@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ضاد — محرر الأكواد</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#007acc">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23C79A3E'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%2314110A'%3Eض%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+__CSS__
+</style>
+</head>
+<body dir="ltr">
+
+<div class="vscode" dir="ltr">
+
+  <div class="titlebar">
+    <span class="titlebar-dots"><i></i><i></i><i></i></span>
+    <span class="titlebar-text">ضاد — محرر الأكواد</span>
+    <button id="sidebar-toggle" class="sidebar-toggle" title="تبديل الشريط الجانبي" aria-label="تبديل الشريط الجانبي">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+  </div>
+
+  <div class="menubar" id="menubar">
+    <button class="menu-item" data-menu="ملف">ملف</button>
+    <button class="menu-item" data-menu="تحرير">تحرير</button>
+    <button class="menu-item" data-menu="تحديد">تحديد</button>
+    <button class="menu-item" data-menu="عرض">عرض</button>
+    <button class="menu-item" data-menu="انتقال">انتقال</button>
+    <button class="menu-item" data-menu="تشغيل">تشغيل</button>
+    <button class="menu-item" data-menu="طرفية">طرفية</button>
+    <button class="menu-item" data-menu="مساعدة">مساعدة</button>
+    <div class="menu-dropdown" id="menu-dropdown" hidden></div>
+  </div>
+
+  <div class="workbench">
+    <div class="activitybar">
+      <button class="activity-btn active" data-view="explorer" title="المستكشف" aria-label="المستكشف">
+        <svg viewBox="0 0 24 24"><path d="M4 3h10l4 4v14H4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 3v4h4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+      <button class="activity-btn" data-view="search" title="البحث" aria-label="البحث">
+        <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <button class="activity-btn" data-view="scm" title="التحكم بالمصدر" aria-label="التحكم بالمصدر">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 8v8M6 12h8a4 4 0 0 0 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+      <button class="activity-btn" data-view="run" title="التشغيل والتصحيح" aria-label="التشغيل والتصحيح">
+        <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor"/></svg>
+      </button>
+      <button class="activity-btn" data-view="extensions" title="الإضافات" aria-label="الإضافات">
+        <svg viewBox="0 0 24 24"><path d="M9 3h3v2.5a1.5 1.5 0 0 0 3 0V3h3v4h-2.5a1.5 1.5 0 0 0 0 3H18v4h-2.5a1.5 1.5 0 1 0 0 3H18v4H9v-2.5a1.5 1.5 0 0 0-3 0V21H3v-4h2.5a1.5 1.5 0 0 0 0-3H3V9h2.5a1.5 1.5 0 0 0 0-3H3V3h6z" fill="currentColor"/></svg>
+      </button>
+      <div class="activity-spacer"></div>
+      <button class="activity-btn" id="settings-btn" title="الإعدادات" aria-label="الإعدادات">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3M12 19v3M4.2 4.2l2 2M17.8 17.8l2 2M2 12h3M19 12h3M4.2 19.8l2-2M17.8 6.2l2-2" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header" id="sidebar-title">المستكشف</div>
+      <div class="side-view active" id="sv-explorer">
+        <div class="sidebar-section-title" id="tree-root-label">▾ ضاد
+          <button class="side-action" id="new-file-btn" title="ملف جديد" aria-label="ملف جديد">＋ ملف جديد</button>
+        </div>
+        <div class="tree" id="file-tree"></div>
+      </div>
+      <div class="side-view" id="sv-search">
+        <input id="search-input" class="side-input" type="text" placeholder="ابحث في كل الملفات…" autocomplete="off">
+        <div id="search-results" class="search-results"></div>
+      </div>
+      <div class="side-view" id="sv-scm">
+        <div class="side-note">التحكم بالمصدر: مشروعك مرتبط بمستودع GitHub «dhad-lang». الدمج مع Git داخل المحرر قيد التطوير.</div>
+      </div>
+      <div class="side-view" id="sv-run">
+        <div class="side-note">شغّل الملف الحالي وشاهد المخرجات في اللوحة السفلية.</div>
+        <button class="btn btn-primary side-run" id="side-run-btn">▶ تشغيل الملف الحالي</button>
+      </div>
+      <div class="side-view" id="sv-extensions">
+        <div class="side-note">الإضافات: لا توجد إضافات مثبّتة. المحرر يتضمن دعم لغة ضاد والإكمال التلقائي والقوالب مدمجًا.</div>
+      </div>
+    </div>
+
+    <div class="editor-area">
+      <div class="tabbar" id="tabbar"></div>
+      <div class="editor-host-wrap">
+        <div class="editor-host" id="monaco-editor"></div>
+        <div class="editor-empty" id="editor-empty" hidden>لا يوجد ملف مفتوح — اختر ملفًا من المستكشف أو أنشئ ملفًا جديدًا (ملف ◂ ملف جديد).</div>
+        <button id="run-btn" class="run-fab" title="تشغيل (Ctrl+Enter)" aria-label="تشغيل">
+          <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-panel="problems">المشكلات</button>
+      <button class="panel-tab" data-panel="output">المخرجات</button>
+      <button class="panel-tab" data-panel="preview">معاينة الصفحة</button>
+      <button class="panel-tab" data-panel="live">تطبيق حي (DOM)</button>
+      <button class="panel-tab" data-panel="ai">المساعد الذكي</button>
+      <button id="export-btn" class="panel-tab" style="margin-inline-start:auto;color:#e8c46a" title="يولّد ملف HTML واحدًا يعمل دون اتصال وبلا خوادم">⭳ تصدير تطبيق مستقل</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-view active" data-view="problems" id="view-problems">
+        <div class="problems-empty" id="problems-empty">لا توجد مشكلات في الملف الحالي.</div>
+        <ul class="problems-list" id="problems-list" hidden></ul>
+      </div>
+      <div class="panel-view" data-view="output" id="view-output">
+        <pre id="output" class="output"></pre>
+      </div>
+      <div class="panel-view" data-view="preview" id="view-preview">
+        <div id="preview-empty" class="preview-empty">
+          لا توجد صفحة محفوظة بعد — استخدم <code>احفظ_ملف("اسم.html"، المحتوى)</code> لعرضها هنا
+        </div>
+        <iframe id="preview-frame" class="preview-frame" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer" title="معاينة الصفحة الناتجة" hidden></iframe>
+        <button id="download-btn" class="download-link" hidden>⭳ تنزيل الملف الأخير</button>
+      </div>
+      <div class="panel-view" data-view="live" id="view-live">
+        <div id="live-empty" class="preview-empty">
+          هذه اللوحة تُبنى مباشرة بواسطة كود ضاد نفسه عبر دوال مثل <code>عنصر_جديد</code> و<code>عند_نقر</code>
+        </div>
+        <div id="live-app-root" class="live-app-root"></div>
+      </div>
+      <div class="panel-view" data-view="ai" id="view-ai">
+        <div id="ai-unavailable" class="ai-unavailable" hidden>المساعد الذكي غير متاح في هذه البيئة الحالية.</div>
+        <div id="ai-body" class="ai-body">
+          <div class="ai-quick-actions">
+            <button class="chip-btn" data-prompt="اشرح هذا الكود بإيجاز، سطرًا بما يفيد">اشرح الكود</button>
+            <button class="chip-btn" data-prompt="راجع هذا الكود واقترح تحسينًا واحدًا محددًا فقط">اقترح تحسينًا</button>
+            <button class="chip-btn" data-prompt="هل يوجد أي خطأ منطقي محتمل في هذا الكود؟">تحقق من الأخطاء</button>
+          </div>
+          <div id="ai-thread" class="ai-thread"></div>
+          <form id="ai-form" class="ai-form">
+            <textarea id="ai-input" class="ai-input" placeholder="اسأل عن الكود، أو اطلب مساعدة في البناء..." rows="2"></textarea>
+            <button type="submit" id="ai-send" class="btn btn-primary ai-send-btn">اسأل</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <div class="status-left">
+      <span class="status-item status-branch">
+        <svg viewBox="0 0 16 16" width="13" height="13"><circle cx="4" cy="3" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="13" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="8" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5v6M4 8h6a2 2 0 0 0 2-2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+        main
+      </span>
+      <span class="status-item" id="status-problems">✓ 0  ⚠ 0</span>
+    </div>
+    <div class="status-right">
+      <span class="status-item" id="status-cloud" title="">☁ …</span>
+      <span class="status-item" id="status-engine">…</span>
+      <span class="status-item" id="status-pos">السطر 1، العمود 1</span>
+      <span class="status-item">UTF-8</span>
+      <span class="status-item">ضاد</span>
+    </div>
+  </div>
+</div>
+
+<script>
+__FRONT__
+</script>
+<script>
+__COMPILER__
+</script>
+<script>
+__VM__
+</script>
+<script>
+__MONACO__
+</script>
+<script>
+__HIGHLIGHTER__
+</script>
+<script>
+__AUTOCOMPLETE__
+</script>
+<script>
+__FALLBACK__
+</script>
+<script>
+__CLOUD__
+</script>
+<script>
+__TEMPLATES__
+</script>
+<script>
+__UI__
+</script>
+</body>
+</html>
