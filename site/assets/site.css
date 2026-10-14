@@ -99,3 +99,18 @@ footer.bot{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font
 #lv .lv-ic{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 12px/1 Cairo,sans-serif}
 #lv .lv-toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);background:#f3ead4;color:#1f1b13;padding:10px 16px;border-radius:10px;margin:0;font:600 14px/1.6 Cairo,sans-serif;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 #lv .lv-toast[hidden]{display:none}
+/* محرر التحدي داخل ورقة الدرس */
+.sheet .chalbox{margin:22px 0 6px;background:#fff;border:1px solid #cfc6aa;border-radius:10px;padding:14px 16px 16px;box-shadow:2px 3px 0 rgba(0,0,0,.06);color:#1f1b13}
+.sheet .chalbox *{line-height:1.8}
+.sheet .cbhead{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}.sheet .cbhead b{color:#0f5c5a;font-size:1.05rem}.sheet .cbhead span{font-size:14.5px;color:#5f5a4e}
+.sheet .cbbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.sheet .cbbar .btn{background:#e4e4e0;color:#1f1b13;border:1px solid #c9c8c1;padding:7px 14px;font-size:14.5px}.sheet .cbbar .btn:hover{background:#d8d8d3}
+.sheet .cbbar .btn.alt{background:#fff}.sheet .cbbar .btn.alt:hover{background:#efefeb}
+.sheet .cbbar .btn[hidden]{display:none}
+.sheet .cbta{display:block;width:100%;box-sizing:border-box;min-height:150px;resize:vertical;margin:0;padding:12px 14px;background:#16130d;color:#f3ead4;border:2px solid #16130d;border-radius:8px;font:500 15px/1.9 "IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;direction:rtl;text-align:right;white-space:pre;overflow:auto;tab-size:4}
+.sheet .cbta:focus{outline:none;border-color:#0f5c5a}
+.sheet .cbmsg{margin-top:10px;padding:8px 14px;border-radius:8px;font-weight:500;font-size:14.5px;font-family:"IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;white-space:pre-wrap;border:1px solid #c9c8c1;background:#f6f6f4}
+.sheet .cbmsg.ok{font-weight:600;background:#e4f4ea;border-color:#8bc9a3;color:#14603a}.sheet .cbmsg.bad{background:#fbe9e5;border-color:#e0a99f;color:#8e2f20}.sheet .cbmsg.info{background:#fff6cc;border-color:#e6d27a;color:#4a3b00}
+.sheet .cbmsg code,.sheet .cbsol pre{font-family:"IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;direction:rtl}
+.sheet .cbsol{margin-top:10px}.sheet .cbsol b{color:#a63a2a;font-size:14.5px}.sheet .cbsol pre{margin:4px 0 0;padding:10px 14px;background:#16130d;color:#f3ead4;border-radius:8px;font-size:15px;line-height:1.9;overflow:auto;white-space:pre;text-align:right}
+.done-mark.solved{color:#0f5c5a}
