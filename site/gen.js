@@ -40,7 +40,7 @@ function codebox(code, where, opt = {}) {
   return `<div class="codebox"><div class="bar"><span>ضاد</span>${r.browser ? '' : '<button data-run>▶ شغّل</button>'}<a href="/editor/?code=${encodeURIComponent(code)}">افتح في المحرر</a></div><pre>${hl(code)}</pre>${o}</div>`;
 }
 // ---------- القالب ----------
-const NAV = [['/learn/', 'تعلّم'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
+const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
 const FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%239a6b12'/%3E%3Ctext x='50' y='70' font-size='62' text-anchor='middle' fill='white'%3Eض%3C/text%3E%3C/svg%3E";
 function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
   const full = title === 'ضاد' ? 'ضاد — لغة برمجة عربية مجانية' : title + ' — ضاد';
