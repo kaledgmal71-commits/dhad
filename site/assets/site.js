@@ -29,7 +29,7 @@ var di=$("#dsearch");if(di){var ents=$$(".entry"),chips=$$(".chip[data-cat]"),ca
  di.oninput=filt;chips.forEach(function(c){c.onclick=function(){cat=c.dataset.cat;chips.forEach(function(x){x.classList.toggle("on",x===c)});filt()}});filt()}
 /* تقدّم الدروس */
 var lid=document.body.dataset.lesson;if(lid){var dn=ls("dhad.site.done")||{};dn[lid]=1;ls("dhad.site.done",dn)}
-var dn2=ls("dhad.site.done")||{};$$("[data-lesson-card]").forEach(function(c){if(dn2[c.dataset.lessonCard]){var m=document.createElement("span");m.className="done-mark";m.textContent="✓ قرأته";c.appendChild(m)}});
+var dn2=ls("dhad.site.done")||{},sv2=ls("dhad.site.solved")||{};$$("[data-lesson-card]").forEach(function(c){var id=c.dataset.lessonCard;if(sv2[id]||dn2[id]){var m=document.createElement("span");m.className="done-mark"+(sv2[id]?" solved":"");m.textContent=sv2[id]?"✓ حللت التحدي":"✓ قرأته";c.appendChild(m)}});
 /* المجتمع */
 var CFG={url:"https://pacucdvobiwcigcuyvbr.supabase.co",key:"sb_publishable_VBFe3Sfh3Q7NS1muHs-Uog_67Tn3eo2"};
 function raw(p,o,tok){o=o||{};o.headers=Object.assign({apikey:CFG.key,"Content-Type":"application/json"},o.headers||{});if(tok)o.headers.Authorization="Bearer "+tok;return fetch(CFG.url+p,o)}
@@ -232,7 +232,7 @@ function open(){
 }
 art.style.cursor="zoom-in";art.setAttribute("title","اضغط لعرض الدرس كصورة كاملة");
 art.addEventListener("click",function(e){
-  if(e.target.closest("button,a,pre,.out,textarea,input"))return;
+  if(e.target.closest("button,a,pre,.out,textarea,input,.chalbox"))return;
   var s=window.getSelection&&window.getSelection().toString();if(s)return;
   open();
 });
@@ -250,4 +250,63 @@ fetch(CFG.url+"/rest/v1/rpc/"+(seen?"counter_get":"counter_hit"),{method:"POST",
  if(typeof n!=="number"&&typeof n!=="string")return;n=Number(n);if(!isFinite(n))return;
  if(!seen){try{localStorage.setItem("dhad.counted","1")}catch(e){}}
  el.textContent=ar(n);el.parentNode.hidden=false}).catch(function(){});
+})();
+
+/* محرر التحدي: تشغيل + فحص تلقائي + تلميح + حل */
+(function(){
+"use strict";
+var box=document.getElementById("cb"),dj=document.getElementById("chal-data");if(!box||!dj)return;
+var C;try{C=JSON.parse(dj.textContent)}catch(e){return}
+var ta=box.querySelector("textarea"),msg=box.querySelector(".cbmsg"),sol=box.querySelector(".cbsol"),bSol=box.querySelector('[data-act="sol"]');
+var KEY="dhad.chal."+C.id,fails=0,hintN=0;
+function ls(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||"null");localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+var saved=ls(KEY);if(typeof saved==="string"&&saved.trim())ta.value=saved;
+function rows(){var n=ta.value.split("\n").length;ta.style.minHeight=Math.min(Math.max(n,6),22)*28.5+28+"px"}
+rows();
+ta.addEventListener("input",function(){ls(KEY,ta.value);rows()});
+function norm(s){return String(s).replace(/[٠-٩]/g,function(d){return "٠١٢٣٤٥٦٧٨٩".indexOf(d)}).replace(/٫/g,".").replace(/\s+$/,"").replace(/^\s+/,"")}
+function say(kind,html,isText){msg.hidden=false;msg.className="cbmsg "+kind;if(isText)msg.textContent=html;else msg.innerHTML=html}
+function esc(t){return String(t).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function run(code){if(!window.DhadRun)return{ok:false,out:[],error:"المحرك لم يُحمّل بعد، أعد المحاولة بعد لحظة"};return window.DhadRun(code)}
+function check(code){
+  if(!code.replace(/#[^\n]*/g,"").trim())return{ok:false,m:"المحرر فارغ. اكتب حلّك أولًا ثم اضغط «شغّل وافحص»."};
+  for(var i=0;i<C.must.length;i++)if(!new RegExp(C.must[i].re).test(code))return{ok:false,m:C.must[i].msg};
+  for(var j=0;j<C.mustNot.length;j++)if(new RegExp(C.mustNot[j].re).test(code))return{ok:false,m:C.mustNot[j].msg};
+  var tests=C.tests.length?C.tests:[{post:"",expect:null}];
+  for(var t=0;t<tests.length;t++){
+    var T=tests[t],r=run(code+"\n"+(T.post||""));
+    if(C.error){
+      if(r.ok)return{ok:false,m:"الكود عمل دون أي خطأ، والمطلوب أن يحدث الخطأ المذكور في التحدي."};
+      if(!new RegExp(C.error).test(r.error))return{ok:false,m:"حدث خطأ آخر غير المطلوب:\n"+r.error};
+      continue}
+    if(!r.ok)return{ok:false,m:"✗ "+r.error+(r.out.length?"\nقبل الخطأ طُبع:\n"+r.out.join("\n"):"")};
+    if(T.expect){var got=r.out.map(norm),exp=T.expect.map(norm),same=got.length===exp.length&&got.every(function(g,k){return g===exp[k]});
+      if(!same){var pre=T.post?"بعد تشغيل كودك مع:\n"+T.post+"\n\n":"";
+        return{ok:false,m:pre+"المتوقع:\n"+T.expect.join("\n")+"\n\nالذي ظهر عندك:\n"+(r.out.length?r.out.join("\n"):"(لم ُيطبع شيء — هل نسيت اطبع؟)")}}}
+  }
+  return{ok:true,out:run(code).out}
+}
+function go(){
+  var code=ta.value,res=check(code);
+  if(res.ok){
+    var done=ls("dhad.site.solved")||{};done[C.id]=1;ls("dhad.site.solved",done);
+    var o=(res.out&&res.out.length)?"<br><small>خرج برنامجك:</small><br><code>"+esc(res.out.join("\n")).replace(/\n/g,"<br>")+"</code>":"";
+    say("ok","✓ أحسنت! حلّك صحيح ويجتاز كل الفحوص."+o);bSol.hidden=false;
+  }else{
+    fails++;say("bad",res.m,true);bSol.hidden=false;
+  }
+}
+box.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;var a=b.getAttribute("data-act");
+  if(a==="run")go();
+  else if(a==="hint"){hintN++;say("info","تلميح: "+C.hint,true)}
+  else if(a==="sol"){var open=!sol.hidden;if(open){sol.hidden=true;b.textContent="أظهر الحل";return}
+    var r=run(C.solution+"\n"+((C.tests[0]&&C.tests[0].post)||""));
+    sol.innerHTML="<b>الحل المقترح (حاول أولًا ثم قارن):</b><pre></pre>";sol.querySelector("pre").textContent=C.solution;sol.hidden=false;b.textContent="أخفِ الحل"}
+  else if(a==="reset"){if(ta.value!==C.starter&&ta.value.trim()&&!confirm("سيُمسح ما كتبته. متأكد؟"))return;ta.value=C.starter;ls(KEY,ta.value);rows();msg.hidden=true;sol.hidden=true;bSol.textContent="أظهر الحل"}
+});
+ta.addEventListener("keydown",function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();go();return}
+  if(e.key==="Tab"&&!e.shiftKey){e.preventDefault();var s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.slice(0,s)+"    "+ta.value.slice(en);ta.selectionStart=ta.selectionEnd=s+4;ls(KEY,ta.value)}
+});
 })();
