@@ -47,6 +47,16 @@ ${codebox(examples.find(e => e.id === 'primes').code, 'home:primes')}</section>
 function lessonCard(l) { const ع = lessons.indexOf(l);
   return `<a class="card" href="/learn/${l.id}/" data-lesson-card="${l.id}"><div class="ic">${l.icon}</div><div class="n">الدرس ${AR(String(ع + 1).padStart(2, '0'))} · ${l.level}</div><h3>${l.title}</h3><p>${l.goal}</p></a>`; }
 
+
+// ===== محرر التحدي داخل الدرس =====
+const challenges = require('./content/challenges.js');
+function chalBox(l) { const c = challenges[l.id]; if (!c) return '';
+  const data = JSON.stringify({ id: l.id, task: c.task, tests: c.tests || [], must: c.must || [], mustNot: c.mustNot || [], error: c.error || '', hint: c.hint, solution: c.solution, starter: c.starter }).replace(/</g, '\\u003c');
+  return `<div class="chalbox" id="cb"><div class="cbhead"><b>جرّب بنفسك</b><span>${esc(c.task)}</span></div>
+<div class="cbbar"><button class="btn" data-act="run">▶ شغّل وافحص</button><button class="btn alt" data-act="hint">تلميح</button><button class="btn alt" data-act="sol" hidden>أظهر الحل</button><button class="btn alt" data-act="reset">إعادة</button></div>
+<textarea class="cbta" dir="rtl" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="محرر التحدي">${esc(c.starter)}</textarea>
+<div class="cbmsg" role="status" hidden></div><div class="cbsol" hidden></div></div><script type="application/json" id="chal-data">${data}</script>`; }
+
 // ===== تعلّم =====
 { const levels = [...new Set(lessons.map(l => l.level))];
   emit('/learn/', { title: 'ضاد من الصفر', desc: 'سلسلة دروس مصوّرة بأوراق دفتر مرتّبة: ورقة واحدة لكل فكرة، مع مثال منفّذ وتحدٍّ.',
@@ -60,7 +70,7 @@ ${levels.map(lv => `<section class="sec"><h2>${lv}</h2><div class="grid lessongr
 <div class="sheetwrap"><article class="sheet"><div class="ico">${l.icon}</div><div class="no">ضاد من الصفر · ${num} / ${AR(N)}</div><h1>${l.title}</h1>
 <div class="goal">الهدف: ${l.goal}</div><ol>${l.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol>
 ${codebox(l.code, 'lesson:' + l.id, { expectError: l.expectError })}
-<div class="tipbox"><b>نصيحة:</b> ${esc(l.tip)}</div><div class="chal"><b>تحدٍّ:</b> ${esc(l.challenge)}</div></article>
+<div class="tipbox"><b>نصيحة:</b> ${esc(l.tip)}</div><div class="chal"><b>تحدٍّ:</b> ${esc(l.challenge)}</div>${chalBox(l)}</article>
 <div class="sheetnote">اطبع الصفحة (Ctrl+P) لتحصل على الورقة وحدها.</div>
 <div class="pager">${prev ? `<a class="btn alt" href="/learn/${prev.id}/">→ ${prev.title}</a>` : '<span></span>'}${next ? `<a class="btn" href="/learn/${next.id}/">${next.title} ←</a>` : `<a class="btn" href="/examples/">أمثلة عملية ←</a>`}</div></div>` });
   });
