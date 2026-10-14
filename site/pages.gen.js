@@ -76,6 +76,8 @@ ${codebox(l.code, 'lesson:' + l.id, { expectError: l.expectError })}
   });
 }
 
+require('./sheets.gen.js');
+
 // ===== الدليل =====
 emit('/docs/', { title: 'دليل المستخدم', desc: 'مرجع لغة ضاد: الصياغة والأنواع والعوامل والتحكم والدوال والقوائم والأخطاء.',
  body: `${crumbs([null, 'الدليل'])}<h1>دليل المستخدم</h1><p class="lead">مرجع مختصر ودقيق. للتعلم المتدرج ابدأ من <a href="/learn/">الدروس</a>، وللبحث عن دالة بعينها افتح <a href="/dictionary/">المعجم</a>.</p>
