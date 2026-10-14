@@ -267,7 +267,7 @@ ta.addEventListener("input",function(){ls(KEY,ta.value);rows()});
 function norm(s){return String(s).replace(/[٠-٩]/g,function(d){return "٠١٢٣٤٥٦٧٨٩".indexOf(d)}).replace(/٫/g,".").replace(/\s+$/,"").replace(/^\s+/,"")}
 function say(kind,html,isText){msg.hidden=false;msg.className="cbmsg "+kind;if(isText)msg.textContent=html;else msg.innerHTML=html}
 function esc(t){return String(t).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-function run(code){if(!window.DhadRun)return{ok:false,out:[],error:"المحرك لم يُحمّل بعد، أعد المحاولة بعد لحظة"};return window.DhadRun(code)}
+function run(code){if(!window.DhadRun)return{ok:false,out:[],error:"المحرك لم يُحمَّل بعد، أعد المحاولة بعد لحظة"};return window.DhadRun(code)}
 function check(code){
   if(!code.replace(/#[^\n]*/g,"").trim())return{ok:false,m:"المحرر فارغ. اكتب حلّك أولًا ثم اضغط «شغّل وافحص»."};
   for(var i=0;i<C.must.length;i++)if(!new RegExp(C.must[i].re).test(code))return{ok:false,m:C.must[i].msg};
@@ -282,7 +282,7 @@ function check(code){
     if(!r.ok)return{ok:false,m:"✗ "+r.error+(r.out.length?"\nقبل الخطأ طُبع:\n"+r.out.join("\n"):"")};
     if(T.expect){var got=r.out.map(norm),exp=T.expect.map(norm),same=got.length===exp.length&&got.every(function(g,k){return g===exp[k]});
       if(!same){var pre=T.post?"بعد تشغيل كودك مع:\n"+T.post+"\n\n":"";
-        return{ok:false,m:pre+"المتوقع:\n"+T.expect.join("\n")+"\n\nالذي ظهر عندك:\n"+(r.out.length?r.out.join("\n"):"(لم ُيطبع شيء — هل نسيت اطبع؟)")}}}
+        return{ok:false,m:pre+"المتوقع:\n"+T.expect.join("\n")+"\n\nالذي ظهر عندك:\n"+(r.out.length?r.out.join("\n"):"(لم يُطبع شيء — هل نسيت اطبع؟)")}}}
   }
   return{ok:true,out:run(code).out}
 }
