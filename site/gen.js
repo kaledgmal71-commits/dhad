@@ -53,7 +53,7 @@ function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
 <link rel="stylesheet" href="/assets/site.css">${schema}</head><body ${bodyAttr}>
 <header class="top"><div class="wrap"><a class="logo" href="/"><i>ض</i>ضاد</a><nav class="main">${nav}</nav><button id="theme" class="themebtn" title="السمة" aria-label="تبديل السمة">◐</button><a class="btn" href="/editor/">افتح المحرر</a></div></header>
 <main><div class="wrap">${body}</div></main>
-<footer class="bot"><div class="wrap"><div class="cols"><div><h4>ضاد</h4><p>لغة برمجة عربية مجانية ومفتوحة للجميع، تكريمًا للخوارزمي. هدفها تيسير العلم وتقريب البرمجة والذكاء الاصطناعي من الجميع.</p></div>
+<footer class="bot"><div class="wrap"><div class="cols"><div><h4>ضاد</h4><p>لغة برمجة عربية مجانية ومفتوحة للجميع، تكريمًا للخوارزمي. هدفها تيسير العلم وتقريب البرمجة والذكاء الاصطناعي من الجميع.</p><p class="visits" hidden>عدد الزائرين: <b id="vc"></b></p></div>
 <div><h4>تعلّم</h4><a href="/learn/">ضاد من الصفر</a><a href="/docs/">الدليل</a><a href="/dictionary/">المعجم</a><a href="/examples/">أمثلة</a></div>
 <div><h4>استكشف</h4><a href="/editor/">المحرر</a><a href="/ai/">الذكاء الاصطناعي</a><a href="/articles/">مقالات</a><a href="/roadmap/">الخارطة</a></div>
 <div><h4>شارك</h4><a href="/community/">المجتمع</a><a href="/limits/">ما هي ضاد وما ليست</a><a href="/about/">عن المشروع</a><a href="/llms.txt">llms.txt</a></div></div></div></footer>
