@@ -239,3 +239,15 @@ art.addEventListener("click",function(e){
 var note=$(".sheetnote");if(note)note.insertAdjacentHTML("beforeend","<br>اضغط على الورقة لعرضها صورةً كاملة تحفظها أو تشاركها.");
 build();
 })();
+/* عدّاد الزائرين: رقم فقط، بلا أي بيانات شخصية */
+(function(){
+var el=document.getElementById("vc");if(!el)return;
+var CFG={url:"https://pacucdvobiwcigcuyvbr.supabase.co",key:"sb_publishable_VBFe3Sfh3Q7NS1muHs-Uog_67Tn3eo2"};
+var seen=false;try{seen=localStorage.getItem("dhad.counted")==="1"}catch(e){}
+function ar(n){return String(n).replace(/\d/g,function(d){return "٠١٢٣٤٥٦٧٨٩"[d]})}
+fetch(CFG.url+"/rest/v1/rpc/"+(seen?"counter_get":"counter_hit"),{method:"POST",headers:{apikey:CFG.key,"Content-Type":"application/json"},body:"{}"})
+.then(function(r){return r.ok?r.json():null}).then(function(n){
+ if(typeof n!=="number"&&typeof n!=="string")return;n=Number(n);if(!isFinite(n))return;
+ if(!seen){try{localStorage.setItem("dhad.counted","1")}catch(e){}}
+ el.textContent=ar(n);el.parentNode.hidden=false}).catch(function(){});
+})();
