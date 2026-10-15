@@ -314,10 +314,11 @@ class VM {
     // نص للكود: أرقام لاتينية ونقطة عشرية، يصلح لتوليد CSS وJSON وJavaScript
     g.set("نص_برمجي", (x) => (typeof x === "number" ? String(x) : toDisplay(x)));
     g.set("عدد", (x) => {
-      const normalized = typeof x === "string" ? normalizeDigits(x) : x;
-      const f = parseFloat(normalized);
-      if (isNaN(f)) throw new VMRuntimeError(`لا يمكن تحويل "${x}" إلى رقم`);
-      return f;
+      if (typeof x === "number") return x;
+      // الفاصلة العشرية العربية ٫ تُعامَل كنقطة، والتحويل صارم: النص كله رقم أو خطأ
+      const normalized = typeof x === "string" ? normalizeDigits(x).replace(/\u066B/g, ".").trim() : x;
+      if (typeof normalized !== "string" || !/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(normalized)) throw new VMRuntimeError(`لا يمكن تحويل "${toDisplay(x)}" إلى رقم`);
+      return parseFloat(normalized);
     });
     g.set("احفظ_ملف", (path, content) => { this.onSaveFile(path, content); return path; });
     g.set("جذر", (x) => { if (x < 0) throw new VMRuntimeError("لا يوجد جذر حقيقي لعدد سالب"); return Math.sqrt(x); });
