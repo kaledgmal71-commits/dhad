@@ -114,3 +114,61 @@ footer.bot{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font
 .sheet .cbmsg code,.sheet .cbsol pre{font-family:"IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;direction:rtl}
 .sheet .cbsol{margin-top:10px}.sheet .cbsol b{color:#a63a2a;font-size:14.5px}.sheet .cbsol pre{margin:4px 0 0;padding:10px 14px;background:#16130d;color:#f3ead4;border-radius:8px;font-size:15px;line-height:1.9;overflow:auto;white-space:pre;text-align:right}
 .done-mark.solved{color:#0f5c5a}
+/* شروحات مصوّرة: ورقة دفتر بصفحة واحدة */
+.ssheet{--bl:#2f5fb3;--bl2:#7ea3dd;--gr:#bfe6c9;position:relative;background-color:#fffffd;background-image:repeating-linear-gradient(transparent 0,transparent 31px,rgba(150,185,225,.35) 31px,rgba(150,185,225,.35) 32px);border:1px solid #d6d3c4;border-radius:8px;padding:22px 22px 26px;box-shadow:0 2px 0 #e4e0d0,0 14px 34px -22px rgba(40,50,20,.45);color:#1f2a44;max-width:1060px;margin:0 auto}
+.ssheet *{box-sizing:border-box}
+.ssheet .stitle,.ssheet .stitle2{display:block;background:var(--gr);border-radius:10px 16px 12px 18px;padding:6px 20px;font-weight:800;color:#1f2a44;margin:0 0 12px}
+.ssheet .stitle{font-size:1.45rem;line-height:1.5}.ssheet .stitle2{font-size:1.3rem;line-height:1.5;margin-bottom:18px}
+.srow{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin:0 0 16px}
+.sb{grid-column:span var(--sp,6);background:rgba(255,255,255,.55);border:2px solid var(--bl2);border-radius:14px;padding:14px 16px 16px;min-width:0}
+.sb .sh{display:inline-block;background:#cdeed6;border-radius:8px 14px 10px 14px;padding:3px 16px;margin:-26px 0 10px;font-size:1.06rem;line-height:1.6;font-weight:800;color:#1f2a44;border:0}
+.ssheet p{margin:.3em 0 .7em;line-height:1.95;font-size:16px;color:#26324f}
+.ssheet code{font-family:"IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;background:#eef3fb;border:1px solid #d3def0;border-radius:5px;padding:0 6px;font-size:.92em;color:#1d3f87;direction:rtl;unicode-bidi:isolate}
+.sul{margin:.2em 0 .4em;padding:0 20px 0 0;list-style:none}.sul li{position:relative;margin:.35em 0;line-height:1.9;font-size:16px;color:#26324f}
+.sul li:before{content:"";position:absolute;right:-16px;top:.78em;width:7px;height:7px;border-radius:50%;background:var(--bl)}
+.sok{border:2px solid #7fc08e;border-radius:12px;background:#f4fbf5;padding:8px 14px;margin:.6em 0 0}.sok div{display:flex;gap:10px;align-items:center;line-height:1.9;font-size:15.5px;font-weight:600}.sok span{color:#2e8a45;font-weight:800}
+.sart{display:flex;flex-direction:column;align-items:center;margin:.4em 0}.sart .art{width:100%;max-width:210px;height:auto}.sart.side .art{max-width:130px}
+.art .at{font:700 15px Cairo,sans-serif;fill:#1f2a44}.art .at.big{font-size:17px}.sart .cap{font-size:14.5px;line-height:1.8;color:#3a4766;text-align:center;margin-top:4px}
+/* نافذة الكود */
+.ssheet .codebox.win{margin:.5em 0;border:2px solid var(--bl2);border-radius:12px;overflow:hidden;background:#fff;line-height:1.8}
+.win .wbar{display:flex;align-items:center;gap:6px;background:#dbe6f7;padding:6px 12px;font-size:14px;border-bottom:2px solid var(--bl2)}
+.win .wbar i{width:12px;height:12px;border-radius:50%;display:inline-block}.win .d1{background:#e8627a}.win .d2{background:#f0b43c}.win .d3{background:#4fb36a}
+.win .wbar b{font:700 13.5px ui-monospace,Menlo,monospace;color:#1f2a44;margin:0 8px;direction:ltr}
+.win .wbar button{margin-inline-start:auto;background:#fff;border:1px solid #9db6e0;border-radius:7px;padding:2px 12px;font:700 13px Cairo,sans-serif;color:#1f2a44;cursor:pointer}.win .wbar button:hover{background:#eaf1fc}
+.win .wbar a{font-size:13px;color:#2f5fb3;text-decoration:none;font-weight:700}.win .wbar a:hover{text-decoration:underline}
+.ssheet .win pre{margin:0;padding:10px 16px;background:#fff;color:#1f2a44;border-radius:0;font:500 15.5px/1.95 "IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;overflow:auto;white-space:pre;direction:rtl;text-align:right}
+.win pre .hl-k{color:#1d4fb8;font-weight:700}.win pre .hl-s{color:#c0392b}.win pre .hl-n{color:#c0392b}.win pre .hl-c{color:#7a8499;font-style:italic}.win pre .hl-f{color:#8a3fb5;font-weight:600}
+.ssheet .win .out{background:#16222e;color:#f1f5fb;border-top:2px solid var(--bl2);padding:10px 16px 12px;font:500 15px/1.85 "IBM Plex Sans Arabic",Cairo,ui-monospace,monospace;white-space:pre-wrap;text-align:right}
+.win .out:before{content:attr(data-label);display:block;font:700 12.5px Cairo,sans-serif;color:#9db6e0;margin-bottom:2px}
+.win .out.err{color:#ffb4a8}
+/* جداول */
+.stable{width:100%;border-collapse:separate;border-spacing:0;border:2px solid var(--bl2);border-radius:10px;overflow:hidden;background:#fff;font-size:15px;margin:.4em 0}
+.stable th{background:#e5eefb;padding:7px 10px;font-weight:800;color:#1f2a44;text-align:right;border-bottom:2px solid var(--bl2)}
+.stable td{padding:7px 10px;border-top:1px solid #d9e3f3;line-height:1.7;vertical-align:middle}.stable tbody tr:first-child td{border-top:0}
+.stable td+td,.stable th+th{border-right:1px solid #d9e3f3}
+.badge{display:inline-block;padding:1px 14px;border-radius:8px;font-weight:800;font-size:.95em;line-height:1.7;border:1px solid rgba(0,0,0,.12)}
+.badge.p1{background:#f6bcc6}.badge.p2{background:#bfe0f5}.badge.p3{background:#bfe6b9}.badge.p4{background:#f8e29d}.badge.p5{background:#d8c8f0}.badge.p6{background:#ffd0a8}
+.res{font-weight:800;color:#1f2a44}
+/* أسماء، ملاحظات، تشريح */
+.snames{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.6em}
+.snames>div{border:2px solid;border-radius:10px;padding:6px 10px;font-size:14.5px}.snames .g{border-color:#7fc08e;background:#f4fbf5}.snames .b{border-color:#e08a8a;background:#fdf3f3}
+.snames b{display:block;margin-bottom:2px}.snames .g b{color:#2e8a45}.snames .b b{color:#b3382c}.snames code{display:inline-block;margin:2px 3px}
+.snote{border:2px solid #9bc9a4;background:#f4fbf5;border-radius:12px;padding:6px 14px;margin:.6em 0 0;font-size:15px;line-height:1.85;color:#26324f}.snote b{display:block;color:#2e7a42}
+.sanat .top{display:flex;justify-content:center}.sanat .top code{font-size:1.15rem;background:#fff;border:2px solid var(--bl2);border-radius:8px;padding:6px 18px;direction:rtl}
+.sanat .arrs{display:flex;justify-content:space-around;padding:0 20%}.sanat .arr{width:34px;height:30px}
+.sanat .parts{display:grid;grid-template-columns:repeat(var(--n,2),1fr);gap:12px}.sanat .parts>div{border:2px dashed var(--bl2);border-radius:10px;padding:8px 10px;text-align:center;background:#fff}
+.sanat .parts code{display:inline-block;font-size:1.05rem;margin-bottom:2px}.sanat .parts span{display:block;font-size:14.5px;line-height:1.8;color:#3a4766}
+.stiles{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--bl2);border-radius:12px;overflow:hidden;background:#fff}
+.stiles>div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border:1px solid #d9e3f3;text-align:center;margin:-1px 0 0 -1px}
+.stiles svg{width:54px;height:54px}.stiles b{font-size:14.5px;color:#1f2a44}.stiles span{font-size:13px;color:#5a6785}
+.sprac{margin:.3em 0;padding:0;list-style:none;counter-reset:q}.sprac li{counter-increment:q;display:flex;align-items:center;gap:10px;margin:.4em 0;font-size:16px;font-weight:600}
+.sprac li:before{content:counter(q,arabic-indic);width:28px;height:28px;border-radius:50%;border:2px solid var(--bl);color:var(--bl);display:inline-flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.sb.sum,.sb.nxt{background:rgba(255,255,255,.7);border-color:#8fbf9a}
+.slink{text-align:center;margin-top:6px;font-weight:700;color:#26324f}.slink .btn{margin-inline-start:8px;background:#e4e4e0;color:#1f1b13;border:1px solid #c9c8c1}
+@media(max-width:820px){.srow{grid-template-columns:1fr}.sb{grid-column:auto!important}.ssheet{padding:14px 10px 18px}.ssheet .stitle{font-size:1.1rem}.ssheet .stitle2{font-size:1.05rem}.sb .sh{font-size:1rem;margin-top:-24px}.snames{grid-template-columns:1fr}.stable{font-size:14px}.stable th,.stable td{padding:6px 7px}.stiles svg{width:44px;height:44px}.ssheet p,.sul li{font-size:15.5px}}
+@media print{.ssheet{box-shadow:none;border:0}}
+.ssheet .ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.stable td:first-child{white-space:nowrap}
+.win .wbar a{white-space:nowrap}.win .wbar b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:560px){.win .wbar i{display:none}.win .wbar{gap:8px;padding:6px 10px}}
+.tscroll{overflow-x:auto;margin:.4em 0;-webkit-overflow-scrolling:touch}.tscroll .stable{margin:0;min-width:100%}
