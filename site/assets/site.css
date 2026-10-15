@@ -172,3 +172,4 @@ footer.bot{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font
 .win .wbar a{white-space:nowrap}.win .wbar b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:560px){.win .wbar i{display:none}.win .wbar{gap:8px;padding:6px 10px}}
 .tscroll{overflow-x:auto;margin:.4em 0;-webkit-overflow-scrolling:touch}.tscroll .stable{margin:0;min-width:100%}
+.sart svg:not(.art){width:92px;height:92px}
