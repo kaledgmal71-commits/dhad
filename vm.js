@@ -193,7 +193,7 @@ class VM {
         const idx = this.pop();
         const obj = this.pop();
         if (obj instanceof Map) { this.push(obj.has(idx) ? obj.get(idx) : null); return; }
-        if (obj == null || obj[idx] === undefined) throw new VMRuntimeError(`خطأ في الفهرسة عند ${idx}`);
+        if (obj == null || obj[idx] === undefined) throw new VMRuntimeError(`خطأ في الفهرسة عند ${toDisplay(idx)}`);
         this.push(obj[idx]);
         return;
       }
