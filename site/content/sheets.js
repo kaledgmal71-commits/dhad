@@ -226,4 +226,4 @@ module.exports = [
         { t: 'note', x: 'التحديات الثلاثة موجودة بصيغتها الكاملة وفحصها الآلي في <a href="/learn/lists/">درس القوائم</a> و<a href="/learn/maps/">درس القواميس</a>.' }] },
     ],
   ] },
-].concat(require('./sheets2.js'));
+].concat(require('./sheets2.js')).concat(require('./sheets3.js'));
