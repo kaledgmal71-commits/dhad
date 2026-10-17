@@ -193,18 +193,30 @@ class VM {
         const idx = this.pop();
         const obj = this.pop();
         if (obj instanceof Map) { this.push(obj.has(idx) ? obj.get(idx) : null); return; }
-        if (obj == null || obj[idx] === undefined) throw new VMRuntimeError(`خطأ في الفهرسة عند ${toDisplay(idx)}`);
-        this.push(obj[idx]);
-        return;
+        // فهرسة صارمة: أعداد صحيحة فقط على القوائم والنصوص، ولا وصول لأي خاصية داخلية في جافاسكربت
+        if (Array.isArray(obj) || typeof obj === "string") {
+          if (typeof idx === "number" && Number.isInteger(idx)) {
+            const k = idx < 0 ? obj.length + idx : idx;
+            if (k >= 0 && k < obj.length) { this.push(obj[k]); return; }
+          }
+          throw new VMRuntimeError(`خطأ في الفهرسة عند ${toDisplay(idx)}`);
+        }
+        throw new VMRuntimeError(`لا يمكن الفهرسة على قيمة من نوع ${typeName(obj).replace(/[«»]/g, "")}`);
       }
       case "INDEX_SET": {
         const idx = this.pop();
         const obj = this.pop();
         const value = this.pop();
-        if (obj == null) throw new VMRuntimeError("خطأ في الفهرسة");
-        if (obj instanceof Map) obj.set(idx, value); else obj[idx] = value;
-        this.push(value);
-        return;
+        if (obj instanceof Map) { obj.set(idx, value); this.push(value); return; }
+        if (Array.isArray(obj)) {
+          if (typeof idx === "number" && Number.isInteger(idx)) {
+            const k = idx < 0 ? obj.length + idx : idx;
+            if (k >= 0 && k <= obj.length) { obj[k] = value; this.push(value); return; }
+          }
+          throw new VMRuntimeError(`خطأ في الفهرسة عند ${toDisplay(idx)}`);
+        }
+        if (typeof obj === "string") throw new VMRuntimeError("النصوص لا تُعدَّل بالفهرسة؛ أنشئ نصًا جديدًا بـ استبدل() أو اقتطع()");
+        throw new VMRuntimeError(`لا يمكن الإسناد بالفهرسة على قيمة من نوع ${typeName(obj).replace(/[«»]/g, "")}`);
       }
       case "ADD": {
         const b = this.pop(), a = this.pop();
@@ -325,12 +337,26 @@ class VM {
       return parseFloat(normalized);
     });
     g.set("احفظ_ملف", (path, content) => { this.onSaveFile(path, content); return path; });
-    g.set("جذر", (x) => { if (x < 0) throw new VMRuntimeError("لا يوجد جذر حقيقي لعدد سالب"); return Math.sqrt(x); });
-    g.set("قوة", (a, b) => Math.pow(a, b));
-    g.set("مطلق", (x) => Math.abs(x));
-    g.set("جولة", (x) => Math.round(x));
-    g.set("أرضية", (x) => Math.floor(x));
-    g.set("سقف", (x) => Math.ceil(x));
+    const num = (name, ...xs) => { for (const x of xs) if (typeof x !== "number" || Number.isNaN(x)) throw new VMRuntimeError(`${name}() تحتاج رقمًا لكنها وجدت ${typeName(x).replace(/[«»]/g, "")}`); };
+    g.set("جمع", (l) => { needList("جمع", l); let t = 0; for (const x of l) { num("جمع", x); t += x; } return t; });
+    g.set("موضع", (c, v) => {
+      if (typeof c === "string") { if (typeof v !== "string") throw new VMRuntimeError("موضع() في النص تحتاج نصًا تبحث عنه"); return c.indexOf(v); }
+      needList("موضع", c);
+      return c.findIndex((x) => x === v);
+    });
+    g.set("@في", (c, v) => { if (typeof c === "string" || Array.isArray(c)) return c.includes(v); if (c instanceof Map) return c.has(v); throw new VMRuntimeError("«في» تحتاج في طرفها الأيمن نصًا أو قائمة أو خريطة"); });
+    g.set("الوقت", () => Date.now());
+    g.set("@شريحة", (c, a, b) => {
+      if (!(typeof c === "string" || Array.isArray(c))) throw new VMRuntimeError(`الشريحة [أ:ب] تحتاج قائمة أو نصًا لكن وجدت ${typeName(c).replace(/[«»]/g, "")}`);
+      for (const x of [a, b]) if (x !== null && x !== undefined && !(typeof x === "number" && Number.isInteger(x))) throw new VMRuntimeError("حدّا الشريحة [أ:ب] يجب أن يكونا عددين صحيحين");
+      return c.slice(a === null ? undefined : a, b === null ? undefined : b);
+    });
+    g.set("جذر", (x) => { num("جذر", x); if (x < 0) throw new VMRuntimeError("لا يوجد جذر حقيقي لعدد سالب"); return Math.sqrt(x); });
+    g.set("قوة", (a, b) => { num("قوة", a, b); return Math.pow(a, b); });
+    g.set("مطلق", (x) => { num("مطلق", x); return Math.abs(x); });
+    g.set("جولة", (x) => { num("جولة", x); return Math.round(x); });
+    g.set("أرضية", (x) => { num("أرضية", x); return Math.floor(x); });
+    g.set("سقف", (x) => { num("سقف", x); return Math.ceil(x); });
     g.set("الأكبر", (...a) => { const v = a.length === 1 && Array.isArray(a[0]) ? a[0] : a; if (!v.length) throw new VMRuntimeError("الأكبر() تحتاج قيمة واحدة على الأقل"); return Math.max(...v); });
     g.set("الأصغر", (...a) => { const v = a.length === 1 && Array.isArray(a[0]) ? a[0] : a; if (!v.length) throw new VMRuntimeError("الأصغر() تحتاج قيمة واحدة على الأقل"); return Math.min(...v); });
     g.set("عشوائي", (من, إلى) => {
