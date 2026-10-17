@@ -300,6 +300,10 @@ class VM {
     g.set("رشّح", (l, f) => { needList("رشّح", l); needFn("رشّح", f); return l.filter((x) => truthy(callFn(f, [x]))); });
     g.set("اختصر", (l, f, init) => { needList("اختصر", l); needFn("اختصر", f); let acc = init === undefined ? null : init; for (const x of l) acc = callFn(f, [acc, x]); return acc; });
     g.set("نوع", (x) => typeName(x).replace(/[«»]/g, ""));
+    g.set("@تكرار", (x) => {
+      if (Array.isArray(x) || typeof x === "string") return x;
+      throw new VMRuntimeError(`من_أجل (… في …) تحتاج قائمة أو نصًا، لكن وجدت ${typeName(x).replace(/[«»]/g, "")}. للخريطة استعمل مفاتيح() أو قيم()`);
+    });
     g.set("أطلق_خطأ", (m) => { throw new VMRuntimeError(toDisplay(m)); });
     g.set("ادخل", (q) => {
       const msg = q === undefined ? "" : toDisplay(q);
