@@ -91,7 +91,7 @@ function tokenize(src) {
     }
 
     const two = src.slice(i, i + 2);
-    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR" };
+    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS" };
     if (twoMap[two]) { tokens.push({ type: twoMap[two], value: two, line }); i += 2; continue; }
 
     if (ch === "=") { tokens.push({ type: "ASSIGN", value: "=", line }); i++; continue; }
@@ -176,17 +176,35 @@ class Parser {
     return { kind: "Block", statements: stmts };
   }
 
+  // قائمة المعاملات بعد «(» وحتى «)»، مع قيم افتراضية اختيارية: دالة س(أ، ب = ٥)
+  paramList() {
+    const params = [], defaults = [];
+    if (!this.check("RPAREN")) {
+      do {
+        const name = this.expect("IDENT").value;
+        params.push(name);
+        if (this.match("ASSIGN")) defaults.push({ name, expr: this.logicOr() });
+        else if (defaults.length) throw new ParseError(`السطر ${this.peek().line}: بعد معامل له قيمة افتراضية يجب أن تكون بقية المعاملات كذلك`);
+      } while (this.match("COMMA"));
+    }
+    this.expect("RPAREN");
+    return { params, defaults };
+  }
+  withDefaults(body, defaults) {
+    if (!defaults.length) return body;
+    const pre = defaults.map((d) => ({ kind: "If",
+      cond: { kind: "BinOp", op: "EQ", left: { kind: "Identifier", name: d.name }, right: { kind: "Null" } },
+      thenBlock: { kind: "Block", statements: [{ kind: "ExprStmt", expr: { kind: "Assign", target: { kind: "Identifier", name: d.name }, expr: d.expr } }] },
+      elseBlock: null }));
+    return { kind: "Block", statements: pre.concat(body.statements) };
+  }
+
   funcDecl() {
     this.expect("FUNC");
     const name = this.expect("IDENT").value;
     this.expect("LPAREN");
-    const params = [];
-    if (!this.check("RPAREN")) {
-      params.push(this.expect("IDENT").value);
-      while (this.match("COMMA")) params.push(this.expect("IDENT").value);
-    }
-    this.expect("RPAREN");
-    const body = this.block();
+    const { params, defaults } = this.paramList();
+    const body = this.withDefaults(this.block(), defaults);
     return { kind: "FuncDecl", name, params, body };
   }
 
@@ -273,6 +291,18 @@ class Parser {
 
   assignment() {
     const expr = this.logicOr();
+    const COMPOUND = { PLUSEQ: "PLUS", MINUSEQ: "MINUS", STAREQ: "STAR", SLASHEQ: "SLASH", PERCENTEQ: "PERCENT" };
+    const ct = this.peek().type;
+    if (COMPOUND[ct] || ct === "PLUSPLUS" || ct === "MINUSMINUS") {
+      this.advance();
+      if (expr.kind !== "Identifier" && !(expr.kind === "Index" && this.simpleTarget(expr))) {
+        throw new ParseError(`السطر ${this.peek().line}: الطرف الأيسر للإسناد المركّب يجب أن يكون متغيرًا أو عنصرًا بفهرس بسيط`);
+      }
+      let op, value;
+      if (ct === "PLUSPLUS" || ct === "MINUSMINUS") { op = ct === "PLUSPLUS" ? "PLUS" : "MINUS"; value = { kind: "Number", value: 1 }; }
+      else { op = COMPOUND[ct]; value = this.assignment(); }
+      return { kind: "Assign", target: expr, expr: { kind: "BinOp", op, left: expr, right: value } };
+    }
     if (this.check("ASSIGN")) {
       this.advance();
       const value = this.assignment();
@@ -282,6 +312,15 @@ class Parser {
       throw new ParseError("الطرف الأيسر للإسناد يجب أن يكون متغيرًا");
     }
     return expr;
+  }
+
+  // هدف الإسناد المركّب لا يحوي استدعاءً (حتى لا يُنفَّذ مرتين)
+  simpleTarget(n) {
+    if (n.kind === "Identifier" || n.kind === "Number" || n.kind === "String") return true;
+    if (n.kind === "Index") return this.simpleTarget(n.obj) && this.simpleTarget(n.index);
+    if (n.kind === "BinOp") return this.simpleTarget(n.left) && this.simpleTarget(n.right);
+    if (n.kind === "UnaryOp") return this.simpleTarget(n.expr);
+    return false;
   }
 
   logicOr() {
@@ -304,7 +343,12 @@ class Parser {
   }
   comparison() {
     let expr = this.term();
-    while (["LT", "GT", "LTE", "GTE"].includes(this.peek().type)) {
+    while (["LT", "GT", "LTE", "GTE"].includes(this.peek().type) || (this.check("IDENT") && this.peek().value === "في")) {
+      if (this.check("IDENT")) {   // س في قائمة  ==  يحوي(قائمة، س)
+        this.advance();
+        expr = { kind: "Call", callee: { kind: "Identifier", name: "@في" }, args: [this.term(), expr] };
+        continue;
+      }
       const op = this.advance().type;
       expr = { kind: "BinOp", op, left: expr, right: this.term() };
     }
@@ -349,7 +393,22 @@ class Parser {
         expr = { kind: "Index", obj: expr, index: { kind: "String", value: nameTok.value } };
       } else if (this.check("LBRACKET")) {
         this.advance();
+        const Null = { kind: "Null" };
+        if (this.check("COLON")) {            // ق[:ب]
+          this.advance();
+          const hi = this.check("RBRACKET") ? Null : this.expression();
+          this.expect("RBRACKET");
+          expr = { kind: "Call", callee: { kind: "Identifier", name: "@شريحة" }, args: [expr, Null, hi] };
+          continue;
+        }
         const idx = this.expression();
+        if (this.check("COLON")) {            // ق[أ:ب] أو ق[أ:]
+          this.advance();
+          const hi = this.check("RBRACKET") ? Null : this.expression();
+          this.expect("RBRACKET");
+          expr = { kind: "Call", callee: { kind: "Identifier", name: "@شريحة" }, args: [expr, idx, hi] };
+          continue;
+        }
         this.expect("RBRACKET");
         expr = { kind: "Index", obj: expr, index: idx };
       } else break;
@@ -367,13 +426,8 @@ class Parser {
     if (tok.type === "FUNC") {
       this.advance();
       this.expect("LPAREN");
-      const params = [];
-      if (!this.check("RPAREN")) {
-        params.push(this.expect("IDENT").value);
-        while (this.match("COMMA")) params.push(this.expect("IDENT").value);
-      }
-      this.expect("RPAREN");
-      return { kind: "FuncExpr", params, body: this.block() };
+      const { params, defaults } = this.paramList();
+      return { kind: "FuncExpr", params, body: this.withDefaults(this.block(), defaults) };
     }
     if (tok.type === "LPAREN") { this.advance(); const e = this.expression(); this.expect("RPAREN"); return e; }
     if (tok.type === "LBRACE") {
