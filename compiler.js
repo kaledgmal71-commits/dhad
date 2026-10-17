@@ -223,6 +223,19 @@ class Compiler {
     loop.breakAddrs.forEach((a) => this.chunk.patch(a, [this.chunk.here()]));
   }
 
+  // من_أجل (س في قائمة): تُحوَّل إلى حلقة عدّاد مخفي فوق القائمة، فيبقى توقف/أكمل/الإغلاقات على دلالاتها
+  stmt_ForIn(node) {
+    this.forInCount = (this.forInCount || 0) + 1;
+    const n = this.forInCount;
+    const L = { kind: "Identifier", name: "@forin_list_" + n };
+    const I = { kind: "Identifier", name: "@forin_i_" + n };
+    this.stmt_VarDecl({ kind: "VarDecl", name: "@forin_list_" + n, expr: { kind: "Call", callee: { kind: "Identifier", name: "@تكرار" }, args: [node.iter] } });
+    const last = { kind: "BinOp", op: "MINUS", left: { kind: "Call", callee: { kind: "Identifier", name: "طول" }, args: [L] }, right: { kind: "Number", value: 1 } };
+    const first = { kind: "VarDecl", name: node.varName, expr: { kind: "Index", obj: L, index: I } };
+    this.stmt_For({ kind: "For", varName: "@forin_i_" + n, start: { kind: "Number", value: 0 }, end: last, step: null,
+      body: { kind: "Block", statements: [first].concat(node.body.statements) } });
+  }
+
   stmt_Return(node) {
     if (node.expr) this.compileExpr(node.expr);
     else this.chunk.emit("CONST", this.chunk.addConstant(null));
