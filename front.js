@@ -157,6 +157,8 @@ class Parser {
   _statement() {
     if (this.check("FUNC") && this.tokens[this.pos + 1].type === "IDENT") return this.funcDecl();
     if (this.check("IDENT") && this.peek().value === "حاول" && this.tokens[this.pos + 1].type === "LBRACE") return this.tryStmt();
+    if (this.check("IDENT") && this.peek().value === "صنف" && this.tokens[this.pos + 1].type === "IDENT" &&
+        (this.tokens[this.pos + 2].type === "LBRACE" || (this.tokens[this.pos + 2].type === "IDENT" && this.tokens[this.pos + 2].value === "يرث"))) return this.classStmt();
     if (this.check("IF")) return this.ifStmt();
     if (this.check("WHILE")) return this.whileStmt();
     if (this.check("FOR")) return this.forStmt();
@@ -166,6 +168,69 @@ class Parser {
     if (this.check("BREAK")) { this.advance(); this.match("SEMI"); return { kind: "Break" }; }
     if (this.check("CONTINUE")) { this.advance(); this.match("SEMI"); return { kind: "Continue" }; }
     return this.exprStmt();
+  }
+
+  // صنف اسم [يرث أب] { دالة جديد(...) {...}  دالة طريقة(...) {...} }
+  // يُحوَّل إلى دوال عادية: كل نسخة خريطة تحمل طرقها كإغلاقات على «هذا»، فلا تغيير في الآلة الافتراضية.
+  classStmt() {
+    const line = this.peek().line;
+    this.advance();                                   // صنف
+    const name = this.expect("IDENT").value;
+    this.classes = this.classes || new Map();
+    let parent = null;
+    if (this.check("IDENT") && this.peek().value === "يرث") {
+      this.advance();
+      const pn = this.expect("IDENT").value;
+      parent = this.classes.get(pn);
+      if (!parent) throw new ParseError(`السطر ${line}: الصنف الأب «${pn}» غير معروف — عرّفه قبل الصنف الذي يرثه`);
+      parent.name = pn;
+    }
+    this.expect("LBRACE");
+    const methods = [];
+    let ctor = null;
+    while (!this.check("RBRACE") && !this.check("EOF")) {
+      if (!this.check("FUNC")) throw new ParseError(`السطر ${this.peek().line}: داخل الصنف لا يُكتب إلا تعريف دوال (دالة اسم(...) { ... })`);
+      const fn = this.funcDecl();
+      if (fn.name === "جديد") { if (ctor) throw new ParseError(`السطر ${line}: للصنف «${name}» أكثر من دالة جديد`); ctor = fn; }
+      else methods.push(fn);
+    }
+    this.expect("RBRACE");
+
+    const id = (n) => ({ kind: "Identifier", name: n });
+    const str = (v) => ({ kind: "String", value: v });
+    const call = (f, args) => ({ kind: "Call", callee: typeof f === "string" ? id(f) : f, args });
+    const stmt = (e) => ({ kind: "ExprStmt", expr: e });
+    const THIS = "هذا";
+    const ctorParams = ctor ? ctor.params : (parent ? parent.ctorParams : []);
+
+    // الطرق: تثبّت طرق الأب أولًا ثم طرق هذا الصنف فتتغلّب عليها
+    const mBody = [];
+    if (parent) mBody.push(stmt(call("@طرق_" + parent.name, [id(THIS)])));
+    for (const m of methods) {
+      mBody.push(m);
+      mBody.push(stmt({ kind: "Assign", target: { kind: "Index", obj: id(THIS), index: str(m.name) }, expr: id(m.name) }));
+    }
+    const methodsFn = { kind: "FuncDecl", name: "@طرق_" + name, params: [THIS], body: { kind: "Block", statements: mBody } };
+
+    // المُنشئ: «الأب(...)» داخل جديد تستدعي مُنشئ الأب على الكائن نفسه
+    const cBody = [];
+    if (parent) {
+      cBody.push({ kind: "VarDecl", name: "الأب", expr: { kind: "FuncExpr", params: parent.ctorParams,
+        body: { kind: "Block", statements: [stmt(call("@بناء_" + parent.name, [id(THIS)].concat(parent.ctorParams.map(id))))] } } });
+    }
+    if (ctor) cBody.push(...ctor.body.statements);
+    else if (parent) cBody.push(stmt(call("الأب", ctorParams.map(id))));
+    const ctorFn = { kind: "FuncDecl", name: "@بناء_" + name, params: [THIS].concat(ctorParams), body: { kind: "Block", statements: cBody } };
+
+    // الدالة العامة: اسم_الصنف(...) تُنشئ كائنًا جديدًا
+    const mk = { kind: "FuncDecl", name, params: ctorParams, body: { kind: "Block", statements: [
+      { kind: "VarDecl", name: THIS, expr: { kind: "MapLiteral", entries: [] } },
+      stmt(call("@طرق_" + name, [id(THIS)])),
+      stmt(call("@بناء_" + name, [id(THIS)].concat(ctorParams.map(id)))),
+      { kind: "Return", expr: id(THIS) },
+    ] } };
+    this.classes.set(name, { ctorParams });
+    return { kind: "Multi", statements: [methodsFn, ctorFn, mk], line };
   }
 
   block() {
