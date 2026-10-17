@@ -242,6 +242,8 @@ class Compiler {
     this.chunk.emit("RETURN");
   }
 
+  stmt_Multi(node) { node.statements.forEach((s) => this.compileStmt(s)); }
+
   stmt_Block(node) { this.compileBlockScoped(node); }
 
   stmt_Break() {
