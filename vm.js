@@ -41,6 +41,7 @@ function typeName(v) {
   if (typeof v === "boolean") return "قيمة منطقية";
   if (Array.isArray(v)) return "قائمة";
   if (v instanceof Map) return "خريطة";
+  if (v instanceof VMFunction || typeof v === "function") return "دالة";
   return "قيمة";
 }
 function numPair(op, a, b) {
@@ -52,12 +53,23 @@ function cmpPair(op, a, b) {
   throw new VMRuntimeError(`لا يمكن المقارنة بـ «${op}» بين ${typeName(a)} و${typeName(b)}`);
 }
 
-function toDisplay(v) {
+function toDisplay(v, seen) {
   if (v === null || v === undefined) return "لاشيء";
   if (typeof v === "boolean") return v ? "صحيح" : "خطأ";
-  if (Array.isArray(v)) return "[" + v.map(toDisplay).join("، ") + "]";
-  if (v instanceof Map) return "{" + [...v].map(([k, x]) => toDisplay(k) + ": " + toDisplay(x)).join("، ") + "}";
   if (typeof v === "number") return toArabicIndicDigits(String(v)).replace(/\./g, "٫");
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) || v instanceof Map) {
+    seen = seen || new Set();
+    if (seen.has(v)) return "[…]";           // بنية تحوي نفسها: لا نكرّر إلى ما لا نهاية
+    seen.add(v);
+    const out = Array.isArray(v)
+      ? "[" + v.map((x) => toDisplay(x, seen)).join("، ") + "]"
+      : "{" + [...v].map(([k, x]) => toDisplay(k, seen) + ": " + toDisplay(x, seen)).join("، ") + "}";
+    seen.delete(v);
+    return out;
+  }
+  if (v instanceof VMFunction) return "‹دالة›";
+  if (typeof v === "function") return "‹دالة جاهزة›";
   if (typeof Element !== "undefined" && v instanceof Element) return `[عنصر واجهة: ${v.tagName.toLowerCase()}]`;
   return String(v);
 }
@@ -296,7 +308,7 @@ class VM {
 
   _setupBuiltins() {
     const g = this.globals;
-    g.set("اطبع", (...a) => { this.onPrint(a.map(toDisplay).join(" ")); return null; });
+    g.set("اطبع", (...a) => { this.onPrint(a.map((x) => toDisplay(x)).join(" ")); return null; });
     g.set("طول", (x) => { if (typeof x === "string" || Array.isArray(x)) return x.length; if (x instanceof Map) return x.size; throw new VMRuntimeError("طول() تحتاج نصًا أو قائمة أو خريطة"); });
     const needFn = (name, f) => { if (!(f instanceof VMFunction) && typeof f !== "function") throw new VMRuntimeError(name + "() تحتاج دالة في الوسيط الأخير"); };
     const callFn = (f, a) => (f instanceof VMFunction ? this.callFunctionExternally(f, a) : f(...a));
@@ -368,7 +380,7 @@ class VM {
     g.set("استبدل", (s, a, b) => { if (typeof s !== "string") throw new VMRuntimeError("استبدل() تحتاج نصًا"); return s.split(a).join(b); });
     g.set("يحوي", (c, v) => { if (typeof c === "string" || Array.isArray(c)) return c.includes(v); if (c instanceof Map) return c.has(v); throw new VMRuntimeError("يحوي() تحتاج نصًا أو قائمة أو خريطة"); });
     g.set("افصل", (s, sep) => { if (typeof s !== "string") throw new VMRuntimeError("افصل() تحتاج نصًا"); return s.split(sep === undefined ? " " : sep); });
-    g.set("اربط", (lst, sep) => { if (!Array.isArray(lst)) throw new VMRuntimeError("اربط() تحتاج قائمة"); return lst.map(toDisplay).join(sep === undefined ? "" : sep); });
+    g.set("اربط", (lst, sep) => { if (!Array.isArray(lst)) throw new VMRuntimeError("اربط() تحتاج قائمة"); return lst.map((x) => toDisplay(x)).join(sep === undefined ? "" : sep); });
     g.set("قصّ", (s) => { if (typeof s !== "string") throw new VMRuntimeError("قصّ() تحتاج نصًا"); return s.trim(); });
     g.set("رتب", (lst) => {
       if (!Array.isArray(lst)) throw new VMRuntimeError("رتب() تحتاج قائمة");
