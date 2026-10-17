@@ -6,7 +6,7 @@ const lessons = require('./content/lessons.js');
 
 const evalOut = (expr, where) => { const r = R.run('اطبع(' + expr + ')'); if (!r.ok) { problems.push(`${where}: ${expr} → ${r.error}`); return '؟'; } return r.out.join(' '); };
 // رموز المقارنة داخل نص عربي تنعكس بصريًا (> تظهر <) فنعزلها لتظهر كما تُكتب
-const opfix = h => h.replace(/(<[^>]*>)|((?:&lt;|&gt;|[=!])+)/g, (m, tag, op) => tag ? tag : `<span class="ltr">${op}</span>`);
+const opfix = h => h.replace(/(<[^>]*>)|((?:[+\-*\/%]=|\+\+|--)|(?:&lt;|&gt;|[=!])+)/g, (m, tag, op) => tag ? tag : `<span class="ltr">${op}</span>`);
 const hlx = c => opfix(hl(c));
 const PAL = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
 
