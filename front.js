@@ -228,6 +228,13 @@ class Parser {
   forStmt() {
     this.expect("FOR"); this.expect("LPAREN");
     const varName = this.expect("IDENT").value;
+    if (this.check("IDENT") && this.peek().value === "في") {
+      this.advance();
+      const iter = this.expression();
+      this.expect("RPAREN");
+      const body = this.block();
+      return { kind: "ForIn", varName, iter, body };
+    }
     this.expect("FROM");
     const start = this.expression();
     this.expect("TO");
