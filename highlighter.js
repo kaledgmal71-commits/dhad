@@ -1,3 +1,5 @@
+// كلمات سياقية: تعمل كمفاتيح داخل صيغ معيّنة وتبقى أسماء صالحة في غيرها
+const SOFT_KEYWORDS = new Set(["في", "صنف", "يرث", "هذا", "الأب"]);
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -50,7 +52,7 @@ function highlightToHTML(src) {
       const start = i;
       while (i < n && isIdentPart(src[i])) i++;
       const word = src.slice(start, i);
-      if (KEYWORDS[word]) push(word, "tok-keyword");
+      if (KEYWORDS[word] || SOFT_KEYWORDS.has(word)) push(word, "tok-keyword");
       else if (BUILTINS.has(word)) push(word, "tok-builtin");
       else push(word, "tok-ident");
       continue;
