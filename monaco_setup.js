@@ -6,6 +6,7 @@ const MONACO_SNIPPETS = {
   "طالما": "طالما (${1:شرط}) {\n\t$0\n}",
   "من_أجل": "من_أجل (${1:i} من ${2:١} إلى ${3:١٠}) {\n\t$0\n}",
   "متغير": "متغير ${1:الاسم} = $0",
+  "صنف": "صنف ${1:الاسم} {\n\tدالة جديد(${2}) {\n\t\t$0\n\t}\n}",
 };
 
 function loadMonaco(timeoutMs = 12000) {
@@ -32,7 +33,7 @@ function loadMonaco(timeoutMs = 12000) {
 }
 
 function dhadBuiltinNames() {
-  return Array.from(new VM().globals.keys());
+  return Array.from(new VM().globals.keys()).filter((k) => k[0] !== "@");
 }
 
 function collectUserIdentifiersFrom(src) {
@@ -46,7 +47,7 @@ function collectUserIdentifiersFrom(src) {
 }
 
 function registerDhadLanguage(monaco) {
-  const keywords = Object.keys(KEYWORDS);
+  const keywords = Object.keys(KEYWORDS).concat(["في", "صنف", "يرث", "هذا", "الأب"]);
   const builtins = dhadBuiltinNames();
   const LETTER = "[\\u0621-\\u064A\\u064B-\\u0652\\u0671-\\u06D3_a-zA-Z]";
   const LETTER_OR_DIGIT = "[\\u0621-\\u064A\\u064B-\\u0652\\u0671-\\u06D3_a-zA-Z0-9\\u0660-\\u0669]";
@@ -80,14 +81,14 @@ function registerDhadLanguage(monaco) {
     tokenizer: {
       root: [
         [/#.*$/, "comment"],
-        [/[\u0660-\u06690-9]+(\.[\u0660-\u06690-9]+)?/, "number"],
+        [/[٠-٩0-9]+(\.[٠-٩0-9]+)?/, "number"],
         [/"([^"\\]|\\.)*$/, "string.invalid"],
         [/"/, { token: "string.quote", next: "@dq" }],
         [/'/, { token: "string.quote", next: "@sq" }],
         [new RegExp(LETTER + LETTER_OR_DIGIT + "*"), { cases: { "@keywords": "keyword", "@builtins": "predefined", "@default": "identifier" } }],
         [/[{}()\[\]]/, "@brackets"],
         [/==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!]/, "operator"],
-        [/[.,\u060C:;]/, "delimiter"],
+        [/[.,،:;]/, "delimiter"],
       ],
       dq: [[/[^\\"]+/, "string"], [/\\./, "string.escape"], [/"/, { token: "string.quote", next: "@pop" }]],
       sq: [[/[^\\']+/, "string"], [/\\./, "string.escape"], [/'/, { token: "string.quote", next: "@pop" }]],
