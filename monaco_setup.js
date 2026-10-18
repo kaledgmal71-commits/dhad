@@ -81,14 +81,14 @@ function registerDhadLanguage(monaco) {
     tokenizer: {
       root: [
         [/#.*$/, "comment"],
-        [/[\\u0660-\\u06690-9]+(\\.[\\u0660-\\u06690-9]+)?/, "number"],
+        [/[٠-٩0-9]+(\.[٠-٩0-9]+)?/, "number"],
         [/"([^"\\]|\\.)*$/, "string.invalid"],
         [/"/, { token: "string.quote", next: "@dq" }],
         [/'/, { token: "string.quote", next: "@sq" }],
         [new RegExp(LETTER + LETTER_OR_DIGIT + "*"), { cases: { "@keywords": "keyword", "@builtins": "predefined", "@default": "identifier" } }],
         [/[{}()\[\]]/, "@brackets"],
         [/==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!]/, "operator"],
-        [/[.,\\u060C:;]/, "delimiter"],
+        [/[.,،:;]/, "delimiter"],
       ],
       dq: [[/[^\\"]+/, "string"], [/\\./, "string.escape"], [/"/, { token: "string.quote", next: "@pop" }]],
       sq: [[/[^\\']+/, "string"], [/\\./, "string.escape"], [/'/, { token: "string.quote", next: "@pop" }]],
