@@ -344,7 +344,7 @@ class VM {
     g.set("عدد", (x) => {
       if (typeof x === "number") return x;
       // الفاصلة العشرية العربية ٫ تُعامَل كنقطة، والتحويل صارم: النص كله رقم أو خطأ
-      const normalized = typeof x === "string" ? normalizeDigits(x).replace(/\u066B/g, ".").trim() : x;
+      const normalized = typeof x === "string" ? normalizeDigits(x).replace(/٫/g, ".").trim() : x;
       if (typeof normalized !== "string" || !/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(normalized)) throw new VMRuntimeError(`لا يمكن تحويل "${toDisplay(x)}" إلى رقم`);
       return parseFloat(normalized);
     });
@@ -382,11 +382,33 @@ class VM {
     g.set("افصل", (s, sep) => { if (typeof s !== "string") throw new VMRuntimeError("افصل() تحتاج نصًا"); return s.split(sep === undefined ? " " : sep); });
     g.set("اربط", (lst, sep) => { if (!Array.isArray(lst)) throw new VMRuntimeError("اربط() تحتاج قائمة"); return lst.map((x) => toDisplay(x)).join(sep === undefined ? "" : sep); });
     g.set("قصّ", (s) => { if (typeof s !== "string") throw new VMRuntimeError("قصّ() تحتاج نصًا"); return s.trim(); });
-    g.set("رتب", (lst) => {
+    g.set("رتب", (lst, cmp) => {
       if (!Array.isArray(lst)) throw new VMRuntimeError("رتب() تحتاج قائمة");
       const c = [...lst];
+      if (cmp !== undefined) {
+        needFn("رتب", cmp);
+        c.sort((a, b) => { const r = callFn(cmp, [a, b]); num("دالة المقارنة في رتب", r); return r; });
+        return c;
+      }
       c.sort((a, b) => (typeof a === "number" && typeof b === "number") ? a - b : String(a).localeCompare(String(b), "ar"));
       return c;
+    });
+    g.set("انزع", (l) => { needList("انزع", l); if (!l.length) throw new VMRuntimeError("انزع() لا تعمل على قائمة فارغة"); return l.pop(); });
+    g.set("أدرج", (l, i, v) => {
+      needList("أدرج", l);
+      if (typeof i !== "number" || !Number.isInteger(i) || i < 0 || i > l.length) throw new VMRuntimeError("أدرج(): الموضع يجب أن يكون عددًا صحيحًا بين ٠ وطول القائمة");
+      l.splice(i, 0, v); return l;
+    });
+    g.set("مدى", (a, b, st) => {
+      if (b === undefined) { b = a; a = 0; }
+      if (st === undefined) st = 1;
+      for (const x of [a, b, st]) if (typeof x !== "number" || !Number.isFinite(x)) throw new VMRuntimeError("مدى() تحتاج أرقامًا");
+      if (st === 0) throw new VMRuntimeError("مدى(): الخطوة لا تكون صفرًا");
+      const n = Math.ceil((b - a) / st);
+      if (n > 1000000) throw new VMRuntimeError("مدى(): القائمة أكبر من المسموح (مليون عنصر)");
+      const out = [];
+      for (let k = 0; k < n; k++) out.push(a + k * st);
+      return out;
     });
     g.set("اعكس", (v) => {
       if (Array.isArray(v)) return [...v].reverse();
