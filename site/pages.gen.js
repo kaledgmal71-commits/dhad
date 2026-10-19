@@ -51,7 +51,7 @@ function lessonCard(l) { const ع = lessons.indexOf(l);
 // ===== محرر التحدي داخل الدرس =====
 const challenges = require('./content/challenges.js');
 function chalBox(l) { const c = challenges[l.id]; if (!c) return '';
-  const data = JSON.stringify({ id: l.id, task: c.task, tests: c.tests || [], must: c.must || [], mustNot: c.mustNot || [], error: c.error || '', hint: c.hint, solution: c.solution, starter: c.starter }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ id: l.id, task: c.task, tests: c.tests || [], must: c.must || [], mustNot: c.mustNot || [], error: c.error || '', hint: c.hint, solution: c.solution, starter: c.starter }).replace(/</g, String.fromCharCode(92) + 'u003c');
   return `<div class="chalbox" id="cb"><div class="cbhead"><b>جرّب بنفسك</b><span>${esc(c.task)}</span></div>
 <div class="cbbar"><button class="btn" data-act="run">▶ شغّل وافحص</button><button class="btn alt" data-act="hint">تلميح</button><button class="btn alt" data-act="sol" hidden>أظهر الحل</button><button class="btn alt" data-act="reset">إعادة</button></div>
 <textarea class="cbta" dir="rtl" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="محرر التحدي">${esc(c.starter)}</textarea>
@@ -142,7 +142,13 @@ ${codebox(`# كود مولَّد فيه خطأ (دالة غير موجودة)
 اطبع(نفّذ("اطبع(مجموع([١، ٢، ٣]))"))
 # بعد إصلاح النموذج له:
 اطبع(نفّذ("متغير م = ٠\\nمن_أجل (ع من ١ إلى ٣) { م = م + ع }\\nاطبع(م)"))`, 'ai:loop')}` });
-write('llms.txt', `# ضاد (Dhad)\n> لغة برمجة عربية مجانية مفتوحة، مترجم وآلة افتراضية خاصة، تعمل في المتصفح. الموقع: ${SITE}\n\n## تعليمات لكتابة شيفرة ضاد\n${SPEC}\n\n## روابط\n- المحرر: ${SITE}/editor/\n- الدليل: ${SITE}/docs/\n- المعجم: ${SITE}/dictionary/\n- الدروس: ${SITE}/learn/\n- أمثلة: ${SITE}/examples/\n`);
+write('llms.txt', `# ضاد (Dhad)\n> لغة برمجة عربية مجانية مفتوحة، مترجم وآلة افتراضية خاصة، تعمل في المتصفح. الموقع: ${SITE}\n\n## تعليمات لكتابة شيفرة ضاد\n${SPEC}\n\n## روابط\n- المحرر: ${SITE}/editor/\n- الدليل: ${SITE}/docs/\n- المعجم: ${SITE}/dictionary/\n- الدروس: ${SITE}/learn/\n- أمثلة: ${SITE}/examples/\n- النسخة الكاملة للآلات (معجم وأمثلة بمخرجاتها): ${SITE}/llms-full.txt\n`);
+// llms-full.txt: نسخة كاملة للآلات تُولَّد من المحرك نفسه (المعجم والأمثلة بمخرجاتها الفعلية) فلا تتقادم.
+{ const runOut = (code) => { try { const r = R.run(code); return r.ok ? r.out.join('\n') : null; } catch (e) { return null; } };
+  const blk = (code, out) => '```dhad\n' + code + '\n```\n' + (out ? 'المخرجات:\n```\n' + out + '\n```\n' : '');
+  const dictTxt = dict.map(d => `### ${d.w} (${d.kind}${d.en ? '، ' + d.en : ''})\nالصيغة: ${d.sig}\n${d.d}\n${d.ex ? blk(d.ex, runOut(d.ex)) : ''}`).join('\n');
+  const exTxt = examples.map(e => `### ${e.title} — ${e.cat}\n${e.desc}\n${blk(e.code, runOut(e.code))}`).join('\n');
+  write('llms-full.txt', `# ضاد (Dhad) — المرجع الكامل\n> لغة برمجة عربية مجانية مفتوحة. مترجم وآلة افتراضية خاصة، تعمل في المتصفح. كل مثال هنا نُفِّذ بمحرك ضاد أثناء البناء ومخرجاته حقيقية. الموقع: ${SITE}\n\n## قواعد الكتابة\n${SPEC}\n\n## المعجم الكامل\n${dictTxt}\n## أمثلة كاملة منفَّذة\n${exTxt}\n## روابط\n- المحرر: ${SITE}/editor/\n- الدليل: ${SITE}/docs/\n- المعجم: ${SITE}/dictionary/\n- الدروس: ${SITE}/learn/\n- الشروحات: ${SITE}/explain/\n`); }
 
 // ===== المجتمع =====
 emit('/community/', { title: 'المجتمع', desc: 'لوحة مجتمع ضاد: آراء المتعلمين الإيجابية والسلبية، اقتراحاتهم وأسئلتهم.',
