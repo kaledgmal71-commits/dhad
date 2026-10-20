@@ -1,7 +1,7 @@
-// شروحات ضاد المصوّرة: صفحة واحدة لكل موضوع بنمط ورقة الدفتر. كل شيفرة تُنفَّذ بالمحرك الحقيقي أثناء البناء، وكل جدول يحسب نتائجه منه.
+// شروحات ضاد المصوّرة: صفحة واحدة لكل موضوع بنمط ورقة الدفتر. كل شيفرة تُنفَّذ بالمحرك الحقيقي أثناء البناء، وكل جدول يحسب نتائجه منه.
 const G = require('./gen.js');
 const { emit, esc, AR, crumbs, hl, R, problems } = G;
-const sheets = require('./content/sheets.js');
+const sheets = require('./content/sheets.js').concat(require('./content/sheets4.js'));
 const lessons = require('./content/lessons.js');
 
 const evalOut = (expr, where) => { const r = R.run('اطبع(' + expr + ')'); if (!r.ok) { problems.push(`${where}: ${expr} → ${r.error}`); return '؟'; } return r.out.join(' '); };
