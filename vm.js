@@ -323,6 +323,12 @@ class VM {
     g.set("طبّق", (l, f) => { needList("طبّق", l); needFn("طبّق", f); return l.map((x) => callFn(f, [x])); });
     g.set("رشّح", (l, f) => { needList("رشّح", l); needFn("رشّح", f); return l.filter((x) => truthy(callFn(f, [x]))); });
     g.set("اختصر", (l, f, init) => { needList("اختصر", l); needFn("اختصر", f); let acc = init === undefined ? null : init; for (const x of l) acc = callFn(f, [acc, x]); return acc; });
+    g.set("كرّر", (x, n) => {
+      if (typeof n !== "number" || !Number.isInteger(n) || n < 0) throw new VMRuntimeError("كرّر(): العدد يجب أن يكون صحيحًا غير سالب");
+      if (typeof x === "string") { if (x.length * n > 1000000) throw new VMRuntimeError("كرّر(): الناتج كبير جدًا"); return x.repeat(n); }
+      if (Array.isArray(x)) { if (x.length * n > 1000000) throw new VMRuntimeError("كرّر(): الناتج كبير جدًا"); const r = []; for (let i = 0; i < n; i++) for (const e of x) r.push(e); return r; }
+      throw new VMRuntimeError("كرّر() تحتاج نصًا أو قائمة، لكن وجدت " + typeName(x).replace(/[«»]/g, ""));
+    });
     g.set("نوع", (x) => typeName(x).replace(/[«»]/g, ""));
     g.set("@تكرار", (x) => {
       if (Array.isArray(x) || typeof x === "string") return x;
