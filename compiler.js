@@ -58,6 +58,7 @@ class Compiler {
     this.stack = [];            // مكدّس FunctionScope الحالية (للتعامل مع دوال متداخلة)
     this.loopStack = [];        // لدعم توقف/أكمل: { breakAddrs: [], continueTarget }
     this.tryDepth = 0;          // عمق كتل «حاول» المفتوحة (لإغلاقها عند توقف/أكمل)
+    this.exportNames = [];      // أسماء ما عُلِّم بـ «صدّر» في المستوى الأعلى
   }
 
   get current() { return this.stack[this.stack.length - 1]; }
@@ -71,7 +72,7 @@ class Compiler {
     program.statements.forEach((s) => this.compileStmt(s));
     this.chunk.emit("HALT");
     this.stack.pop();
-    return { mainChunkIndex: 0, functionChunks: this.functionChunks };
+    return { mainChunkIndex: 0, functionChunks: this.functionChunks, exportNames: this.exportNames };
   }
 
   // ---------- الجمل ----------
@@ -80,6 +81,11 @@ class Compiler {
     const m = this["stmt_" + node.kind];
     if (!m) throw new CompileError(`لا يمكن تصريف الجملة: ${node.kind}`);
     m.call(this, node);
+  }
+
+  stmt_Export(node) {
+    this.compileStmt(node.stmt);
+    node.names.forEach((n) => { if (!this.exportNames.includes(n)) this.exportNames.push(n); });
   }
 
   stmt_ExprStmt(node) {
