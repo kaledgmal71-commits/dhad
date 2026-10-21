@@ -17,10 +17,10 @@ class LexError extends Error {}
 // دعم الأرقام العربية (الهندية) ٠١٢٣٤٥٦٧٨٩ بجانب الأرقام اللاتينية 0-9
 // حتى يمكن كتابة الكود بالكامل بدون أي رمز لاتيني إن أراد المستخدم ذلك
 function isDigitChar(ch) {
-  return /[0-9\u0660-\u0669\u06F0-\u06F9]/.test(ch);
+  return /[0-9٠-٩۰-۹]/.test(ch);
 }
 function normalizeDigits(str) {
-  return str.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (ch) => {
+  return str.replace(/[٠-٩۰-۹]/g, (ch) => {
     const code = ch.codePointAt(0);
     if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
     if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
@@ -36,7 +36,7 @@ const ARABIC_PUNCTUATION = new Set(["،", "؛", "؟", "٪", "٫", "٬", "۔"]);
 
 function isIdentStart(ch) {
   if (ARABIC_PUNCTUATION.has(ch)) return false;
-  return /[A-Za-z_\u0600-\u06FF]/.test(ch);
+  return /[A-Za-z_؀-ۿ]/.test(ch);
 }
 function isIdentPart(ch) {
   return isIdentStart(ch) || /[0-9]/.test(ch);
@@ -130,7 +130,7 @@ function tokAr(tok) {
 }
 
 class Parser {
-  constructor(tokens) { this.tokens = tokens; this.pos = 0; }
+  constructor(tokens) { this.tokens = tokens; this.pos = 0; this.depth = 0; }
   peek() { return this.tokens[this.pos]; }
   advance() { const t = this.tokens[this.pos]; if (t.type !== "EOF") this.pos++; return t; }
   check(t) { return this.peek().type === t; }
@@ -159,6 +159,7 @@ class Parser {
     if (this.check("IDENT") && this.peek().value === "حاول" && this.tokens[this.pos + 1].type === "LBRACE") return this.tryStmt();
     if (this.check("IDENT") && this.peek().value === "صنف" && this.tokens[this.pos + 1].type === "IDENT" &&
         (this.tokens[this.pos + 2].type === "LBRACE" || (this.tokens[this.pos + 2].type === "IDENT" && this.tokens[this.pos + 2].value === "يرث"))) return this.classStmt();
+    if (this.check("IDENT") && (this.peek().value === "صدّر" || this.peek().value === "صدر") && this.exportable()) return this.exportStmt();
     if (this.check("IF")) return this.ifStmt();
     if (this.check("WHILE")) return this.whileStmt();
     if (this.check("FOR")) return this.forStmt();
@@ -168,6 +169,23 @@ class Parser {
     if (this.check("BREAK")) { this.advance(); this.match("SEMI"); return { kind: "Break" }; }
     if (this.check("CONTINUE")) { this.advance(); this.match("SEMI"); return { kind: "Continue" }; }
     return this.exprStmt();
+  }
+
+  // صدّر دالة/متغير/صنف: تُعلِن أن هذا الاسم يظهر لمن يستورد الملف. تعمل كلمةً مفتاحية فقط حين يليها دالة أو متغير أو صنف.
+  exportable() {
+    const nx = this.tokens[this.pos + 1], n2 = this.tokens[this.pos + 2];
+    if (!nx) return false;
+    if (nx.type === "FUNC") return !!n2 && n2.type === "IDENT";
+    if (nx.type === "VAR") return true;
+    return nx.type === "IDENT" && nx.value === "صنف" && !!n2 && n2.type === "IDENT";
+  }
+  exportStmt() {
+    const line = this.peek().line;
+    if (this.depth > 0) throw new ParseError(`السطر ${line}: «صدّر» تُكتب في المستوى الأعلى من الملف فقط، لا داخل دالة أو كتلة`);
+    this.advance();                                   // صدّر
+    const st = this.statement();
+    const names = st.kind === "Multi" ? [st.statements[st.statements.length - 1].name] : [st.name];
+    return { kind: "Export", names, stmt: st, line };
   }
 
   // صنف اسم [يرث أب] { دالة جديد(...) {...}  دالة طريقة(...) {...} }
@@ -236,7 +254,9 @@ class Parser {
   block() {
     this.expect("LBRACE");
     const stmts = [];
+    this.depth++;
     while (!this.check("RBRACE") && !this.check("EOF")) stmts.push(this.statement());
+    this.depth--;
     this.expect("RBRACE");
     return { kind: "Block", statements: stmts };
   }
