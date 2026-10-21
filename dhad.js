@@ -34,13 +34,14 @@ function readLine() {
 
 function main(argv) {
   if (!argv.length || argv[0] === "--help" || argv[0] === "-h") { console.log(HELP); return argv.length ? 0 : 1; }
-  let code;
+  let code, root = process.cwd(), mainPath = "main.dhad";
   if (argv[0] === "-e") {
     if (argv[1] === undefined) { console.error("الخيار -e يحتاج شيفرة بعده"); return 1; }
     code = argv[1];
   } else {
     try { code = fs.readFileSync(argv[0], "utf8"); }
     catch (e) { console.error("تعذّر فتح الملف: " + argv[0]); return 1; }
+    root = path.dirname(path.resolve(argv[0])); mainPath = path.basename(argv[0]);
   }
   const api = loadEngine();
   try {
@@ -49,6 +50,13 @@ function main(argv) {
       onPrint: (l) => console.log(l),
       onSaveFile: (name, text) => fs.writeFileSync(path.basename(String(name)), String(text)),
       onInput: (q) => { if (q) process.stdout.write(q + " "); return readLine(); },
+      mainPath,
+      // الاستيراد يقرأ من مجلد الملف الرئيسي ومجلداته الفرعية فقط
+      readModule: (p) => {
+        const full = path.resolve(root, p);
+        if (full !== root && !full.startsWith(root + path.sep)) return null;
+        try { return fs.statSync(full).isFile() ? fs.readFileSync(full, "utf8") : null; } catch (e) { return null; }
+      },
     });
     vm.run(c.mainChunkIndex, c.functionChunks);
     return 0;
