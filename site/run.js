@@ -9,7 +9,9 @@ function run(code, opts = {}) {
   const out = [];
   try {
     const c = api.compile(api.parse(code));
-    const vm = new api.VM({ maxSteps: 150000000, onPrint: l => out.push(l), onSaveFile: () => {}, onInput: () => 'ضاد', ...opts });
+    const files = opts.files || null;
+    const o = { ...opts }; delete o.files;
+    const vm = new api.VM({ maxSteps: 150000000, onPrint: l => out.push(l), onSaveFile: () => {}, onInput: () => 'ضاد', ...(files ? { readModule: p => (Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null) } : {}), ...o });
     vm.run(c.mainChunkIndex, c.functionChunks);
     return { ok: true, out, steps: vm.steps };
   } catch (e) { return { ok: false, out, error: e.message }; }
