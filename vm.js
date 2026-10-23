@@ -74,6 +74,30 @@ function toDisplay(v, seen) {
   return String(v);
 }
 
+// موضع الخطأ: «السطر ٣» في الملف الرئيسي، و«أدوات.dhad، السطر ٣» داخل ملف مستورد
+function lineWhere(frame, instr) {
+  const f = frame && frame.chunk && frame.chunk.file;
+  return (f ? f + "، " : "") + "السطر " + instr.line;
+}
+
+// يحوّل مسار الاستيراد إلى مفتاح موحّد داخل مجلد المشروع. «./» و«../» نسبة إلى الملف المستورِد،
+// وما سواهما نسبة إلى جذر المشروع. يعيد null إن خرج المسار من الجذر.
+function normalizeModulePath(spec, fromFile) {
+  const p = String(spec).replace(/\\/g, "/");
+  let parts = [];
+  if (p.startsWith("./") || p.startsWith("../")) {
+    parts = String(fromFile || "").split("/");
+    parts.pop();
+    parts = parts.filter(Boolean);
+  }
+  for (const seg of p.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") { if (!parts.length) return null; parts.pop(); continue; }
+    parts.push(seg);
+  }
+  return parts.length ? parts.join("/") : null;
+}
+
 class VM {
   constructor(opts = {}) {
     this.globals = new Map();
@@ -88,7 +112,12 @@ class VM {
     this.t0 = Date.now();
     this.steps = 0;
     this.domRoot = opts.domRoot || null;
+    this.readModule = opts.readModule || null;        // (مسار) => نص الملف أو null
+    this.mainPath = opts.mainPath || "main.dhad";
+    this.modules = new Map();                          // الوحدات المحمّلة: مسار -> { loading, exports }
+    this.importStack = [];
     this._setupBuiltins();
+    this.builtins = new Map(this.globals);             // لقطة الدوال الجاهزة؛ تُنسخ لكل وحدة فتبدأ بأسماء نظيفة
   }
 
   _tick() {
@@ -116,10 +145,10 @@ class VM {
   }
 
   _loop() {
-    let instr = null;
-    try { this._loop2((i) => { instr = i; }); }
+    let instr = null, fr = null;
+    try { this._loop2((i, f) => { instr = i; fr = f; }); }
     catch (e) {
-      if (e instanceof VMRuntimeError && !e.lined && instr && instr.line) { e.message = `السطر ${instr.line}: ${e.message}`; e.lined = true; }
+      if (e instanceof VMRuntimeError && !e.lined && instr && instr.line) { e.message = `${lineWhere(fr, instr)}: ${e.message}`; e.lined = true; }
       throw e;
     }
   }
@@ -133,7 +162,7 @@ class VM {
         continue;
       }
       const instr = frame.chunk.code[frame.ip];
-      track(instr);
+      track(instr, frame);
       frame.ip++;
       try {
         this._tick();
@@ -145,7 +174,7 @@ class VM {
           e = ne;
         }
         if (e.fatal || !(e instanceof VMRuntimeError)) throw e;
-        if (!e.lined && instr.line) { e.message = `السطر ${instr.line}: ${e.message}`; e.lined = true; }
+        if (!e.lined && instr.line) { e.message = `${lineWhere(frame, instr)}: ${e.message}`; e.lined = true; }
         // ابحث عن أقرب كتلة «حاول» ما زالت نشطة
         let h = null;
         while (this.handlers.length) {
@@ -163,6 +192,7 @@ class VM {
 
   _exec(frame, instr) {
     const { op, args } = instr;
+    const G = frame.chunk.globals || this.globals;   // فضاء أسماء الملف الذي تنتمي إليه هذه التعليمة
     switch (op) {
       case "HALT": this.frames.pop(); return;
       case "CONST": this.push(frame.chunk.constants[args[0]]); return;
@@ -175,16 +205,16 @@ class VM {
       case "TRY_END": this.handlers.pop(); return;
       case "GET_GLOBAL": {
         const name = args[0];
-        if (!this.globals.has(name)) throw new VMRuntimeError(`متغير غير معرّف: ${name}` + this._hint(name));
-        this.push(this.globals.get(name));
+        if (!G.has(name)) throw new VMRuntimeError(`متغير غير معرّف: ${name}` + this._hint(name, G));
+        this.push(G.get(name));
         return;
       }
       case "SET_GLOBAL": {
-        if (!this.globals.has(args[0])) throw new VMRuntimeError(`المتغير «${args[0]}» غير معرّف — عرّفه أولًا بـ «متغير ${args[0]} = …» (الإسناد لا ينشئ متغيرًا جديدًا)` + this._hint(args[0]));
-        this.globals.set(args[0], this.peek()); return;
+        if (!G.has(args[0])) throw new VMRuntimeError(`المتغير «${args[0]}» غير معرّف — عرّفه أولًا بـ «متغير ${args[0]} = …» (الإسناد لا ينشئ متغيرًا جديدًا)` + this._hint(args[0], G));
+        G.set(args[0], this.peek()); return;
       }
-      case "SET_GLOBAL_NEW": this.globals.set(args[0], this.peek()); return;
-      case "DEFINE_GLOBAL": this.globals.set(args[0], this.pop()); return;
+      case "SET_GLOBAL_NEW": G.set(args[0], this.peek()); return;
+      case "DEFINE_GLOBAL": G.set(args[0], this.pop()); return;
       case "JUMP": frame.ip = args[0]; return;
       case "JUMP_IF_FALSE": if (!truthy(this.peek())) frame.ip = args[0]; return;
       case "MAKE_LIST": {
@@ -264,7 +294,7 @@ class VM {
       }
       case "BUILD_FUNCTION": {
         const chunkIndex = args[0];
-        const fn = new VMFunction(chunkIndex, this.functionChunks[chunkIndex]);
+        const fn = new VMFunction(chunkIndex, (frame.chunk.fchunks || this.functionChunks)[chunkIndex]);
         fn.env = frame.env;
         this.push(fn);
         return;
@@ -297,10 +327,10 @@ class VM {
     }
   }
 
-  _hint(name) {
+  _hint(name, G) {
     const strip = (w) => String(w).replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[ً-ْ]/g, "");
     const target = strip(name);
-    const pool = [...this.globals.keys()].filter((k) => !String(k).startsWith("@"));
+    const pool = [...(G || this.globals).keys()].filter((k) => !String(k).startsWith("@"));
     if (typeof KEYWORDS !== "undefined") pool.push(...Object.keys(KEYWORDS));
     const hit = pool.find((k) => k !== name && strip(k) === target);
     return hit ? ` — هل تقصد «${hit}»؟` : "";
@@ -329,6 +359,7 @@ class VM {
       if (Array.isArray(x)) { if (x.length * n > 1000000) throw new VMRuntimeError("كرّر(): الناتج كبير جدًا"); const r = []; for (let i = 0; i < n; i++) for (const e of x) r.push(e); return r; }
       throw new VMRuntimeError("كرّر() تحتاج نصًا أو قائمة، لكن وجدت " + typeName(x).replace(/[«»]/g, ""));
     });
+    g.set("استورد", (spec) => this._import(spec));
     g.set("نوع", (x) => typeName(x).replace(/[«»]/g, ""));
     g.set("@تكرار", (x) => {
       if (Array.isArray(x) || typeof x === "string") return x;
@@ -458,6 +489,59 @@ class VM {
       }
       return output;
     });
+  }
+
+  // استورد("مسار"): تحمّل ملف ضاد مرة واحدة في فضاء أسماء خاص به، وتعيد خريطة بما عُلِّم فيه بـ «صدّر»
+  _import(spec) {
+    if (typeof spec !== "string" || !spec.trim()) throw new VMRuntimeError("استورد() تحتاج اسم الملف نصًا، مثل: استورد(\"أدوات\")");
+    const top = this.frames[this.frames.length - 1];
+    const from = (top && top.chunk.file) || this.mainPath;
+    if (spec.startsWith("ضاد/")) throw new VMRuntimeError(`الوحدة القياسية «${spec}» غير موجودة بعد`);
+    if (!this.readModule) throw new VMRuntimeError("الاستيراد غير متاح في هذه البيئة (لا توجد ملفات يُستورد منها)");
+    const base = normalizeModulePath(spec, from);
+    if (!base) throw new VMRuntimeError(`المسار «${spec}» غير صالح أو يخرج من مجلد المشروع`);
+    const cands = /\.(dhad|ضاد)$/.test(base) ? [base] : [base + ".dhad", base + ".ضاد", base];
+    let key = null, src = null;
+    for (const c of cands) {
+      if (c === this.mainPath) throw new VMRuntimeError(`لا يمكن استيراد الملف الرئيسي «${c}»`);
+      const hit = this.modules.get(c);
+      if (hit) {
+        if (hit.loading) {
+          const st = this.importStack, chain = st.slice(Math.max(0, st.indexOf(c))).concat(c);
+          throw new VMRuntimeError("استيراد دائري: " + chain.join(" ← ") + " — اكسر الدائرة بنقل المشترك إلى ملف ثالث");
+        }
+        return hit.exports;
+      }
+      const text = this.readModule(c);
+      if (typeof text === "string") { key = c; src = text; break; }
+    }
+    if (key === null) throw new VMRuntimeError(`لم أجد الملف «${spec}» (بحثت عن ${cands.join(" و")})`);
+
+    const entry = { loading: true, exports: null };
+    this.modules.set(key, entry);
+    if (!this.importStack.length) this.importStack.push(this.mainPath);
+    this.importStack.push(key);
+    const savedFrames = this.frames, savedStack = this.stack, savedHandlers = this.handlers;
+    try {
+      let compiled;
+      try { compiled = compile(parse(src)); }
+      catch (e) { throw new VMRuntimeError(`في الملف ${key}: ${e.message}`); }
+      const G = new Map(this.builtins);
+      for (const ch of compiled.functionChunks) { ch.globals = G; ch.file = key; ch.fchunks = compiled.functionChunks; }
+      this.frames = []; this.stack = []; this.handlers = [];
+      this.frames.push(new CallFrame(compiled.functionChunks[compiled.mainChunkIndex], [], 0));
+      this._loop();
+      const ex = new Map();
+      for (const n of compiled.exportNames) ex.set(n, G.has(n) ? G.get(n) : null);
+      entry.loading = false; entry.exports = ex;
+      return ex;
+    } catch (e) {
+      this.modules.delete(key);
+      throw e;
+    } finally {
+      this.frames = savedFrames; this.stack = savedStack; this.handlers = savedHandlers;
+      this.importStack.pop();
+    }
   }
 
   callFunctionExternally(vmFunction, args) {
