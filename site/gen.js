@@ -26,9 +26,9 @@ function hl(code) {
   return out;
 }
 // ---------- تنفيذ حقيقي ----------
-function exec(code, where, { expectError = false, browser = false } = {}) {
+function exec(code, where, { expectError = false, browser = false, files = null } = {}) {
   if (browser) return { out: [], ok: true, browser: true };
-  const r = R.run(code);
+  const r = R.run(code, files ? { files } : {});
   if (!r.ok && !expectError) problems.push(`${where}: ${r.error}`);
   if (r.ok && expectError) problems.push(`${where}: كان يُتوقع خطأ`);
   return r;
@@ -37,6 +37,10 @@ function codebox(code, where, opt = {}) {
   const r = exec(code, where, opt); let o = '';
   if (r.browser) o = `<div class="out">يعمل داخل المحرر (يحتاج صفحة المعاينة).</div>`;
   else o = `<div class="out${r.ok ? '' : ' err'}">${esc(r.out.join('\n') + (r.ok ? '' : (r.out.length ? '\n' : '') + '✗ ' + r.error))}</div>`;
+  if (opt.files) { // مثال متعدد الملفات: تُعرض الملفات الإضافية أولًا، ولا يُشغَّل في المتصفح (لا ملفات هناك)
+    const extra = Object.entries(opt.files).map(([n, s]) => `<div class="codebox" data-multi><div class="bar"><span>${esc(n)}</span></div><pre>${hl(s)}</pre></div>`).join('');
+    return extra + `<div class="codebox" data-multi><div class="bar"><span>ضاد</span></div><pre>${hl(code)}</pre>${o}</div>`;
+  }
   return `<div class="codebox"><div class="bar"><span>ضاد</span>${r.browser ? '' : '<button data-run>▶ شغّل</button>'}<a href="/editor/?code=${encodeURIComponent(code)}">افتح في المحرر</a></div><pre>${hl(code)}</pre>${o}</div>`;
 }
 // ---------- القالب ----------
