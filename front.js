@@ -16,11 +16,16 @@ class LexError extends Error {}
 
 // دعم الأرقام العربية (الهندية) ٠١٢٣٤٥٦٧٨٩ بجانب الأرقام اللاتينية 0-9
 // حتى يمكن كتابة الكود بالكامل بدون أي رمز لاتيني إن أراد المستخدم ذلك
+// (تُبنى التعابير النمطية من أرقام الرموز كي لا تحوي الشيفرة تسلسلات الهروب المباشرة)
+const _rng = (a, b) => String.fromCharCode(a) + "-" + String.fromCharCode(b);
+const DIGIT_RE = new RegExp("[0-9" + _rng(0x660, 0x669) + _rng(0x6F0, 0x6F9) + "]");
+const DIGIT_RE_G = new RegExp(DIGIT_RE.source, "g");
+const IDENT_START_RE = new RegExp("[A-Za-z_" + _rng(0x600, 0x6FF) + "]");
 function isDigitChar(ch) {
-  return /[0-9٠-٩۰-۹]/.test(ch);
+  return DIGIT_RE.test(ch);
 }
 function normalizeDigits(str) {
-  return str.replace(/[٠-٩۰-۹]/g, (ch) => {
+  return str.replace(DIGIT_RE_G, (ch) => {
     const code = ch.codePointAt(0);
     if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
     if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
@@ -36,7 +41,7 @@ const ARABIC_PUNCTUATION = new Set(["،", "؛", "؟", "٪", "٫", "٬", "۔"]);
 
 function isIdentStart(ch) {
   if (ARABIC_PUNCTUATION.has(ch)) return false;
-  return /[A-Za-z_؀-ۿ]/.test(ch);
+  return IDENT_START_RE.test(ch);
 }
 function isIdentPart(ch) {
   return isIdentStart(ch) || /[0-9]/.test(ch);
