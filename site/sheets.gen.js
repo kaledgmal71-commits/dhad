@@ -25,11 +25,11 @@ const ART = {
   i_book: `<svg viewBox="0 0 64 64"><path d="M32 14c-6-5-16-6-24-4v38c8-2 18-1 24 4 6-5 16-6 24-4V10c-8-2-18-1-24 4z" fill="#fff" stroke="#2f5fb3" stroke-width="3" stroke-linejoin="round"/><path d="M32 14v38" stroke="#2f5fb3" stroke-width="3"/><path d="M14 22c4-1 8-1 12 1M14 31c4-1 8-1 12 1M38 23c4-2 8-2 12-1M38 32c4-2 8-2 12-1" stroke="#2f5fb3" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
 };
 
-function win(file, src, where, { hideRun = false, err = false } = {}) {
-  const r = R.run(src);
+function win(file, src, where, { hideRun = false, err = false, files = null } = {}) {
+  const r = R.run(src, files ? { files } : {});
   if (err ? r.ok : !r.ok) problems.push(`${where}: ${err ? 'كان يُفترض أن يفشل هذا المثال' : r.error}`);
   const out = esc(r.out.concat(r.ok ? [] : ['✗ ' + r.error]).join('\n'));
-  return `<div class="codebox win"><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(file)}</b>${hideRun ? '' : '<button data-run>▶ شغّل</button>'}<a href="/editor/?code=${encodeURIComponent(src)}">افتح في المحرر</a></div><pre>${hlx(src)}</pre><div class="out${err ? ' err' : ''}" data-label="${err ? 'الخطأ' : 'النتيجة'}">${out}</div></div>`;
+  return `<div class="codebox win"${files ? ' data-multi' : ''}><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(file)}</b>${hideRun ? '' : '<button data-run>▶ شغّل</button>'}${files ? '' : `<a href="/editor/?code=${encodeURIComponent(src)}">افتح في المحرر</a>`}</div><pre>${hlx(src)}</pre><div class="out${err ? ' err' : ''}" data-label="${err ? 'الخطأ' : 'النتيجة'}">${out}</div></div>`;
 }
 
 function part(p, where) {
@@ -38,9 +38,14 @@ function part(p, where) {
     case 'ul': return `<ul class="sul">${p.x.map(i => `<li>${i}</li>`).join('')}</ul>`;
     case 'ok': return `<div class="sok">${p.x.map(i => `<div><span>✓</span>${i}</div>`).join('')}</div>`;
     case 'art': return `<div class="sart ${p.cls || ''}">${ART[p.x]}${p.cap ? `<span class="cap">${p.cap}</span>` : ''}</div>`;
-    case 'code': return win(p.file, p.src, where, { err: !!p.err });
+    case 'code': {
+      if (!p.files) return win(p.file, p.src, where, { err: !!p.err });
+      // مثال متعدد الملفات: الملفات المساعدة تُعرض أولًا بلا مخرجات، والملف الرئيسي يُنفَّذ معها (لا تشغيل في المتصفح لأن الملفات غير متاحة هناك)
+      const extra = Object.entries(p.files).map(([n, s]) => `<div class="codebox win" data-multi><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(n)}</b></div><pre>${hlx(s)}</pre></div>`).join('');
+      return extra + win(p.file, p.src, where, { err: !!p.err, hideRun: true, files: p.files });
+    }
     case 'note': return `<div class="snote"><b>${p.title || 'ملاحظة'}</b>${p.x}</div>`;
-    case 'names': { // أسماء صحيحة وغير صحيحة: يتحقق البناء من كل واحد منها فعلًا
+    case 'names': { // أسماء صحيحة وغير صحيحة: يتحقق البناء من كل واحد منها فعليًا
       p.good.forEach(n => { const r = R.run(`متغير ${n} = ١\nاطبع(${n})`); if (!r.ok) problems.push(`${where}: الاسم ${n} كان يُفترض صحيحًا: ${r.error}`); });
       p.bad.forEach(n => { const r = R.run(`متغير ${n} = ١`); if (r.ok) problems.push(`${where}: الاسم ${n} كان يُفترض خاطئًا`); });
       return `<div class="snames"><div class="g"><b>أمثلة صحيحة:</b><div>${p.good.map(n => `<code>${esc(n)}</code>`).join('')}</div></div><div class="b"><b>أمثلة غير صحيحة:</b><div>${p.bad.map(n => `<code>${esc(n)}</code>`).join('')}</div></div></div>`;
