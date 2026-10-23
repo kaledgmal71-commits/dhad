@@ -1,4 +1,4 @@
-// شروحات ضاد المصوّرة: صفحة واحدة لكل موضوع بنمط ورقة الدفتر. كل شيفرة تُنفَّذ بالمحرك الحقيقي أثناء البناء، وكل جدول يحسب نتائجه منه.
+// شروحات ضاد المصوّرة: صفحة واحدة لكل موضوع بنمط ورقة الدفتر. كل شيفرة تُنفَّذ بالمحرك الحقيقي أثناء البناء، وكل جدول يحسب نتائجه منه.
 const G = require('./gen.js');
 const { emit, esc, AR, crumbs, hl, R, problems } = G;
 const sheets = require('./content/sheets.js').concat(require('./content/sheets4.js'));
@@ -45,7 +45,7 @@ function part(p, where) {
       return extra + win(p.file, p.src, where, { err: !!p.err, hideRun: true, files: p.files });
     }
     case 'note': return `<div class="snote"><b>${p.title || 'ملاحظة'}</b>${p.x}</div>`;
-    case 'names': { // أسماء صحيحة وغير صحيحة: يتحقق البناء من كل واحد منها فعليًا
+    case 'names': { // أسماء صحيحة وغير صحيحة: يتحقق البناء من كل واحد منها فعلًا
       p.good.forEach(n => { const r = R.run(`متغير ${n} = ١\nاطبع(${n})`); if (!r.ok) problems.push(`${where}: الاسم ${n} كان يُفترض صحيحًا: ${r.error}`); });
       p.bad.forEach(n => { const r = R.run(`متغير ${n} = ١`); if (r.ok) problems.push(`${where}: الاسم ${n} كان يُفترض خاطئًا`); });
       return `<div class="snames"><div class="g"><b>أمثلة صحيحة:</b><div>${p.good.map(n => `<code>${esc(n)}</code>`).join('')}</div></div><div class="b"><b>أمثلة غير صحيحة:</b><div>${p.bad.map(n => `<code>${esc(n)}</code>`).join('')}</div></div></div>`;
