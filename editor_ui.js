@@ -360,7 +360,7 @@
       const r = await fetch("/assets/engine.js", { cache: "force-cache" });
       if (!r.ok) throw new Error("تعذّر تحميل المحرك");
       const engine = (await r.text()).replace(/<\/script/gi, "<\\/script");
-      const code = JSON.stringify(ed.getValue()).replace(/</g, "\\u003c");
+      const code = JSON.stringify(ed.getValue()).replace(/</g, "\\" + "u003c");
       const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تطبيق ضاد</title>' +
         '<style>body{font-family:system-ui,"Segoe UI",Tahoma,sans-serif;margin:0;padding:1.2rem;background:#fbf7ee;color:#1f1b13}#dhad-root{margin-bottom:1rem}#dhad-out{white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff;border:1px solid #e3d9c2;border-radius:8px;padding:.8rem;direction:rtl}#dhad-out:empty{display:none}#dhad-err{color:#a11;white-space:pre-wrap}footer{margin-top:1.5rem;font-size:.8rem;color:#777}</style></head><body>' +
         '<div id="dhad-root"></div><div id="dhad-out"></div><div id="dhad-err"></div><footer>صُنع بلغة ضاد — يعمل بالكامل داخل هذا الملف، دون اتصال.</footer>' +
@@ -418,9 +418,21 @@
       return;
     }
 
+    // الاستيراد داخل المحرر: «استورد("أدوات")» تجد ملفًا اسمه أدوات.ضاد (أو أدوات) بين ملفاتك، ولا تستورد الملف المفتوح نفسه
+    const mainEntry = fileEntries.find((e) => e.id === activeId);
+    const stripExt = (n) => String(n).replace(/\.(ضاد|dhad)$/, "");
     const vm = new VM({
       maxSteps: 150000000,
       domRoot: liveRoot,
+      mainPath: mainEntry ? mainEntry.name : "main.dhad",
+      readModule: (p) => {
+        const want = stripExt(p);
+        const hits = fileEntries.filter((e) => e.id !== activeId && stripExt(e.name) === want);
+        const pick = hits.find((e) => mainEntry && e.category === mainEntry.category) || hits[0];
+        if (!pick) return null;
+        const c = contents.get(pick.id);
+        return typeof c === "string" ? c : pick.code;
+      },
       onPrint: (line) => appendLine(line, "line-ok"),
       onSaveFile: handleSaveFile,
     });
