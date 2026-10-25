@@ -57,6 +57,8 @@ class Compiler {
     this.functionChunks = [];   // كل الدوال المصرَّفة (بما فيها البرنامج الرئيسي عند الفهرس 0)
     this.stack = [];            // مكدّس FunctionScope الحالية (للتعامل مع دوال متداخلة)
     this.loopStack = [];        // لدعم توقف/أكمل: { breakAddrs: [], continueTarget }
+    this.inFinally = 0;         // عمق كتل «أخيرًا» التي نصرّفها الآن
+    this.finallyStack = [];     // كتل «أخيرًا» المفتوحة: { block, depth }
     this.tryDepth = 0;          // عمق كتل «حاول» المفتوحة (لإغلاقها عند توقف/أكمل)
     this.exportNames = [];      // أسماء ما عُلِّم بـ «صدّر» في المستوى الأعلى
   }
@@ -107,15 +109,15 @@ class Compiler {
   compileFunctionBody(name, params, body) {
     const funcScope = new FunctionScope(name, params);
     this.stack.push(funcScope);
-    const savedLoops = this.loopStack, savedTry = this.tryDepth;
-    this.loopStack = []; this.tryDepth = 0;
+    const savedLoops = this.loopStack, savedTry = this.tryDepth, savedFin = this.finallyStack, savedInFin = this.inFinally;
+    this.loopStack = []; this.tryDepth = 0; this.finallyStack = []; this.inFinally = 0;
     const chunkIndex = this.functionChunks.length;
     this.functionChunks.push(funcScope.chunk);
     body.statements.forEach((s) => this.compileStmt(s));
     // ارجع لاشيء ضمنيًا إذا لم تصل الدالة إلى ارجع صريحة
     funcScope.chunk.emit("CONST", funcScope.chunk.addConstant(null));
     funcScope.chunk.emit("RETURN");
-    this.loopStack = savedLoops; this.tryDepth = savedTry;
+    this.loopStack = savedLoops; this.tryDepth = savedTry; this.finallyStack = savedFin; this.inFinally = savedInFin;
     this.stack.pop();
     return chunkIndex;
   }
@@ -135,6 +137,46 @@ class Compiler {
   }
 
   stmt_Try(node) {
+    if (!node.finallyBlock) return this._tryCatch(node);
+    // حاول { أ } [التقط { ب }] أخيرًا { ج }: معالج خارجي يلتقط كل خطأ فيشغّل «ج» ثم يعيد إطلاقه
+    const outer = this.chunk.emit("TRY_BEGIN", -1);
+    this.tryDepth++;
+    this.finallyStack.push({ block: node.finallyBlock, depth: this.tryDepth });
+    if (node.catchBlock) this._tryCatch(node); else this.compileBlockScoped(node.tryBlock);
+    this.finallyStack.pop();
+    this.tryDepth--;
+    this.chunk.emit("TRY_END");
+    this._finallyBody(node.finallyBlock);
+    const jEnd = this.chunk.emit("JUMP", -1);
+    this.chunk.patch(outer, [this.chunk.here()]);
+    this._finallyBody(node.finallyBlock);   // مسار الخطأ: الخطأ على المكدّس أثناء تشغيل «أخيرًا»
+    this.chunk.emit("RETHROW");
+    this.chunk.patch(jEnd, [this.chunk.here()]);
+  }
+
+  _finallyBody(block) {
+    this.inFinally++;
+    this.compileBlockScoped(block);
+    this.inFinally--;
+  }
+
+  // ينفّذ أجسام «أخيرًا» المفتوحة من الداخل إلى الخارج قبل الخروج بـ ارجع/توقف/أكمل
+  _unwindFinally(downToDepth) {
+    const saved = this.finallyStack;
+    for (let k = this.tryDepth; k > downToDepth; k--) {
+      this.chunk.emit("TRY_END");
+      const idx = saved.findIndex((f) => f.depth === k);
+      if (idx >= 0) {
+        this.finallyStack = saved.slice(0, idx);
+        const savedDepth = this.tryDepth; this.tryDepth = k - 1;
+        this._finallyBody(saved[idx].block);
+        this.tryDepth = savedDepth;
+        this.finallyStack = saved;
+      }
+    }
+  }
+
+  _tryCatch(node) {
     const begin = this.chunk.emit("TRY_BEGIN", -1);
     this.tryDepth++;
     this.compileBlockScoped(node.tryBlock);
@@ -170,7 +212,7 @@ class Compiler {
     this.compileExpr(node.cond);
     const jFalse = this.chunk.emit("JUMP_IF_FALSE", -1);
     this.chunk.emit("POP");
-    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth });
+    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally });
     this.compileBlockScoped(node.body);
     const loop = this.loopStack.pop();
     loop.continueAddrs.forEach((a) => this.chunk.patch(a, [loopStart]));
@@ -211,7 +253,7 @@ class Compiler {
     const jFalse = this.chunk.emit("JUMP_IF_FALSE", -1);
     this.chunk.emit("POP");
 
-    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth });
+    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally });
     this.compileBlockScoped(node.body);
     // زيادة المتغيّر بالخطوة قبل العودة إلى بداية الحلقة (هذا هو هدف "أكمل" الحقيقي)
     const incrAddr = this.chunk.here();
@@ -243,8 +285,10 @@ class Compiler {
   }
 
   stmt_Return(node) {
+    if (this.inFinally) throw new CompileError("لا يُكتب ارجع داخل كتلة «أخيرًا» لأنها تعمل في كل الأحوال");
     if (node.expr) this.compileExpr(node.expr);
     else this.chunk.emit("CONST", this.chunk.addConstant(null));
+    if (this.finallyStack.length) this._unwindFinally(0);
     this.chunk.emit("RETURN");
   }
 
@@ -255,7 +299,8 @@ class Compiler {
   stmt_Break() {
     if (this.loopStack.length === 0) throw new CompileError("توقف مستخدمة خارج حلقة");
     const lp = this.loopStack[this.loopStack.length - 1];
-    for (let k = this.tryDepth; k > lp.tryDepth; k--) this.chunk.emit("TRY_END");
+    if (this.inFinally > lp.inFinally) throw new CompileError("لا يخرج توقف/أكمل من كتلة «أخيرًا» إلى حلقة خارجها");
+    this._unwindFinally(lp.tryDepth);
     const addr = this.chunk.emit("JUMP", -1);
     lp.breakAddrs.push(addr);
   }
@@ -263,7 +308,8 @@ class Compiler {
   stmt_Continue() {
     if (this.loopStack.length === 0) throw new CompileError("أكمل مستخدمة خارج حلقة");
     const lp = this.loopStack[this.loopStack.length - 1];
-    for (let k = this.tryDepth; k > lp.tryDepth; k--) this.chunk.emit("TRY_END");
+    if (this.inFinally > lp.inFinally) throw new CompileError("لا يخرج توقف/أكمل من كتلة «أخيرًا» إلى حلقة خارجها");
+    this._unwindFinally(lp.tryDepth);
     const addr = this.chunk.emit("JUMP", -1);
     lp.continueAddrs.push(addr);
   }

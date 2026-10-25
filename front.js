@@ -301,15 +301,19 @@ class Parser {
   tryStmt() {
     this.advance(); // حاول
     const tryBlock = this.block();
-    if (!(this.check("IDENT") && this.peek().value === "التقط")) {
-      const tok = this.peek();
-      throw new ParseError(`السطر ${tok.line}: بعد كتلة «حاول» يجب أن تأتي «التقط { … }»`);
+    let errName = null, catchBlock = null, finallyBlock = null;
+    const isWord = (w) => this.check("IDENT") && (this.peek().value === w || (w === "أخيرًا" && (this.peek().value === "أخيرا" || this.peek().value === "أخيراً")));
+    if (isWord("التقط")) {
+      this.advance();
+      if (this.match("LPAREN")) { errName = this.expect("IDENT").value; this.expect("RPAREN"); }
+      catchBlock = this.block();
     }
-    this.advance();
-    let errName = null;
-    if (this.match("LPAREN")) { errName = this.expect("IDENT").value; this.expect("RPAREN"); }
-    const catchBlock = this.block();
-    return { kind: "Try", tryBlock, errName, catchBlock };
+    if (isWord("أخيرًا")) { this.advance(); finallyBlock = this.block(); }
+    if (!catchBlock && !finallyBlock) {
+      const tok = this.peek();
+      throw new ParseError(`السطر ${tok.line}: بعد كتلة «حاول» يجب أن تأتي «التقط { … }» أو «أخيرًا { … }»`);
+    }
+    return { kind: "Try", tryBlock, errName, catchBlock, finallyBlock };
   }
 
   ifStmt() {

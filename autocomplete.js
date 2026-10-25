@@ -126,7 +126,7 @@ function setupAutocomplete(textarea, listEl, wrapEl) {
     if (range.word.length < 1) return hide();
 
     const pool = [
-      ...Object.keys(KEYWORDS).concat(["في", "صنف", "يرث", "هذا", "الأب", "صدّر"]).map((k) => ({
+      ...Object.keys(KEYWORDS).concat(["في", "صنف", "يرث", "هذا", "الأب", "صدّر", "حاول", "التقط", "أخيرًا"]).map((k) => ({
         label: k,
         tag: SNIPPETS[k] ? "قالب كود" : "كلمة مفتاحية",
         insertText: SNIPPETS[k] ? SNIPPETS[k].insertText : null,

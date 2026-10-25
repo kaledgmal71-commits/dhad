@@ -584,7 +584,7 @@ class VM {
         this.frames.length = h.depth;
         this.stack.length = h.stackLen;
         h.frame.ip = h.catchAddr;
-        this.push(e.message);
+        this.push(e.value !== undefined ? e.value : e.message);
       }
     }
   }
@@ -602,6 +602,12 @@ class VM {
       case "SET_UP": { let e = frame.env; for (let k = 0; k < args[0]; k++) e = e.parent; e.locals[args[1]] = this.peek(); return; }
       case "TRY_BEGIN": this.handlers.push({ frame, depth: this.frames.length, stackLen: this.stack.length, catchAddr: args[0] }); return;
       case "TRY_END": this.handlers.pop(); return;
+      case "RETHROW": {
+        const v = this.pop();
+        const e = new VMRuntimeError(toDisplay(v)); e.lined = true;
+        if (typeof v !== "string") e.value = v;
+        throw e;
+      }
       case "GET_GLOBAL": {
         const name = args[0];
         if (!G.has(name)) throw new VMRuntimeError(`متغير غير معرّف: ${name}` + this._hint(name, G));
@@ -764,7 +770,12 @@ class VM {
       if (Array.isArray(x) || typeof x === "string") return x;
       throw new VMRuntimeError(`من_أجل (… في …) تحتاج قائمة أو نصًا، لكن وجدت ${typeName(x).replace(/[«»]/g, "")}. للخريطة استعمل مفاتيح() أو قيم()`);
     });
-    g.set("أطلق_خطأ", (m) => { throw new VMRuntimeError(toDisplay(m)); });
+    g.set("أطلق_خطأ", (m) => {
+      const e = new VMRuntimeError(toDisplay(m));
+      if (typeof m !== "string") e.value = m;
+      else if (/^(.+، )?السطر \d+: /.test(m)) e.lined = true;   // رسالة التُقطت من قبل: لا نكرّر رقم السطر
+      throw e;
+    });
     g.set("ادخل", (q) => {
       const msg = q === undefined ? "" : toDisplay(q);
       let r;

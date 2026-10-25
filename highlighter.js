@@ -1,5 +1,5 @@
 // كلمات سياقية: تعمل كمفاتيح داخل صيغ معيّنة وتبقى أسماء صالحة في غيرها
-const SOFT_KEYWORDS = new Set(["في", "صنف", "يرث", "هذا", "الأب", "صدّر"]);
+const SOFT_KEYWORDS = new Set(["في", "صنف", "يرث", "هذا", "الأب", "صدّر", "حاول", "التقط", "أخيرًا", "أخيرا"]);
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
