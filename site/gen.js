@@ -49,7 +49,7 @@ const FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBo
 function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
   const full = title === 'ضاد' ? 'ضاد — لغة برمجة عربية مجانية' : title + ' — ضاد';
   const nav = NAV.map(([h, t]) => `<a href="${h}"${url.startsWith(h) ? ' class="on"' : ''}>${t}</a>`).join('');
-  return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="google-site-verification" content="dVw7n_T22ODDShIJIVJ7Ae5nOOBLo9XKTQ7EJOXAt3U" /><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(full)}</title><meta name="description" content="${esc(desc)}"><link rel="canonical" href="${SITE}${url}"><link rel="icon" href="${FAV}">
 <meta property="og:title" content="${esc(full)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:type" content="website"><meta property="og:locale" content="ar_AR">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
