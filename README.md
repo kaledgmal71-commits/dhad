@@ -20,3 +20,6 @@ node dhad.js -e "اطبع(١ + ٢)"
 
 بعد تعديل أي ملف في `stdlib/` شغّل `node tools/embed_stdlib.js` ليُدمج في `vm.js`، ثم `node build.js` و`node site/pages.gen.js`.
 الاختبارات: `node tests/modules.test.js` و`node tests/stdlib-text.test.js` و`node tests/stdlib-numbers.test.js`.
+
+## دفتر التطوير
+كل تغيير موثّق في [docs/دفتر-التطوير.md](docs/دفتر-التطوير.md).

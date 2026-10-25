@@ -189,7 +189,7 @@ class Parser {
     if (this.depth > 0) throw new ParseError(`السطر ${line}: «صدّر» تُكتب في المستوى الأعلى من الملف فقط، لا داخل دالة أو كتلة`);
     this.advance();                                   // صدّر
     const st = this.statement();
-    const names = st.kind === "Multi" ? [st.statements[st.statements.length - 1].name] : [st.name];
+    const names = st.kind === "Multi" ? (st.names || [st.statements[st.statements.length - 1].name]) : [st.name];
     return { kind: "Export", names, stmt: st, line };
   }
 
@@ -339,14 +339,18 @@ class Parser {
 
   forStmt() {
     this.expect("FOR"); this.expect("LPAREN");
-    const varName = this.expect("IDENT").value;
+    let varName, pat = null;
+    if (this.check("LBRACKET") || this.check("LBRACE")) { pat = this.pattern(); this.destructN = (this.destructN || 0) + 1; varName = "@عنصر_حلقة_" + this.destructN; }
+    else varName = this.expect("IDENT").value;
     if (this.check("IDENT") && this.peek().value === "في") {
       this.advance();
       const iter = this.expression();
       this.expect("RPAREN");
       const body = this.block();
+      if (pat) body.statements.unshift(this.destructure(pat, { kind: "Identifier", name: varName }, this.peek().line));
       return { kind: "ForIn", varName, iter, body };
     }
+    if (pat) throw new ParseError(`السطر ${this.peek().line}: التفكيك في الحلقة يعمل مع «في» فقط: من_أجل ([أ، ب] في قائمة)`);
     this.expect("FROM");
     const start = this.expression();
     this.expect("TO");
@@ -368,11 +372,74 @@ class Parser {
 
   varDecl() {
     this.expect("VAR");
+    if (this.check("LBRACKET") || this.check("LBRACE")) {
+      const line = this.peek().line;
+      const pat = this.pattern();
+      this.expect("ASSIGN");
+      const expr = this.expression();
+      this.match("SEMI");
+      return this.destructure(pat, expr, line);
+    }
     const name = this.expect("IDENT").value;
     this.expect("ASSIGN");
     const expr = this.expression();
     this.match("SEMI");
     return { kind: "VarDecl", name, expr };
+  }
+
+  // نمط التفكيك: [أ، ب، ...الباقي] للقوائم، و{اسم، عمر: ع} للخرائط، ويجوز التداخل
+  pattern() {
+    const line = this.peek().line;
+    if (this.match("LBRACKET")) {
+      const items = []; let rest = null;
+      if (!this.check("RBRACKET")) {
+        do {
+          if (this.check("DOT") && this.tokens[this.pos + 1].type === "DOT" && this.tokens[this.pos + 2].type === "DOT") {
+            this.advance(); this.advance(); this.advance();
+            rest = this.expect("IDENT").value;
+            break;
+          }
+          items.push(this.check("LBRACKET") || this.check("LBRACE") ? this.pattern() : this.expect("IDENT").value);
+        } while (this.match("COMMA"));
+      }
+      this.expect("RBRACKET");
+      if (!items.length && !rest) throw new ParseError(`السطر ${line}: نمط التفكيك فارغ`);
+      return { type: "list", items, rest };
+    }
+    this.expect("LBRACE");
+    const entries = [];
+    do {
+      const key = this.expect("IDENT").value;
+      let target = key;
+      if (this.match("COLON")) target = this.check("LBRACKET") || this.check("LBRACE") ? this.pattern() : this.expect("IDENT").value;
+      entries.push({ key, target });
+    } while (this.match("COMMA"));
+    this.expect("RBRACE");
+    return { type: "map", entries };
+  }
+
+  // يحوّل نمط التفكيك إلى متغيرات عادية: مصدر مخفي ثم متغير لكل اسم
+  destructure(pat, expr, line) {
+    this.destructN = (this.destructN || 0) + 1;
+    const stmts = [], names = [];
+    const call = (fn, args) => ({ kind: "Call", callee: { kind: "Identifier", name: fn }, args });
+    const walk = (p, srcExpr) => {
+      const hidden = "@تفكيك_" + (++this.destructN);
+      stmts.push({ kind: "VarDecl", name: hidden, expr: srcExpr });
+      const H = { kind: "Identifier", name: hidden };
+      const bind = (target, valueExpr) => {
+        if (typeof target === "string") { stmts.push({ kind: "VarDecl", name: target, expr: valueExpr }); names.push(target); }
+        else walk(target, valueExpr);
+      };
+      if (p.type === "list") {
+        p.items.forEach((t, i) => bind(t, call("@عنصر", [H, { kind: "Number", value: i }])));
+        if (p.rest) bind(p.rest, call("@باقي", [H, { kind: "Number", value: p.items.length }]));
+      } else {
+        p.entries.forEach((e) => bind(e.target, call("@عنصر", [H, { kind: "String", value: e.key }])));
+      }
+    };
+    walk(pat, expr);
+    return { kind: "Multi", statements: stmts, names, line };
   }
 
   exprStmt() {

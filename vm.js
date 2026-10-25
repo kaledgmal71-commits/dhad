@@ -440,6 +440,7 @@ function typeName(v) {
   if (typeof v === "boolean") return "قيمة منطقية";
   if (Array.isArray(v)) return "قائمة";
   if (v instanceof Map) return "خريطة";
+  if (v instanceof Set) return "مجموعة";
   if (v instanceof VMFunction || typeof v === "function") return "دالة";
   return "قيمة";
 }
@@ -467,6 +468,7 @@ function toDisplay(v, seen) {
     seen.delete(v);
     return out;
   }
+  if (v instanceof Set) return "مجموعة{" + [...v].map((x) => toDisplay(x, seen)).join("، ") + "}";
   if (v instanceof VMFunction) return "‹دالة›";
   if (typeof v === "function") return "‹دالة جاهزة›";
   if (typeof Element !== "undefined" && v instanceof Element) return `[عنصر واجهة: ${v.tagName.toLowerCase()}]`;
@@ -744,16 +746,16 @@ class VM {
   _setupBuiltins() {
     const g = this.globals;
     g.set("اطبع", (...a) => { this.onPrint(a.map((x) => toDisplay(x)).join(" ")); return null; });
-    g.set("طول", (x) => { if (typeof x === "string" || Array.isArray(x)) return x.length; if (x instanceof Map) return x.size; throw new VMRuntimeError("طول() تحتاج نصًا أو قائمة أو خريطة"); });
+    g.set("طول", (x) => { if (typeof x === "string" || Array.isArray(x)) return x.length; if (x instanceof Map || x instanceof Set) return x.size; throw new VMRuntimeError("طول() تحتاج نصًا أو قائمة أو خريطة أو مجموعة"); });
     const needFn = (name, f) => { if (!(f instanceof VMFunction) && typeof f !== "function") throw new VMRuntimeError(name + "() تحتاج دالة في الوسيط الأخير"); };
     const callFn = (f, a) => (f instanceof VMFunction ? this.callFunctionExternally(f, a) : f(...a));
     const needList = (name, l) => { if (!Array.isArray(l)) throw new VMRuntimeError(name + "() تحتاج قائمة"); };
     g.set("مفاتيح", (m) => { if (!(m instanceof Map)) throw new VMRuntimeError("مفاتيح() تحتاج خريطة"); return [...m.keys()]; });
     g.set("قيم", (m) => { if (!(m instanceof Map)) throw new VMRuntimeError("قيم() تحتاج خريطة"); return [...m.values()]; });
     g.set("احذف", (c, k) => {
-      if (c instanceof Map) { c.delete(k); return c; }
+      if (c instanceof Map || c instanceof Set) { c.delete(k); return c; }
       if (Array.isArray(c)) { if (typeof k !== "number" || k < 0 || k >= c.length) throw new VMRuntimeError("احذف(): فهرس خارج حدود القائمة"); c.splice(k, 1); return c; }
-      throw new VMRuntimeError("احذف() تحتاج خريطة أو قائمة");
+      throw new VMRuntimeError("احذف() تحتاج خريطة أو قائمة أو مجموعة");
     });
     g.set("طبّق", (l, f) => { needList("طبّق", l); needFn("طبّق", f); return l.map((x) => callFn(f, [x])); });
     g.set("رشّح", (l, f) => { needList("رشّح", l); needFn("رشّح", f); return l.filter((x) => truthy(callFn(f, [x]))); });
@@ -768,7 +770,42 @@ class VM {
     g.set("نوع", (x) => typeName(x).replace(/[«»]/g, ""));
     g.set("@تكرار", (x) => {
       if (Array.isArray(x) || typeof x === "string") return x;
-      throw new VMRuntimeError(`من_أجل (… في …) تحتاج قائمة أو نصًا، لكن وجدت ${typeName(x).replace(/[«»]/g, "")}. للخريطة استعمل مفاتيح() أو قيم()`);
+      if (x instanceof Set) return [...x];
+      throw new VMRuntimeError(`من_أجل (… في …) تحتاج قائمة أو نصًا أو مجموعة، لكن وجدت ${typeName(x).replace(/[«»]/g, "")}. للخريطة استعمل مفاتيح() أو قيم()`);
+    });
+    // المجموعات: قيم لا تتكرر. تقبل الأرقام والنصوص والقيم المنطقية فقط (مقارنتها بالقيمة لا بالعنوان)
+    const setElem = (fn, v) => {
+      if (v !== null && typeof v !== "number" && typeof v !== "string" && typeof v !== "boolean")
+        throw new VMRuntimeError(fn + "(): المجموعة تقبل أرقامًا ونصوصًا وقيمًا منطقية فقط، لكن وجدت " + typeName(v).replace(/[«»]/g, ""));
+    };
+    const needSet = (fn, x) => { if (!(x instanceof Set)) throw new VMRuntimeError(fn + "() تحتاج مجموعتين، لكن وجدت " + typeName(x).replace(/[«»]/g, "")); };
+    g.set("مجموعة", (src) => {
+      const out = new Set();
+      if (src === undefined || src === null) return out;
+      const items = src instanceof Set ? [...src] : (Array.isArray(src) || typeof src === "string") ? Array.from(src) : null;
+      if (!items) throw new VMRuntimeError("مجموعة() تحتاج قائمة أو نصًا أو مجموعة، لكن وجدت " + typeName(src).replace(/[«»]/g, ""));
+      for (const x of items) { setElem("مجموعة", x); out.add(x); }
+      return out;
+    });
+    g.set("اتحاد", (a, b) => { needSet("اتحاد", a); needSet("اتحاد", b); return new Set([...a, ...b]); });
+    g.set("تقاطع", (a, b) => { needSet("تقاطع", a); needSet("تقاطع", b); return new Set([...a].filter((x) => b.has(x))); });
+    g.set("فرق", (a, b) => { needSet("فرق", a); needSet("فرق", b); return new Set([...a].filter((x) => !b.has(x))); });
+    g.set("جزء_من", (a, b) => { needSet("جزء_من", a); needSet("جزء_من", b); return [...a].every((x) => b.has(x)); });
+    g.set("إلى_قائمة", (x) => { if (x instanceof Set) return [...x]; if (x instanceof Map) return [...x.keys()]; if (Array.isArray(x)) return x.slice(); if (typeof x === "string") return Array.from(x); throw new VMRuntimeError("إلى_قائمة() تحتاج مجموعة أو خريطة أو قائمة أو نصًا"); });
+    g.set("أزواج", (m) => { if (!(m instanceof Map)) throw new VMRuntimeError("أزواج() تحتاج خريطة"); return [...m].map(([k, v]) => [k, v]); });
+    // التفكيك: نأخذ العنصر أو لاشيء إن لم يوجد، ونرفض النوع الخطأ بوضوح
+    g.set("@عنصر", (c, k) => {
+      if (typeof k === "number") {
+        if (Array.isArray(c) || typeof c === "string") return k < c.length ? c[k] : null;
+        throw new VMRuntimeError("التفكيك بـ [ … ] يحتاج قائمة أو نصًا، لكن وجدت " + typeName(c).replace(/[«»]/g, ""));
+      }
+      if (c instanceof Map) return c.has(k) ? c.get(k) : null;
+      throw new VMRuntimeError("التفكيك بـ { … } يحتاج خريطة، لكن وجدت " + typeName(c).replace(/[«»]/g, ""));
+    });
+    g.set("@باقي", (c, i) => {
+      if (Array.isArray(c)) return c.slice(i);
+      if (typeof c === "string") return Array.from(c).slice(i);
+      throw new VMRuntimeError("التفكيك بـ [ … ] يحتاج قائمة أو نصًا، لكن وجدت " + typeName(c).replace(/[«»]/g, ""));
     });
     g.set("أطلق_خطأ", (m) => {
       const e = new VMRuntimeError(toDisplay(m));
@@ -784,7 +821,7 @@ class VM {
       else throw new VMRuntimeError("ادخل() تحتاج بيئة تدعم الإدخال (المحرر أو التطبيق المُصدَّر)");
       return r === null || r === undefined ? "" : normalizeDigits(String(r));
     });
-    g.set("أضف", (lst, val) => { if (!Array.isArray(lst)) throw new VMRuntimeError("أضف() تحتاج قائمة"); lst.push(val); return lst; });
+    g.set("أضف", (lst, val) => { if (lst instanceof Set) { setElem("أضف", val); lst.add(val); return lst; } if (!Array.isArray(lst)) throw new VMRuntimeError("أضف() تحتاج قائمة أو مجموعة"); lst.push(val); return lst; });
     g.set("نص", (x) => toDisplay(x));
     // رمز(حرف) ترجع رقم الحرف في يونيكود، وحرف(رقم) ترجع الحرف من رقمه: هما أساس مكتبة النصوص المكتوبة بضاد
     g.set("رمز", (c) => { if (typeof c !== "string" || c.length === 0) throw new VMRuntimeError("رمز() تحتاج نصًا فيه حرف واحد على الأقل"); return c.codePointAt(0); });
@@ -828,7 +865,7 @@ class VM {
     });
     g.set("اقتطع", (s, a, b) => { if (typeof s !== "string") throw new VMRuntimeError("اقتطع() تحتاج نصًا"); return b === undefined ? s.slice(a) : s.slice(a, b); });
     g.set("استبدل", (s, a, b) => { if (typeof s !== "string") throw new VMRuntimeError("استبدل() تحتاج نصًا"); return s.split(a).join(b); });
-    g.set("يحوي", (c, v) => { if (typeof c === "string" || Array.isArray(c)) return c.includes(v); if (c instanceof Map) return c.has(v); throw new VMRuntimeError("يحوي() تحتاج نصًا أو قائمة أو خريطة"); });
+    g.set("يحوي", (c, v) => { if (typeof c === "string" || Array.isArray(c)) return c.includes(v); if (c instanceof Map || c instanceof Set) return c.has(v); throw new VMRuntimeError("يحوي() تحتاج نصًا أو قائمة أو خريطة أو مجموعة"); });
     g.set("افصل", (s, sep) => { if (typeof s !== "string") throw new VMRuntimeError("افصل() تحتاج نصًا"); return s.split(sep === undefined ? " " : sep); });
     g.set("اربط", (lst, sep) => { if (!Array.isArray(lst)) throw new VMRuntimeError("اربط() تحتاج قائمة"); return lst.map((x) => toDisplay(x)).join(sep === undefined ? "" : sep); });
     g.set("قصّ", (s) => { if (typeof s !== "string") throw new VMRuntimeError("قصّ() تحتاج نصًا"); return s.trim(); });
