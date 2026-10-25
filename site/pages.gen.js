@@ -235,6 +235,7 @@ emit('/limits/', { title: 'ما هي ضاد وما ليست', desc: 'حدود ض
 write('404.html', page({ url: '/404', title: 'الصفحة غير موجودة', desc: 'الصفحة غير موجودة', body: `<h1>الصفحة غير موجودة</h1><p class="lead">ربما تغيّر العنوان. ابدأ من <a href="/">الرئيسية</a> أو <a href="/learn/">الدروس</a>.</p>` }));
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${G.urls.concat(['/editor/']).map(u => `<url><loc>${SITE}${u}</loc></url>`).join('')}</urlset>`);
 write('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
+write('a68eac8d535fb.html', 'google-site-verification: a68eac8d535fb.html');
 
 // ===== المحرر: نقله إلى /editor/ مع ترقيعات =====
 { const src = path.join(DIST, 'index.html');
