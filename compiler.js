@@ -106,8 +106,9 @@ class Compiler {
     }
   }
 
-  compileFunctionBody(name, params, body) {
+  compileFunctionBody(name, params, body, isAsync) {
     const funcScope = new FunctionScope(name, params);
+    funcScope.chunk.isAsync = !!isAsync;
     this.stack.push(funcScope);
     const savedLoops = this.loopStack, savedTry = this.tryDepth, savedFin = this.finallyStack, savedInFin = this.inFinally;
     this.loopStack = []; this.tryDepth = 0; this.finallyStack = []; this.inFinally = 0;
@@ -125,14 +126,21 @@ class Compiler {
   stmt_FuncDecl(node) {
     // داخل دالة: نحجز خانة الاسم قبل تصريف الجسم ليستطيع الاستدعاء الذاتي رؤية الاسم
     const slot = this.isTopLevel ? -1 : this.current.declare(node.name);
-    const chunkIndex = this.compileFunctionBody(node.name, node.params, node.body);
+    const chunkIndex = this.compileFunctionBody(node.name, node.params, node.body, node.isAsync);
     this.chunk.emit("BUILD_FUNCTION", chunkIndex);
     if (this.isTopLevel) this.chunk.emit("DEFINE_GLOBAL", node.name);
     else { this.chunk.emit("SET_LOCAL", slot); this.chunk.emit("POP"); }
   }
 
+  expr_Await(node) {
+    // مسموحة في دالة غير_متزامنة أو في المستوى الأعلى من الملف
+    if (!this.isTopLevel && !this.chunk.isAsync) throw new CompileError("انتظر لا تُكتب إلا داخل دالة غير_متزامنة أو في المستوى الأعلى من الملف");
+    this.compileExpr(node.expr);
+    this.chunk.emit("AWAIT");
+  }
+
   expr_FuncExpr(node) {
-    const chunkIndex = this.compileFunctionBody("<مجهولة>", node.params, node.body);
+    const chunkIndex = this.compileFunctionBody("<مجهولة>", node.params, node.body, node.isAsync);
     this.chunk.emit("BUILD_FUNCTION", chunkIndex);
   }
 

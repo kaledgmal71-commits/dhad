@@ -403,6 +403,12 @@ const STDLIB_SOURCES = {
 // </STDLIB>
 class VMRuntimeError extends Error {}
 class VMBreakSentinel extends Error {}
+class VMSuspend extends Error {}           // إشارة داخلية: المهمة توقفت عند «انتظر» وستُستأنف لاحقًا
+
+// وعد: نتيجة مهمة غير متزامنة. حالته منتظر/أُنجز/رُفض، ويستأنف المنتظرون عند الحسم
+class VMPromise {
+  constructor() { this.state = "pending"; this.value = null; this.callbacks = []; this.handled = false; this.error = null; }
+}
 
 class VMFunction {
   constructor(chunkIndex, chunk) {
@@ -441,6 +447,7 @@ function typeName(v) {
   if (Array.isArray(v)) return "قائمة";
   if (v instanceof Map) return "خريطة";
   if (v instanceof Set) return "مجموعة";
+  if (v instanceof VMPromise) return "وعد";
   if (v instanceof VMFunction || typeof v === "function") return "دالة";
   return "قيمة";
 }
@@ -469,6 +476,7 @@ function toDisplay(v, seen) {
     return out;
   }
   if (v instanceof Set) return "مجموعة{" + [...v].map((x) => toDisplay(x, seen)).join("، ") + "}";
+  if (v instanceof VMPromise) return v.state === "pending" ? "وعد{منتظر}" : v.state === "done" ? "وعد{أُنجز: " + toDisplay(v.value, seen) + "}" : "وعد{رُفض: " + toDisplay(v.value, seen) + "}";
   if (v instanceof VMFunction) return "‹دالة›";
   if (typeof v === "function") return "‹دالة جاهزة›";
   if (typeof Element !== "undefined" && v instanceof Element) return `[عنصر واجهة: ${v.tagName.toLowerCase()}]`;
@@ -517,6 +525,8 @@ class VM {
     this.mainPath = opts.mainPath || "main.dhad";
     this.modules = new Map();                          // الوحدات المحمّلة: مسار -> { loading, exports }
     this.importStack = [];
+    this.microtasks = []; this.timers = []; this.timerSeq = 0; this.now = 0;   // جدولة الوعود والمؤقتات (بزمن افتراضي)
+    this.rejected = []; this.currentTask = null; this.syncDepth = 0; this.taskDepth = 0;
     this._setupBuiltins();
     this.builtins = new Map(this.globals);             // لقطة الدوال الجاهزة؛ تُنسخ لكل وحدة فتبدأ بأسماء نظيفة
   }
@@ -540,9 +550,15 @@ class VM {
     this.t0 = Date.now();
     this.functionChunks = functionChunks;
     const mainChunk = functionChunks[mainChunkIndex];
-    const frame = new CallFrame(mainChunk, [], 0);
-    this.frames.push(frame);
-    this._loop();
+    const task = { frames: [new CallFrame(mainChunk, [], 0)], stack: [], handlers: [], promise: new VMPromise() };
+    this._runTask(task);
+    const p = task.promise;
+    if (p.state === "failed") throw p.error || this._asError(p.value);
+    this._drain();
+    if (p.state === "failed") throw p.error || this._asError(p.value);
+    if (p.state === "pending") throw new VMRuntimeError("البرنامج ينتظر وعدًا لن يُنجَز أبدًا (انتظار متبادل بين مهمتين، أو وعد لا يُحسم)");
+    const orphan = this.rejected.find((q) => !q.handled);
+    if (orphan) throw orphan.error || this._asError(orphan.value);
   }
 
   _loop() {
@@ -569,6 +585,7 @@ class VM {
         this._tick();
         this._exec(frame, instr);
       } catch (err) {
+        if (err instanceof VMSuspend) throw err;
         let e = err;
         if (!(e instanceof VMRuntimeError) && !(e instanceof VMBreakSentinel)) {
           const ne = new VMRuntimeError("خطأ داخلي: " + (e && e.message ? e.message : e));
@@ -576,18 +593,90 @@ class VM {
         }
         if (e.fatal || !(e instanceof VMRuntimeError)) throw e;
         if (!e.lined && instr.line) { e.message = `${lineWhere(frame, instr)}: ${e.message}`; e.lined = true; }
-        // ابحث عن أقرب كتلة «حاول» ما زالت نشطة
-        let h = null;
-        while (this.handlers.length) {
-          const cand = this.handlers.pop();
-          if (this.frames[cand.depth - 1] === cand.frame) { h = cand; break; }
-        }
-        if (!h) throw e;
-        this.frames.length = h.depth;
-        this.stack.length = h.stackLen;
-        h.frame.ip = h.catchAddr;
-        this.push(e.value !== undefined ? e.value : e.message);
+        this._catchInto(e);
       }
+    }
+  }
+
+  // ابحث عن أقرب كتلة «حاول» ما زالت نشطة وانتقل إليها بالخطأ، وإلا أعد إطلاقه
+  _catchInto(e) {
+    let h = null;
+    while (this.handlers.length) {
+      const cand = this.handlers.pop();
+      if (this.frames[cand.depth - 1] === cand.frame) { h = cand; break; }
+    }
+    if (!h) throw e;
+    this.frames.length = h.depth;
+    this.stack.length = h.stackLen;
+    h.frame.ip = h.catchAddr;
+    this.push(e.value !== undefined ? e.value : e.message);
+  }
+
+  _asError(v) {
+    const e = new VMRuntimeError(toDisplay(v)); e.lined = true;
+    if (typeof v !== "string") e.value = v;
+    return e;
+  }
+
+  // ===== المهام والوعود =====
+  _settle(p, state, value) {
+    if (p.state !== "pending") return;
+    p.state = state; p.value = value;
+    const cbs = p.callbacks; p.callbacks = [];
+    for (const cb of cbs) this.microtasks.push(() => cb(state, value));
+    if (state === "failed" && !p.handled) this.rejected.push(p);
+  }
+  _onSettle(p, cb) {
+    p.handled = true;
+    if (p.state === "pending") p.callbacks.push(cb);
+    else this.microtasks.push(() => cb(p.state, p.value));
+  }
+  _startAsync(fn, args) {
+    if (this.taskDepth > 300) throw new VMRuntimeError("تداخل الدوال غير المتزامنة عميق جدًا (أكثر من ٣٠٠)");
+    const p = new VMPromise();
+    const locals = new Array(fn.chunk.maxSlots).fill(null);
+    fn.chunk.params.forEach((_, i) => { locals[i] = i < args.length ? args[i] : null; });
+    this._runTask({ frames: [new CallFrame(fn.chunk, locals, 0, fn.env)], stack: [], handlers: [], promise: p });
+    return p;
+  }
+  // يشغّل مهمة حتى تنتهي أو تتوقف عند «انتظر»، ثم يعيد حالة من استدعاها
+  _runTask(task, resume) {
+    const sv = { f: this.frames, s: this.stack, h: this.handlers, t: this.currentTask, d: this.syncDepth };
+    this.frames = task.frames; this.stack = task.stack; this.handlers = task.handlers;
+    this.currentTask = task; this.syncDepth = 0; this.taskDepth++;
+    try {
+      if (resume) {
+        if (resume.state === "failed") this._catchInto(this._asError(resume.value));
+        else this.push(resume.value);
+      }
+      this._loop();
+      const result = this.stack.length ? this.stack[this.stack.length - 1] : null;
+      if (result instanceof VMPromise) this._onSettle(result, (st, v) => { if (st === "failed") task.promise.error = result.error; this._settle(task.promise, st, v); });
+      else this._settle(task.promise, "done", result);
+    } catch (e) {
+      if (e instanceof VMSuspend) return;
+      if (e instanceof VMRuntimeError && !e.fatal) {
+        task.promise.error = e;
+        this._settle(task.promise, "failed", e.value !== undefined ? e.value : e.message);
+        return;
+      }
+      throw e;
+    } finally {
+      this.frames = sv.f; this.stack = sv.s; this.handlers = sv.h; this.currentTask = sv.t; this.syncDepth = sv.d; this.taskDepth--;
+    }
+  }
+  // يشغّل المهام المؤجلة ثم المؤقتات (بزمن افتراضي: لا ننتظر فعليًا، بل نقفز إلى أقرب مؤقت)
+  _drain() {
+    for (;;) {
+      let i = 0;
+      while (i < this.microtasks.length) { this._tick(); this.microtasks[i++](); }
+      this.microtasks.length = 0;
+      if (!this.timers.length) break;
+      this.timers.sort((a, b) => a.time - b.time || a.seq - b.seq);
+      const t = this.timers.shift();
+      this.now = Math.max(this.now, t.time);
+      this._tick();
+      t.fn();
     }
   }
 
@@ -710,6 +799,7 @@ class VM {
         const argCount = args[0];
         const argVals = this.stack.splice(this.stack.length - argCount, argCount);
         const callee = this.pop();
+        if (callee instanceof VMFunction && callee.chunk.isAsync) { this.push(this._startAsync(callee, argVals)); return; }
         if (callee instanceof VMFunction) {
           const locals = new Array(callee.chunk.maxSlots).fill(null);
           callee.chunk.params.forEach((_, i) => { locals[i] = i < argVals.length ? argVals[i] : null; });
@@ -722,6 +812,16 @@ class VM {
           return;
         }
         throw new VMRuntimeError("غير قابل للاستدعاء");
+      }
+      case "AWAIT": {
+        const v = this.pop();
+        if (!(v instanceof VMPromise)) { this.push(v); return; }
+        if (this.syncDepth > 0 || !this.currentTask) throw new VMRuntimeError("انتظر لا تعمل هنا: الدالة استُدعيت من دالة جاهزة (مثل طبّق) أو من ملف مستورَد، فلا يمكن إيقافها لانتظار غيرها");
+        if (v.state === "done") { v.handled = true; this.push(v.value); return; }
+        if (v.state === "failed") { v.handled = true; const e = this._asError(v.value); throw e; }
+        const task = this.currentTask;
+        this._onSettle(v, (st, val) => this._runTask(task, { state: st, value: val }));
+        throw new VMSuspend();
       }
       case "RETURN": {
         const value = this.pop();
@@ -772,6 +872,41 @@ class VM {
       if (Array.isArray(x) || typeof x === "string") return x;
       if (x instanceof Set) return [...x];
       throw new VMRuntimeError(`من_أجل (… في …) تحتاج قائمة أو نصًا أو مجموعة، لكن وجدت ${typeName(x).replace(/[«»]/g, "")}. للخريطة استعمل مفاتيح() أو قيم()`);
+    });
+    // الوعود والزمن. الزمن افتراضي: «نم» ترتّب الأحداث ولا تُبطئ التشغيل فعليًا، فتخرج النتائج حتمية
+    const needMs = (fn, n) => { if (typeof n !== "number" || !(n >= 0) || n > 86400000) throw new VMRuntimeError(fn + "() تحتاج عددًا من ٠ إلى ٨٦٤٠٠٠٠٠ مللي ثانية"); };
+    g.set("نم", (ms) => {
+      needMs("نم", ms);
+      if (this.timers.length > 100000) throw new VMRuntimeError("نم(): مؤقتات كثيرة جدًا");
+      const p = new VMPromise();
+      this.timers.push({ time: this.now + ms, seq: ++this.timerSeq, fn: () => this._settle(p, "done", null) });
+      return p;
+    });
+    g.set("وعد_جاهز", (v) => { if (v instanceof VMPromise) return v; const p = new VMPromise(); this._settle(p, "done", v === undefined ? null : v); return p; });
+    g.set("كل_الوعود", (list) => {
+      needList("كل_الوعود", list);
+      const out = new VMPromise(), n = list.length, res = new Array(n).fill(null);
+      let left = n;
+      if (!n) { this._settle(out, "done", res); return out; }
+      list.forEach((x, i) => {
+        if (!(x instanceof VMPromise)) { res[i] = x; if (--left === 0) this._settle(out, "done", res); return; }
+        this._onSettle(x, (st, v) => {
+          if (out.state !== "pending") return;
+          if (st === "failed") { out.error = this._asError(v); this._settle(out, "failed", v); }
+          else { res[i] = v; if (--left === 0) this._settle(out, "done", res); }
+        });
+      });
+      return out;
+    });
+    g.set("أول_وعد", (list) => {
+      needList("أول_وعد", list);
+      if (!list.length) throw new VMRuntimeError("أول_وعد() تحتاج قائمة فيها عنصر واحد على الأقل");
+      const out = new VMPromise();
+      for (const x of list) {
+        if (!(x instanceof VMPromise)) { this._settle(out, "done", x); break; }
+        this._onSettle(x, (st, v) => { if (out.state !== "pending") return; if (st === "failed") out.error = this._asError(v); this._settle(out, st, v); });
+      }
+      return out;
     });
     // المجموعات: قيم لا تتكرر. تقبل الأرقام والنصوص والقيم المنطقية فقط (مقارنتها بالقيمة لا بالعنوان)
     const setElem = (fn, v) => {
@@ -981,6 +1116,7 @@ class VM {
     if (!this.importStack.length) this.importStack.push(this.mainPath);
     this.importStack.push(key);
     const savedFrames = this.frames, savedStack = this.stack, savedHandlers = this.handlers;
+    this.syncDepth++;
     try {
       let compiled;
       try { compiled = compile(parse(src)); }
@@ -999,11 +1135,14 @@ class VM {
       throw e;
     } finally {
       this.frames = savedFrames; this.stack = savedStack; this.handlers = savedHandlers;
+      this.syncDepth--;
       this.importStack.pop();
     }
   }
 
   callFunctionExternally(vmFunction, args) {
+    if (vmFunction.chunk.isAsync) return this._startAsync(vmFunction, args);
+    this.syncDepth++;
     const savedFrames = this.frames, savedStack = this.stack, savedHandlers = this.handlers;
     this.frames = []; this.stack = []; this.handlers = [];
     try {
@@ -1014,6 +1153,7 @@ class VM {
       return this.stack.length ? this.stack[this.stack.length - 1] : null;
     } finally {
       this.frames = savedFrames; this.stack = savedStack; this.handlers = savedHandlers;
+      this.syncDepth--;
     }
   }
 }

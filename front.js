@@ -159,7 +159,14 @@ class Parser {
     return st;
   }
 
+  // «غير_متزامنة» قبل «دالة»: كلمة تعمل كلمةً مفتاحية في موضعها فقط
+  isAsyncMod() { return this.check("IDENT") && this.peek().value === "غير_متزامنة" && this.tokens[this.pos + 1].type === "FUNC"; }
+
   _statement() {
+    if (this.isAsyncMod() && this.tokens[this.pos + 2] && this.tokens[this.pos + 2].type === "IDENT") {
+      this.advance();
+      const fn = this.funcDecl(); fn.isAsync = true; return fn;
+    }
     if (this.check("FUNC") && this.tokens[this.pos + 1].type === "IDENT") return this.funcDecl();
     if (this.check("IDENT") && this.peek().value === "حاول" && this.tokens[this.pos + 1].type === "LBRACE") return this.tryStmt();
     if (this.check("IDENT") && this.peek().value === "صنف" && this.tokens[this.pos + 1].type === "IDENT" &&
@@ -181,6 +188,7 @@ class Parser {
     const nx = this.tokens[this.pos + 1], n2 = this.tokens[this.pos + 2];
     if (!nx) return false;
     if (nx.type === "FUNC") return !!n2 && n2.type === "IDENT";
+    if (nx.type === "IDENT" && nx.value === "غير_متزامنة" && !!n2 && n2.type === "FUNC") return !!this.tokens[this.pos + 3] && this.tokens[this.pos + 3].type === "IDENT";
     if (nx.type === "VAR") return true;
     return nx.type === "IDENT" && nx.value === "صنف" && !!n2 && n2.type === "IDENT";
   }
@@ -212,8 +220,12 @@ class Parser {
     const methods = [];
     let ctor = null;
     while (!this.check("RBRACE") && !this.check("EOF")) {
+      const asyncMethod = this.isAsyncMod();
+      if (asyncMethod) this.advance();
       if (!this.check("FUNC")) throw new ParseError(`السطر ${this.peek().line}: داخل الصنف لا يُكتب إلا تعريف دوال (دالة اسم(...) { ... })`);
       const fn = this.funcDecl();
+      if (asyncMethod) fn.isAsync = true;
+      if (fn.name === "جديد" && fn.isAsync) throw new ParseError(`السطر ${line}: دالة «جديد» لا تكون غير_متزامنة`);
       if (fn.name === "جديد") { if (ctor) throw new ParseError(`السطر ${line}: للصنف «${name}» أكثر من دالة جديد`); ctor = fn; }
       else methods.push(fn);
     }
@@ -532,6 +544,13 @@ class Parser {
     return expr;
   }
   unary() {
+    if (this.check("IDENT") && this.peek().value === "انتظر") {
+      const nx = this.tokens[this.pos + 1];
+      if (["IDENT", "NUMBER", "STRING", "LPAREN", "LBRACKET", "LBRACE", "FUNC", "NOT", "MINUS", "TRUE", "FALSE", "NULL"].includes(nx.type)) {
+        const line = this.advance().line;
+        return { kind: "Await", expr: this.unary(), line };
+      }
+    }
     if (this.check("NOT")) { this.advance(); return { kind: "UnaryOp", op: "ليس", expr: this.unary() }; }
     if (this.check("MINUS")) { this.advance(); return { kind: "UnaryOp", op: "-", expr: this.unary() }; }
     return this.callExpr();
@@ -577,6 +596,10 @@ class Parser {
     return expr;
   }
   primary() {
+    if (this.isAsyncMod() && this.tokens[this.pos + 2] && this.tokens[this.pos + 2].type === "LPAREN") {
+      this.advance();
+      const f = this.primary(); f.isAsync = true; return f;
+    }
     const tok = this.peek();
     if (tok.type === "NUMBER") { this.advance(); return { kind: "Number", value: tok.value.includes(".") ? parseFloat(tok.value) : parseInt(tok.value, 10) }; }
     if (tok.type === "STRING") { this.advance(); return { kind: "String", value: tok.value }; }

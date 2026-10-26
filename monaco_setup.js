@@ -47,7 +47,7 @@ function collectUserIdentifiersFrom(src) {
 }
 
 function registerDhadLanguage(monaco) {
-  const keywords = Object.keys(KEYWORDS).concat(["في", "صنف", "يرث", "هذا", "الأب", "حاول", "التقط", "أخيرًا"]);
+  const keywords = Object.keys(KEYWORDS).concat(["في", "صنف", "يرث", "هذا", "الأب", "حاول", "التقط", "أخيرًا", "غير_متزامنة", "انتظر"]);
   const builtins = dhadBuiltinNames();
   const LETTER = "[\\u0621-\\u064A\\u064B-\\u0652\\u0671-\\u06D3_a-zA-Z]";
   const LETTER_OR_DIGIT = "[\\u0621-\\u064A\\u064B-\\u0652\\u0671-\\u06D3_a-zA-Z0-9\\u0660-\\u0669]";
