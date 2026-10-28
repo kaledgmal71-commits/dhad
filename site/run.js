@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), nodevm = require('vm');
 const root = path.join(__dirname, '..');
 const src = ['front.js', 'compiler.js', 'vm.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n;\n');
 const ctx = nodevm.createContext({ console, performance, setTimeout });
-nodevm.runInContext(src + '\n;this.__api={parse,compile,VM,KEYWORDS,tokenize};', ctx);
+nodevm.runInContext(src + '\n;this.__api={parse,compile,VM,MemoryFS,KEYWORDS,tokenize};', ctx);
 const api = ctx.__api;
 function run(code, opts = {}) {
   const out = [];

@@ -25,11 +25,11 @@ const ART = {
   i_book: `<svg viewBox="0 0 64 64"><path d="M32 14c-6-5-16-6-24-4v38c8-2 18-1 24 4 6-5 16-6 24-4V10c-8-2-18-1-24 4z" fill="#fff" stroke="#2f5fb3" stroke-width="3" stroke-linejoin="round"/><path d="M32 14v38" stroke="#2f5fb3" stroke-width="3"/><path d="M14 22c4-1 8-1 12 1M14 31c4-1 8-1 12 1M38 23c4-2 8-2 12-1M38 32c4-2 8-2 12-1" stroke="#2f5fb3" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
 };
 
-function win(file, src, where, { hideRun = false, err = false, files = null } = {}) {
-  const r = R.run(src, files ? { files } : {});
+function win(file, src, where, { hideRun = false, err = false, files = null, fs = null } = {}) {
+  const r = R.run(src, { ...(files ? { files } : {}), ...(fs ? { fs: new R.api.MemoryFS(fs) } : {}) });
   if (err ? r.ok : !r.ok) problems.push(`${where}: ${err ? 'كان يُفترض أن يفشل هذا المثال' : r.error}`);
   const out = esc(r.out.concat(r.ok ? [] : ['✗ ' + r.error]).join('\n'));
-  return `<div class="codebox win"${files ? ' data-multi' : ''}><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(file)}</b>${hideRun ? '' : '<button data-run>▶ شغّل</button>'}${files ? '' : `<a href="/editor/?code=${encodeURIComponent(src)}">افتح في المحرر</a>`}</div><pre>${hlx(src)}</pre><div class="out${err ? ' err' : ''}" data-label="${err ? 'الخطأ' : 'النتيجة'}">${out}</div></div>`;
+  return `<div class="codebox win"${(files || fs) ? ' data-multi' : ''}><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(file)}</b>${hideRun ? '' : '<button data-run>▶ شغّل</button>'}${files ? '' : `<a href="/editor/?code=${encodeURIComponent(src)}">افتح في المحرر</a>`}</div><pre>${hlx(src)}</pre><div class="out${err ? ' err' : ''}" data-label="${err ? 'الخطأ' : 'النتيجة'}">${out}</div></div>`;
 }
 
 function part(p, where) {
@@ -39,6 +39,7 @@ function part(p, where) {
     case 'ok': return `<div class="sok">${p.x.map(i => `<div><span>✓</span>${i}</div>`).join('')}</div>`;
     case 'art': return `<div class="sart ${p.cls || ''}">${ART[p.x]}${p.cap ? `<span class="cap">${p.cap}</span>` : ''}</div>`;
     case 'code': {
+      if (p.fs) return win(p.file, p.src, where, { err: !!p.err, hideRun: true, fs: p.fs }).replace(/<a href="\/editor[^>]*>[^<]*<\/a>/, '');
       if (!p.files) return win(p.file, p.src, where, { err: !!p.err });
       // مثال متعدد الملفات: الملفات المساعدة تُعرض أولًا بلا مخرجات، والملف الرئيسي يُنفَّذ معها (لا تشغيل في المتصفح لأن الملفات غير متاحة هناك)
       const extra = Object.entries(p.files).map(([n, s]) => `<div class="codebox win" data-multi><div class="wbar"><i class="d1"></i><i class="d2"></i><i class="d3"></i><b>${esc(n)}</b></div><pre>${hlx(s)}</pre></div>`).join('');

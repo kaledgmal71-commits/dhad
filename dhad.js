@@ -10,12 +10,16 @@ const HELP = `ضاد — تشغيل الملفات خارج المتصفح
   node dhad.js -e "اطبع(١)"    تشغيل شيفرة مكتوبة مباشرة
   node dhad.js --help          هذه الرسالة
 
+الملفات: برنامجك لا يصل إلى القرص ما لم تمنحه مجلدًا واحدًا صراحة:
+  node dhad.js --ملفات=مجلد ملف.dhad    (أو --fs=مجلد)
+  يرى البرنامج هذا المجلد وحده كجذر «/»، ولا يستطيع الخروج منه ولا عبر وصلة رمزية.
+
 يُرجع رمز خروج ٠ عند النجاح و١ عند وجود خطأ، فيصلح للسكربتات.`;
 
 function loadEngine() {
   const src = ["front.js", "compiler.js", "vm.js"].map((f) => fs.readFileSync(path.join(__dirname, f), "utf8")).join("\n;\n");
   const ctx = nodevm.createContext({ console, performance, setTimeout });
-  nodevm.runInContext(src + "\n;this.__api={parse,compile,VM};", ctx);
+  nodevm.runInContext(src + "\n;this.__api={parse,compile,VM,MemoryFS};", ctx);
   return ctx.__api;
 }
 
@@ -33,6 +37,13 @@ function readLine() {
 }
 
 function main(argv) {
+  // خيار صلاحية الملفات: --ملفات=مجلد أو --fs=مجلد (يُنتزع من الوسائط قبل بقية المعالجة)
+  let fsRoot = null;
+  argv = argv.filter((a) => {
+    const m = /^--(?:ملفات|fs)=(.*)$/.exec(a);
+    if (m) { fsRoot = m[1]; return false; }
+    return true;
+  });
   if (!argv.length || argv[0] === "--help" || argv[0] === "-h") { console.log(HELP); return argv.length ? 0 : 1; }
   let code, root = process.cwd(), mainPath = "main.dhad";
   if (argv[0] === "-e") {
@@ -46,7 +57,13 @@ function main(argv) {
   const api = loadEngine();
   try {
     const c = api.compile(api.parse(code));
+    let fsHost = null;
+    if (fsRoot !== null) {
+      try { fsHost = new (require("./fs_node.js").NodeFS)(fsRoot); }
+      catch (e) { console.error("تعذّر فتح مجلد الملفات: " + fsRoot); return 1; }
+    }
     const vm = new api.VM({
+      fs: fsHost,
       onPrint: (l) => console.log(l),
       onSaveFile: (name, text) => fs.writeFileSync(path.basename(String(name)), String(text)),
       onInput: (q) => { if (q) process.stdout.write(q + " "); return readLine(); },
