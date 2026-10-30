@@ -3322,6 +3322,7 @@ class VM {
     this.frames.length = h.depth;
     this.stack.length = h.stackLen;
     h.frame.ip = h.catchAddr;
+    h.frame.env = h.env;    // قد يخرج الخطأ من داخل بيئة دورة: نعود إلى البيئة وقت فتح «حاول»
     this.push(e.value !== undefined ? e.value : e.message);
   }
 
@@ -3404,7 +3405,9 @@ class VM {
       case "SET_LOCAL": frame.locals[args[0]] = this.peek(); return;
       case "GET_UP": { let e = frame.env; for (let k = 0; k < args[0]; k++) e = e.parent; this.push(e.locals[args[1]]); return; }
       case "SET_UP": { let e = frame.env; for (let k = 0; k < args[0]; k++) e = e.parent; e.locals[args[1]] = this.peek(); return; }
-      case "TRY_BEGIN": this.handlers.push({ frame, depth: this.frames.length, stackLen: this.stack.length, catchAddr: args[0] }); return;
+      case "ENTER_ENV": frame.env = { locals: new Array(args[0]).fill(null), parent: frame.env }; return;   // بداية دورة تُنشئ دوالّ: بيئة جديدة لمتغيراتها
+      case "EXIT_ENV": frame.env = frame.env.parent; return;
+      case "TRY_BEGIN": this.handlers.push({ frame, env: frame.env, depth: this.frames.length, stackLen: this.stack.length, catchAddr: args[0] }); return;
       case "TRY_END": this.handlers.pop(); return;
       case "RETHROW": {
         const v = this.pop();

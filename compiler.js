@@ -52,6 +52,39 @@ class FunctionScope {
   popScope() { this.scopes.pop(); }
 }
 
+// نطاق «بيئة الدورة»: حين تُنشئ حلقةٌ دوالَّ داخل جسمها تأخذ كل دورة بيئتها الخاصة،
+// فتلتقط الدوال قيم متغيراتها هي لا متغيرًا مشتركًا بين الدورات. لا يملك قطعة خاصة: يُصدر في قطعة الدالة المحيطة.
+class BlockScope {
+  constructor(parent) {
+    this.chunk = parent.chunk;
+    this.scopes = [new Map()];
+    this.nextSlot = 0;
+    this.isBlock = true;
+  }
+  declare(name) {
+    const slot = this.nextSlot++;
+    this.scopes[this.scopes.length - 1].set(name, slot);
+    return slot;
+  }
+  resolve(name) {
+    for (let i = this.scopes.length - 1; i >= 0; i--) {
+      if (this.scopes[i].has(name)) return this.scopes[i].get(name);
+    }
+    return -1;
+  }
+  pushScope() { this.scopes.push(new Map()); }
+  popScope() { this.scopes.pop(); }
+}
+
+// هل يحوي هذا الجزء من الشجرة تعريف دالة (دالة مسمّاة أو مجهولة أو صنف)؟
+function containsClosure(node) {
+  if (!node || typeof node !== "object") return false;
+  if (Array.isArray(node)) return node.some(containsClosure);
+  if (node.kind === "FuncDecl" || node.kind === "FuncExpr") return true;
+  for (const k in node) { if (k !== "kind" && containsClosure(node[k])) return true; }
+  return false;
+}
+
 class Compiler {
   constructor() {
     this.functionChunks = [];   // كل الدوال المصرَّفة (بما فيها البرنامج الرئيسي عند الفهرس 0)
@@ -100,8 +133,7 @@ class Compiler {
     if (this.isTopLevel) {
       this.chunk.emit("DEFINE_GLOBAL", node.name);
     } else {
-      const slot = this.current.declare(node.name);
-      this.chunk.emit("SET_LOCAL", slot);
+      this.emitStore(this.declRef(node.name));
       this.chunk.emit("POP");
     }
   }
@@ -125,16 +157,16 @@ class Compiler {
 
   stmt_FuncDecl(node) {
     // داخل دالة: نحجز خانة الاسم قبل تصريف الجسم ليستطيع الاستدعاء الذاتي رؤية الاسم
-    const slot = this.isTopLevel ? -1 : this.current.declare(node.name);
+    const ref = this.isTopLevel ? null : this.declRef(node.name);
     const chunkIndex = this.compileFunctionBody(node.name, node.params, node.body, node.isAsync);
     this.chunk.emit("BUILD_FUNCTION", chunkIndex);
     if (this.isTopLevel) this.chunk.emit("DEFINE_GLOBAL", node.name);
-    else { this.chunk.emit("SET_LOCAL", slot); this.chunk.emit("POP"); }
+    else { this.emitStore(ref); this.chunk.emit("POP"); }
   }
 
   expr_Await(node) {
     // مسموحة في دالة غير_متزامنة أو في المستوى الأعلى من الملف
-    if (!this.isTopLevel && !this.chunk.isAsync) throw new CompileError("انتظر لا تُكتب إلا داخل دالة غير_متزامنة أو في المستوى الأعلى من الملف");
+    if (this.stack.some((sc, i) => i > 0 && !sc.isBlock) && !this.chunk.isAsync) throw new CompileError("انتظر لا تُكتب إلا داخل دالة غير_متزامنة أو في المستوى الأعلى من الملف");
     this.compileExpr(node.expr);
     this.chunk.emit("AWAIT");
   }
@@ -196,7 +228,7 @@ class Compiler {
     if (!this.isTopLevel) this.current.pushScope();
     if (node.errName) {
       if (this.isTopLevel) this.chunk.emit("DEFINE_GLOBAL", node.errName);
-      else { const slot = this.current.declare(node.errName); this.chunk.emit("SET_LOCAL", slot); this.chunk.emit("POP"); }
+      else { this.emitStore(this.declRef(node.errName)); this.chunk.emit("POP"); }
     } else this.chunk.emit("POP");
     node.catchBlock.statements.forEach((s) => this.compileStmt(s));
     if (!this.isTopLevel) this.current.popScope();
@@ -220,10 +252,14 @@ class Compiler {
     this.compileExpr(node.cond);
     const jFalse = this.chunk.emit("JUMP_IF_FALSE", -1);
     this.chunk.emit("POP");
-    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally });
+    const env = containsClosure(node.body) ? this._beginIterEnv() : null;
+    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally, env: !!env });
     this.compileBlockScoped(node.body);
     const loop = this.loopStack.pop();
-    loop.continueAddrs.forEach((a) => this.chunk.patch(a, [loopStart]));
+    // «أكمل» تقفز إلى إغلاق بيئة الدورة (إن وُجدت) ثم إلى بداية الحلقة
+    const contTarget = this.chunk.here();
+    loop.continueAddrs.forEach((a) => this.chunk.patch(a, [env ? contTarget : loopStart]));
+    if (env) this._endIterEnv(env);
     this.chunk.emit("JUMP", loopStart);
     this.chunk.patch(jFalse, [this.chunk.here()]);
     this.chunk.emit("POP");
@@ -232,13 +268,11 @@ class Compiler {
 
   stmt_For(node) {
     // نفس دلالات النسخة القديمة تمامًا: نحسب اتجاه الخطوة مرة واحدة عند الدخول
-    const varSlotOrGlobal = this.isTopLevel
-      ? { global: node.varName }
-      : { local: this.current.declare(node.varName) };
+    const varSlotOrGlobal = this.declRef(node.varName);
     const endName = "@for_end_" + this.chunk.here();
     const stepName = "@for_step_" + this.chunk.here();
-    const endRef = this.isTopLevel ? { global: endName } : { local: this.current.declare(endName) };
-    const stepRef = this.isTopLevel ? { global: stepName } : { local: this.current.declare(stepName) };
+    const endRef = this.declRef(endName);
+    const stepRef = this.declRef(stepName);
 
     this.compileExpr(node.start);
     this.emitStore(varSlotOrGlobal);
@@ -261,11 +295,26 @@ class Compiler {
     const jFalse = this.chunk.emit("JUMP_IF_FALSE", -1);
     this.chunk.emit("POP");
 
-    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally });
+    // إن أنشأ الجسم دوالَّ: لكل دورة بيئتها، ونسخة خاصة من متغيّر الحلقة تُنسخ قيمتها عائدةً في نهاية الدورة
+    const env = containsClosure(node.body) ? this._beginIterEnv() : null;
+    let outerRef = null, innerRef = null;
+    if (env && !node.hidden) {
+      outerRef = this.lookup(node.varName) || { global: node.varName };
+      this.emitLoad(outerRef);
+      innerRef = { up: 0, slot: this.current.declare(node.varName) };
+      this.emitStore(innerRef);
+      this.chunk.emit("POP");
+    }
+    this.loopStack.push({ breakAddrs: [], continueAddrs: [], tryDepth: this.tryDepth, inFinally: this.inFinally, env: !!env });
     this.compileBlockScoped(node.body);
-    // زيادة المتغيّر بالخطوة قبل العودة إلى بداية الحلقة (هذا هو هدف "أكمل" الحقيقي)
-    const incrAddr = this.chunk.here();
     const loop = this.loopStack.pop();
+    const contAddr = this.chunk.here();
+    if (env) {
+      if (innerRef) { this.emitLoad(innerRef); this.emitStore(outerRef); this.chunk.emit("POP"); }
+      this._endIterEnv(env);
+    }
+    // زيادة المتغيّر بالخطوة قبل العودة إلى بداية الحلقة (هذا هو هدف "أكمل" الحقيقي)
+    const incrAddr = env ? contAddr : this.chunk.here();
     loop.continueAddrs.forEach((a) => this.chunk.patch(a, [incrAddr]));
     this.emitLoad(varSlotOrGlobal);
     this.emitLoad(stepRef);
@@ -289,7 +338,7 @@ class Compiler {
     const last = { kind: "BinOp", op: "MINUS", left: { kind: "Call", callee: { kind: "Identifier", name: "طول" }, args: [L] }, right: { kind: "Number", value: 1 } };
     const first = { kind: "VarDecl", name: node.varName, expr: { kind: "Index", obj: L, index: I } };
     this.stmt_For({ kind: "For", varName: "@forin_i_" + n, start: { kind: "Number", value: 0 }, end: last, step: null,
-      body: { kind: "Block", statements: [first].concat(node.body.statements) } });
+      hidden: true, body: { kind: "Block", statements: [first].concat(node.body.statements) } });
   }
 
   stmt_Return(node) {
@@ -309,6 +358,7 @@ class Compiler {
     const lp = this.loopStack[this.loopStack.length - 1];
     if (this.inFinally > lp.inFinally) throw new CompileError("لا يخرج توقف/أكمل من كتلة «أخيرًا» إلى حلقة خارجها");
     this._unwindFinally(lp.tryDepth);
+    if (lp.env) this.chunk.emit("EXIT_ENV");
     const addr = this.chunk.emit("JUMP", -1);
     lp.breakAddrs.push(addr);
   }
@@ -331,11 +381,30 @@ class Compiler {
   // ---------- مساعدات تحميل/تخزين متغيّر عام أو محلي ----------
   emitLoad(ref) {
     if (ref.global !== undefined) this.chunk.emit("GET_GLOBAL", ref.global);
+    else if (ref.up !== undefined) this.chunk.emit("GET_UP", ref.up, ref.slot);
     else this.chunk.emit("GET_LOCAL", ref.local);
   }
   emitStore(ref) {
     if (ref.global !== undefined) this.chunk.emit("SET_GLOBAL_NEW", ref.global);
+    else if (ref.up !== undefined) this.chunk.emit("SET_UP", ref.up, ref.slot);
     else this.chunk.emit("SET_LOCAL", ref.local);
+  }
+  // يحجز متغيرًا جديدًا في النطاق الحالي ويُرجع مرجعه: عامًّا في الرئيسي، وإلا خانة في الدالة أو في بيئة الدورة
+  declRef(name) {
+    if (this.isTopLevel) return { global: name };
+    const slot = this.current.declare(name);
+    return this.current.isBlock ? { up: 0, slot } : { local: slot };
+  }
+  // يفتح بيئة دورة جديدة؛ تُغلق بـ _endIterEnv
+  _beginIterEnv() {
+    const scope = new BlockScope(this.current);
+    this.stack.push(scope);
+    return { scope, addr: this.chunk.emit("ENTER_ENV", -1) };
+  }
+  _endIterEnv(b) {
+    this.chunk.emit("EXIT_ENV");
+    this.stack.pop();
+    this.chunk.patch(b.addr, [b.scope.nextSlot]);
   }
 
   // ---------- التعابير ----------
@@ -360,35 +429,31 @@ class Compiler {
     this.chunk.emit("MAKE_MAP", node.entries.length);
   }
 
-  // يبحث عن الاسم في الدوال المحيطة (غير الرئيسي): يُرجع {up, slot} أو null
-  resolveUp(name) {
-    for (let d = 1; d < this.stack.length - 1; d++) {
-      const sc = this.stack[this.stack.length - 1 - d];
+  // يبحث عن الاسم من النطاق الحالي إلى الخارج (دون الرئيسي: أسماؤه عامّة).
+  // يُرجع {local} لمتغير الدالة الحالية، أو {up, slot} لما يلزم عبور بيئات إليه، أو null
+  lookup(name) {
+    let d = 0, crossed = false;
+    for (let i = this.stack.length - 1; i >= 1; i--) {
+      const sc = this.stack[i];
       const slot = sc.resolve(name);
-      if (slot !== -1) return { up: d, slot };
+      if (slot !== -1) return (!sc.isBlock && !crossed) ? { local: slot } : { up: d, slot };
+      if (!sc.isBlock) crossed = true;
+      d++;
     }
     return null;
   }
 
   expr_Identifier(node) {
-    if (!this.isTopLevel) {
-      const slot = this.current.resolve(node.name);
-      if (slot !== -1) { this.chunk.emit("GET_LOCAL", slot); return; }
-      const up = this.resolveUp(node.name);
-      if (up) { this.chunk.emit("GET_UP", up.up, up.slot); return; }
-    }
+    const r = this.lookup(node.name);
+    if (r) { if (r.local !== undefined) this.chunk.emit("GET_LOCAL", r.local); else this.chunk.emit("GET_UP", r.up, r.slot); return; }
     this.chunk.emit("GET_GLOBAL", node.name);
   }
 
   expr_Assign(node) {
     if (node.target.kind === "Identifier") {
       this.compileExpr(node.expr);
-      if (!this.isTopLevel) {
-        const slot = this.current.resolve(node.target.name);
-        if (slot !== -1) { this.chunk.emit("SET_LOCAL", slot); return; }
-        const up = this.resolveUp(node.target.name);
-        if (up) { this.chunk.emit("SET_UP", up.up, up.slot); return; }
-      }
+      const r = this.lookup(node.target.name);
+      if (r) { if (r.local !== undefined) this.chunk.emit("SET_LOCAL", r.local); else this.chunk.emit("SET_UP", r.up, r.slot); return; }
       this.chunk.emit("SET_GLOBAL", node.target.name);
     } else if (node.target.kind === "Index") {
       this.compileExpr(node.expr);
