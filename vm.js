@@ -3231,6 +3231,8 @@ class VM {
     this.steps = 0;
     this.domRoot = opts.domRoot || null;
     this.assistant = opts.assistant || null; this.onConfirm = opts.onConfirm || null;
+    this.frontend = opts.frontend || null;            // (نص) => {mainChunkIndex, functionChunks, exportNames}: واجهة أمامية بديلة (الإقلاع الذاتي)
+    this.precompiled = opts.precompiled || null;      // Map: مفتاح الوحدة => بايتكود جاهز (يتجاوز الترجمة)
     this.readModule = opts.readModule || null;        // (مسار) => نص الملف أو null
     this.fsHost = opts.fs || null;                     // صلاحية الملفات: يمنحها المضيف لمجلد واحد (MemoryFS أو نظام ملفات حقيقي مقيَّد). بلا صلاحية = لا ملفات
     this.mainPath = opts.mainPath || "main.dhad";
@@ -3989,9 +3991,8 @@ class VM {
       if (typeof code !== "string") throw new VMRuntimeError("نفّذ() تحتاج نصًا يمثّل كود ضاد");
       const output = [];
       try {
-        const program = parse(code);
-        const { mainChunkIndex, functionChunks } = compile(program);
-        const subVm = new VM({ maxSteps: 200000, onPrint: (l) => output.push(l), onSaveFile: () => { throw new VMRuntimeError("الحفظ غير متاح داخل نفّذ()"); } });
+        const { mainChunkIndex, functionChunks } = this._compileSource(code);
+        const subVm = new VM({ frontend: this.frontend, maxSteps: 200000, onPrint: (l) => output.push(l), onSaveFile: () => { throw new VMRuntimeError("الحفظ غير متاح داخل نفّذ()"); } });
         subVm.run(mainChunkIndex, functionChunks);
       } catch (e) {
         output.push("خطأ: " + e.message);
@@ -4034,6 +4035,11 @@ class VM {
     return this._loadModule(key, src);
   }
 
+  _compileSource(src) {
+    if (this.frontend) return this.frontend(src);
+    return compile(parse(src));
+  }
+
   _loadModule(key, src) {
     const entry = { loading: true, exports: null };
     this.modules.set(key, entry);
@@ -4043,8 +4049,11 @@ class VM {
     this.syncDepth++;
     try {
       let compiled;
-      try { compiled = compile(parse(src)); }
-      catch (e) { throw new VMRuntimeError(`في الملف ${key}: ${e.message}`); }
+      try {
+        const pre = this.precompiled && this.precompiled.get(key);
+        if (pre) compiled = { mainChunkIndex: pre.mainChunkIndex, exportNames: pre.exportNames, functionChunks: pre.functionChunks.map((c) => ({ ...c })) };
+        else compiled = this._compileSource(src);
+      } catch (e) { throw new VMRuntimeError(`في الملف ${key}: ${e.message}`); }
       const G = new Map(this.builtins);
       for (const ch of compiled.functionChunks) { ch.globals = G; ch.file = key; ch.fchunks = compiled.functionChunks; }
       this.frames = []; this.stack = []; this.handlers = [];

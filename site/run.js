@@ -5,13 +5,15 @@ const src = ['front.js', 'compiler.js', 'vm.js'].map(f => fs.readFileSync(path.j
 const ctx = nodevm.createContext({ console, performance, setTimeout });
 nodevm.runInContext(src + '\n;this.__api={parse,compile,VM,MemoryFS,KEYWORDS,tokenize};', ctx);
 const api = ctx.__api;
+// DHAD_SELFHOST=1: الواجهة الأمامية المكتوبة بضاد (selfhost/) بدل front.js/compiler.js، لإثبات الإقلاع الذاتي بكل الاختبارات
+const FE = process.env.DHAD_SELFHOST ? require('../selfhost/boot.js').makeFrontend(api) : null;
 function run(code, opts = {}) {
   const out = [];
   try {
-    const c = api.compile(api.parse(code));
+    const c = FE ? FE(code) : api.compile(api.parse(code));
     const files = opts.files || null;
     const o = { ...opts }; delete o.files;
-    const vm = new api.VM({ maxSteps: 150000000, onPrint: l => out.push(l), onSaveFile: () => {}, onInput: () => 'ضاد', ...(files ? { readModule: p => (Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null) } : {}), ...o });
+    const vm = new api.VM({ ...(FE ? { frontend: FE } : {}), maxSteps: 150000000, onPrint: l => out.push(l), onSaveFile: () => {}, onInput: () => 'ضاد', ...(files ? { readModule: p => (Object.prototype.hasOwnProperty.call(files, p) ? files[p] : null) } : {}), ...o });
     vm.run(c.mainChunkIndex, c.functionChunks);
     return { ok: true, out, steps: vm.steps };
   } catch (e) { return { ok: false, out, error: e.message }; }
