@@ -8,7 +8,10 @@ const HELP = `ضاد — تشغيل الملفات خارج المتصفح
 الاستعمال:
   node dhad.js ملف.dhad        تشغيل ملف
   node dhad.js -e "اطبع(١)"    تشغيل شيفرة مكتوبة مباشرة
+  node dhad.js --js ملف.dhad   الواجهة الأمامية القديمة بجافاسكربت بدل المكتوبة بضاد (للمقارنة)
   node dhad.js --help          هذه الرسالة
+
+الواجهة الأمامية (المرمِّز والمحلل والمترجم) مكتوبة بضاد وتعمل من بايتكودها الجاهز (selfhost/bytecode.json).
 
 الملفات: برنامجك لا يصل إلى القرص ما لم تمنحه مجلدًا واحدًا صراحة:
   node dhad.js --ملفات=مجلد ملف.dhad    (أو --fs=مجلد)
@@ -19,7 +22,7 @@ const HELP = `ضاد — تشغيل الملفات خارج المتصفح
 function loadEngine() {
   const src = ["front.js", "compiler.js", "vm.js"].map((f) => fs.readFileSync(path.join(__dirname, f), "utf8")).join("\n;\n");
   const ctx = nodevm.createContext({ console, performance, setTimeout });
-  nodevm.runInContext(src + "\n;this.__api={parse,compile,VM,MemoryFS};", ctx);
+  nodevm.runInContext(src + "\n;this.__api={parse,compile,VM,MemoryFS,srcHash};", ctx);
   return ctx.__api;
 }
 
@@ -38,8 +41,9 @@ function readLine() {
 
 function main(argv) {
   // خيار صلاحية الملفات: --ملفات=مجلد أو --fs=مجلد (يُنتزع من الوسائط قبل بقية المعالجة)
-  let fsRoot = null;
+  let fsRoot = null, useJs = false;
   argv = argv.filter((a) => {
+    if (a === "--js") { useJs = true; return false; }
     const m = /^--(?:ملفات|fs)=(.*)$/.exec(a);
     if (m) { fsRoot = m[1]; return false; }
     return true;
@@ -56,13 +60,20 @@ function main(argv) {
   }
   const api = loadEngine();
   try {
-    const c = api.compile(api.parse(code));
+    // الافتراضي: واجهة ضاد الأمامية من بايتكودها المخزَّن؛ إن لم يصلح الملف أو طُلب --js فالواجهة القديمة
+    let FE = null;
+    if (!useJs) {
+      try { const f = require("./selfhost/boot.js").makeFrontend({ VM: api.VM, srcHash: api.srcHash }); FE = f; }
+      catch (e) { FE = null; }
+    }
+    const c = FE ? FE(code) : api.compile(api.parse(code));
     let fsHost = null;
     if (fsRoot !== null) {
       try { fsHost = new (require("./fs_node.js").NodeFS)(fsRoot); }
       catch (e) { console.error("تعذّر فتح مجلد الملفات: " + fsRoot); return 1; }
     }
     const vm = new api.VM({
+      ...(FE ? { frontend: FE, precompiled: FE.precompiled } : {}),
       fs: fsHost,
       onPrint: (l) => console.log(l),
       onSaveFile: (name, text) => fs.writeFileSync(path.basename(String(name)), String(text)),
