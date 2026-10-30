@@ -15,6 +15,7 @@ const check = process.argv.includes('--check');
 const sources = {};
 for (const n of MODS) sources[n + '.dhad'] = fs.readFileSync(path.join(root, 'selfhost', n + '.dhad'), 'utf8');
 sources['@boot'] = BOOT_SRC;
+sources['آلة.dhad'] = fs.readFileSync(path.join(root, 'selfhost', 'آلة.dhad'), 'utf8');
 for (const k of Object.keys(api.STDLIB_SOURCES).sort()) sources[k] = api.STDLIB_SOURCES[k];
 
 function canon(v) { return JSON.parse(JSON.stringify(v)); }
