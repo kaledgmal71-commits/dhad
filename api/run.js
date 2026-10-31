@@ -2,6 +2,7 @@
 // المحرك نفسه الذي يعمل في المتصفح: يُجلب من الموقع (assets/engine.api.js) ويُشغَّل في سياق node:vm منعزل بحدّ خطوات وزمن.
 // لا ملفات حقيقية ولا شبكة للشيفرة المنفَّذة؛ الملفات المرسلة تُقرأ من الذاكرة فقط.
 const nodevm = require("vm");
+const ORIGIN = process.env.DHAD_ORIGIN || "https://dhad-lang-beta.vercel.app";
 const MAX_CODE = 20000, MAX_OUT = 64000, MAX_FILES = 20;
 let apiPromise = null, benchPromise = null;
 const hits = new Map(); // تقييد بسيط لكل نسخة تشغيل: ٣٠ طلبًا في الدقيقة لكل عنوان
@@ -69,7 +70,7 @@ module.exports = async (req, res) => {
     if (typeof body.files !== "object" || Array.isArray(body.files) || Object.keys(body.files).length > MAX_FILES || !Object.values(body.files).every(v => typeof v === "string" && v.length <= MAX_CODE)) return res.status(400).json({ ok: false, error: "files: كائن (اسم ← نص) بحد أقصى " + MAX_FILES + " ملفًا." });
     files = Object.assign(Object.create(null), body.files);
   }
-  const origin = "https://" + (req.headers["x-forwarded-host"] || req.headers.host);
+  const origin = ORIGIN; // ثابت عمدًا: لا نثق بترويسة Host فلا يمكن توجيه الجلب إلى موقع آخر
   try {
     const api = await loadApi(origin); const action = body.action || "run";
     if (action === "run") { const r = execute(api, body.code, files); return res.status(200).json({ ok: r.ok, output: r.out, ...(r.ok ? { steps: r.steps } : { error: r.error }) }); }
