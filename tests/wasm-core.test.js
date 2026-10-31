@@ -9,6 +9,7 @@ const host = new api.VM({ maxSteps: 1e15, maxMs: 1e12, onPrint: () => {}, readMo
 const boot = api.compile(api.parse('استورد("وازم")'));
 host.run(boot.mainChunkIndex, boot.functionChunks);
 const compileWasm = host.modules.get('وازم.dhad').exports.get('صرّف_نواة');
+const compileWithLib = host.modules.get('وازم.dhad').exports.get('صرّف_نواة_مع');
 
 async function build(src) {
   const bytes = Uint8Array.from(host.callFunctionExternally(compileWasm, [src]));
@@ -86,6 +87,54 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
     ارجع ١
 }`);
   check('مخصِّص', m.ex.اختبر(), 1);
+  // ---- مكتبة التشغيل (selfhost/نواة-تشغيل.dhad): نصوص وقوائم وخرائط فوق المخصِّص ----
+  const lib = fs.readFileSync(path.join(dir, 'نواة-تشغيل.dhad'), 'utf8');
+  const buildLib = async src => { const bytes = Uint8Array.from(host.callFunctionExternally(compileWithLib, [lib, src])); const printed = []; const { instance } = await WebAssembly.instantiate(bytes, { 'بيئة': { 'اطبع_رقم': n => printed.push(n) } }); return { ex: instance.exports, printed }; };
+  const libSrc = `صدّر دالة قوائم(ن) { متغير ق = قائمة_جديدة()
+    من_أجل (ي من ١ إلى ن) { قائمة_أضف(ق، ي * ٣) }
+    متغير م = ٠
+    من_أجل (ي من ٠ إلى قائمة_طول(ق) - ١) { م = م + قائمة_احصل(ق، ي) }
+    ارجع م + قائمة_انزع(ق) }
+صدّر دالة نصوص() { متغير أ = نص_من_عدد(-١٢٣٤)
+    متغير ب = نص_دمج(أ، نص_من_عدد(٠))
+    اطبع_رقم(نص_طول(ب))
+    اطبع_رقم(نص_بايت(ب، ٠))
+    اطبع_رقم(نص_يساوي(ب، نص_دمج(نص_من_عدد(-١٢٣٤)، نص_من_عدد(٠))))
+    اطبع_رقم(نص_يساوي(أ، ب))
+    ارجع نص_تجزئة(أ) }
+صدّر دالة عشري(ع) { متغير ن = نص_من_عدد(ع)
+    متغير ر = ٠
+    من_أجل (ي من ٠ إلى نص_طول(ن) - 1) { ر = ر * ٣١ + نص_بايت(ن، ي) }
+    ارجع ر }
+صدّر دالة خرائط_عددية(ن) { متغير م = خريطة_جديدة(٠)
+    من_أجل (ي من ١ إلى ن) { خريطة_ضع(م، ي * ١٧، ي) }
+    من_أجل (ي من ١ إلى ن) { إذا (ي % ٣ == ٠) { خريطة_احذف(م، ي * ١٧) } }
+    من_أجل (ي من ١ إلى ن) { خريطة_ضع(م، ي * ١٧ + ١، -ي) }
+    متغير مجموع = خريطة_عدد(م)
+    من_أجل (ي من ١ إلى ن) { مجموع = مجموع + خريطة_احصل(م، ي * ١٧، ٠) + خريطة_احصل(م، ي * ١٧ + ١، ٠) + خريطة_يحوي(م، ي * ١٧ + ٢) }
+    ارجع مجموع }
+صدّر دالة خرائط_نصية(ن) { متغير م = خريطة_جديدة(١)
+    من_أجل (ي من ١ إلى ن) { خريطة_ضع(م، نص_من_عدد(ي)، ي * ٢) }
+    متغير مجموع = ٠
+    من_أجل (ي من ١ إلى ن) { مجموع = مجموع + خريطة_احصل(م، نص_من_عدد(ي)، -١) }
+    ارجع مجموع + خريطة_عدد(م) * ١٠٠٠٠٠٠ + خريطة_احصل(م، نص_من_عدد(ن + ١)، ٧) }
+صدّر دالة ضغط() { متغير مجموع = ٠
+    من_أجل (ي من ١ إلى ٢٠٠٠) { متغير ق = قائمة_جديدة()
+        من_أجل (ك من ١ إلى ١٠٠) { قائمة_أضف(ق، ك) }
+        مجموع = مجموع + قائمة_احصل(ق، ٩٩)
+        حرّر(حمّل(ق + ٨))
+        حرّر(ق) }
+    ارجع حجم_ذاكرة() }`;
+  m = await buildLib(libSrc);
+  check('قوائم', m.ex.قوائم(10000), (() => { let s = 0; for (let i = 1; i <= 10000; i++) s += i * 3; return s + 30000; })());
+  { const r = m.ex.نصوص(); const fnv = s => { let h = 2166136261 | 0; for (const c of Buffer.from(s)) { h = Math.imul(h ^ c, 16777619); } return h; };
+    check('نصوص', [m.printed, r], [[6, 45, 1, 0], fnv('-1234')]); }
+  { const j = n => { const s = String(n); let r = 0; for (const c of Buffer.from(s)) r = (Math.imul(r, 31) + c) | 0; return r; };
+    check('نص من عدد', [0, 7, -7, 2147483647, -2147483648, 100, 1000000].map(m.ex.عشري), [0, 7, -7, 2147483647, -2147483648, 100, 1000000].map(j)); }
+  { const N = 3000; let cnt = 0, tot = 0; const mp = new Map(); for (let i = 1; i <= N; i++) mp.set(i * 17, i); for (let i = 1; i <= N; i++) if (i % 3 === 0) mp.delete(i * 17); for (let i = 1; i <= N; i++) mp.set(i * 17 + 1, -i); tot = mp.size; for (let i = 1; i <= N; i++) { tot += (mp.get(i * 17) ?? 0) + (mp.get(i * 17 + 1) ?? 0) + (mp.has(i * 17 + 2) ? 1 : 0); }
+    check('خرائط عددية (نمو وحذف)', m.ex.خرائط_عددية(N), tot); }
+  { const N = 2000; check('خرائط نصية', m.ex.خرائط_نصية(N), (N * (N + 1)) + N * 1000000 + 7); }
+  { const m2 = await buildLib(libSrc); const pages = m2.ex.ضغط(); check('إعادة استعمال الذاكرة (لا تسرّب)', pages <= 2, true); }
   // خطأ مصدر
   let err = ''; try { host.callFunctionExternally(compileWasm, ['دالة ف() { ارجع س }']); } catch (e) { err = e.message; }
   check('خطأ متغير غير معرّف', /غير معرّف/.test(err), true);
