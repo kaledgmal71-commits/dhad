@@ -215,6 +215,31 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
   check('f64: قسمة وأرضية وقصّ وهل_صحيح', [m.ex.حسابات(7, 2), m.ex.حسابات(-7, 2), m.ex.حسابات(8, 2)], [[7, 2], [-7, 2], [8, 2]].map(([a, b]) => Math.floor(a / b) * 1000 + Math.trunc(-(a / b)) * 10 + (Number.isInteger(a / b) ? 1 : 0)));
   check('f64: جذر وضرب ومقارنة', [m.ex.جذر(144), m.ex.جذر(2)], [Math.trunc(Math.sqrt(144) * Math.sqrt(144)) + 10000, Math.trunc(Math.sqrt(2) * Math.sqrt(2)) + 10000]);
   check('f64: NaN لا يساوي نفسه ويخالفها', m.ex.نان(), (NaN === NaN ? 10 : 0) + (NaN !== NaN ? 1 : 0));
+  // ---- أعداد: باقي القسمة والتحويل إلى نص ----
+  const numLib = fs.readFileSync(path.join(dir, 'نواة-أعداد.dhad'), 'utf8');
+  const buildNum = async src => { const bytes = Uint8Array.from(host.callFunctionExternally(compileWithLib, [lib + '\n' + numLib, src])); const { instance } = await WebAssembly.instantiate(bytes, { 'بيئة': { 'اطبع_رقم': () => {} } }); return instance.exports; };
+  const nx = await buildNum(`صدّر دالة نص_عدد(منخفض، مرتفع) { ف٦٤_ثابت(١٢٨، مرتفع، منخفض)\n ارجع عدد_إلى_نص(١٢٨) }
+صدّر دالة باقي(ملأ، مرتأ، ملب، مرتب) { ف٦٤_ثابت(١٣٦، مرتأ، ملأ)\n ف٦٤_ثابت(١٤٤، مرتب، ملب)\n ف٦٤_باقي(١٥٢، ١٣٦، ١٤٤)\n ارجع حمّل(١٥٢) }
+صدّر دالة باقي_عالٍ() { ارجع حمّل(١٥٦) }`);
+  const dv = new DataView(new ArrayBuffer(8));
+  const parts = x => { dv.setFloat64(0, x, true); return [dv.getInt32(0, true), dv.getInt32(4, true)]; };
+  const readStr = p => { const mem = new Uint8Array(nx.ذاكرة.buffer); const n = new Int32Array(nx.ذاكرة.buffer)[p / 4]; return Buffer.from(mem.slice(p + 4, p + 4 + n)).toString(); };
+  const str = x => readStr(nx.نص_عدد(...parts(x)));
+  const sample = [0, 1, -1, 0.1, 0.2, 0.3, 0.1 + 0.2, 1 / 3, 2 / 3, 123.456, -123.456, 1e21, 1e-7, 123456789012345680000, 1e300, 5e-324, 1.7976931348623157e308, 2 ** 53, 2 ** 52, 2 ** 60, 0.000001, 0.0000001, 100, 1234567.891, NaN, Infinity, -Infinity, 4.35, 0.5, 2.5, 1e22, 9007199254740993, 4.9e-324, 2.2250738585072014e-308, 1.2345678901234567e-5, 15, 1e15, 1e16, 1e20, 123e-20];
+  let bad = [];
+  for (const x of sample) { const got = str(x), want = String(x); if (got !== want) bad.push([x, got, want]); }
+  check('عدد→نص: عيّنات حدّية', bad.slice(0, 5), []);
+  { let s = 1234567, rnd = () => (s = (Math.imul(s, 1103515245) + 12345) >>> 0) / 4294967296; const badr = []; const bits = new DataView(new ArrayBuffer(8));
+    for (let i = 0; i < 1500; i++) { bits.setUint32(0, Math.floor(rnd() * 4294967296)); bits.setUint32(4, Math.floor(rnd() * 4294967296)); const x = bits.getFloat64(0); if (!Number.isFinite(x)) continue; const got = str(x), want = String(x); if (got !== want) badr.push([x, got, want]); }
+    for (let i = 0; i < 1500; i++) { const x = (rnd() - 0.5) * Math.pow(10, Math.floor(rnd() * 30 - 12)); const got = str(x), want = String(x); if (got !== want) badr.push([x, got, want]); }
+    check('عدد→نص: ٣٠٠٠ عدد عشوائي مقابل String', badr.slice(0, 5), []); }
+  {
+    const rem = (a, b) => { const [al, ah] = parts(a), [bl, bh] = parts(b); const lo = nx.باقي(al, ah, bl, bh), hi = nx.باقي_عالٍ(); dv.setInt32(0, lo, true); dv.setInt32(4, hi, true); return dv.getFloat64(0, true); };
+    const pairs = [[7, 2], [-7, 2], [7, -2], [5.5, 2], [0.3, 0.1], [1e300, 3], [1e-300, 7e-5], [10, 0], [NaN, 2], [Infinity, 2], [5, Infinity], [-0, 5], [0, 5], [2 ** 60 + 12345, 10], [123456.789, 0.001], [1, 1e-300], [5e-324, 3], [-9.5, 4]];
+    let s = 99, rnd = () => (s = (Math.imul(s, 1103515245) + 12345) >>> 0) / 4294967296;
+    for (let i = 0; i < 800; i++) pairs.push([(rnd() - 0.5) * Math.pow(10, Math.floor(rnd() * 40 - 15)), (rnd() - 0.5) * Math.pow(10, Math.floor(rnd() * 30 - 12))]);
+    const badm = []; for (const [a, b] of pairs) { const g = rem(a, b), w = a % b; if (!(Object.is(g, w) || (Number.isNaN(g) && Number.isNaN(w)))) badm.push([a, b, g, w]); }
+    check('f64: باقي القسمة مطابق لـ % في JS (٨١٨ زوجًا)', badm.slice(0, 5), []); }
   // خطأ مصدر
   let err = ''; try { host.callFunctionExternally(compileWasm, ['دالة ف() { ارجع س }']); } catch (e) { err = e.message; }
   check('خطأ متغير غير معرّف', /غير معرّف/.test(err), true);
