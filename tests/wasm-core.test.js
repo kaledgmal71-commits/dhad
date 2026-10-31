@@ -220,7 +220,11 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
   const buildNum = async src => { const bytes = Uint8Array.from(host.callFunctionExternally(compileWithLib, [lib + '\n' + numLib, src])); const { instance } = await WebAssembly.instantiate(bytes, { 'بيئة': { 'اطبع_رقم': () => {} } }); return instance.exports; };
   const nx = await buildNum(`صدّر دالة نص_عدد(منخفض، مرتفع) { ف٦٤_ثابت(١٢٨، مرتفع، منخفض)\n ارجع عدد_إلى_نص(١٢٨) }
 صدّر دالة باقي(ملأ، مرتأ، ملب، مرتب) { ف٦٤_ثابت(١٣٦، مرتأ، ملأ)\n ف٦٤_ثابت(١٤٤، مرتب، ملب)\n ف٦٤_باقي(١٥٢، ١٣٦، ١٤٤)\n ارجع حمّل(١٥٢) }
-صدّر دالة باقي_عالٍ() { ارجع حمّل(١٥٦) }`);
+صدّر دالة باقي_عالٍ() { ارجع حمّل(١٥٦) }
+صدّر دالة حلّل(نص) { ارجع نص_إلى_عدد(نص، ١٦٠) }
+صدّر دالة منخفض() { ارجع حمّل(١٦٠) }
+صدّر دالة مرتفع() { ارجع حمّل(١٦٤) }
+صدّر دالة أنشئ_نصًا(ن) { ارجع نص_جديد(ن) }`);
   const dv = new DataView(new ArrayBuffer(8));
   const parts = x => { dv.setFloat64(0, x, true); return [dv.getInt32(0, true), dv.getInt32(4, true)]; };
   const readStr = p => { const mem = new Uint8Array(nx.ذاكرة.buffer); const n = new Int32Array(nx.ذاكرة.buffer)[p / 4]; return Buffer.from(mem.slice(p + 4, p + 4 + n)).toString(); };
@@ -240,6 +244,16 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
     for (let i = 0; i < 800; i++) pairs.push([(rnd() - 0.5) * Math.pow(10, Math.floor(rnd() * 40 - 15)), (rnd() - 0.5) * Math.pow(10, Math.floor(rnd() * 30 - 12))]);
     const badm = []; for (const [a, b] of pairs) { const g = rem(a, b), w = a % b; if (!(Object.is(g, w) || (Number.isNaN(g) && Number.isNaN(w)))) badm.push([a, b, g, w]); }
     check('f64: باقي القسمة مطابق لـ % في JS (٨١٨ زوجًا)', badm.slice(0, 5), []); }
+  { const parse = s => { const b = Buffer.from(s); const p = nx.أنشئ_نصًا(b.length); new Uint8Array(nx.ذاكرة.buffer).set(b, p + 4); const ok = nx.حلّل(p); if (!ok) return 'فشل'; dv.setInt32(0, nx.منخفض(), true); dv.setInt32(4, nx.مرتفع(), true); return dv.getFloat64(0, true); };
+    const same = (a, b) => (typeof a === 'number' && (Object.is(a, b) || (Number.isNaN(a) && Number.isNaN(b))));
+    const strs = ['0', '-0', '1', '0.1', '0.2', '0.30000000000000004', '123.456', '1e21', '1e22', '1e23', '5e-324', '2.4703282292062327e-324', '2.4703282292062328e-324', '1e-400', '1e400', '1.7976931348623157e308', '1.7976931348623159e308', '9007199254740993', '9007199254740992', '9007199254740995', '4.35', '0.000001', '1234567890123456789012345678901234567890', '.5', '5.', '1E5', '-1.5e-7', 'Infinity', '-Infinity', '2.2250738585072011e-308', '2.2250738585072014e-308', '0.0000000000000000000000000000000000001', '00012.5000', '1e+5', '123456789012345678901234567890e-10'];
+    const badp = []; for (const x of strs) { const g = parse(x), w = Number(x); if (!same(g, w)) badp.push([x, g, w]); }
+    check('نص→عدد: عيّنات حدّية', badp.slice(0, 5), []);
+    let s = 4242, rnd = () => (s = (Math.imul(s, 1103515245) + 12345) >>> 0) / 4294967296; const badr = []; const bits = new DataView(new ArrayBuffer(8));
+    for (let i = 0; i < 1500; i++) { bits.setUint32(0, Math.floor(rnd() * 4294967296)); bits.setUint32(4, Math.floor(rnd() * 4294967296)); const x = bits.getFloat64(0); if (!Number.isFinite(x)) continue; const sx = String(x); const g = parse(sx); if (!same(g, x)) badr.push([sx, g, x]); }
+    for (let i = 0; i < 1500; i++) { let d = ''; const nd = 1 + Math.floor(rnd() * 25); for (let k = 0; k < nd; k++) d += Math.floor(rnd() * 10); const sx = d + (rnd() < 0.5 ? '.' + Math.floor(rnd() * 1e9) : '') + 'e' + Math.floor(rnd() * 700 - 350); const g = parse(sx), w = Number(sx); if (!same(g, w)) badr.push([sx, g, w]); }
+    check('نص→عدد: ٣٠٠٠ نص عشوائي مقابل Number (إرجاع دائري وأسس واسعة)', badr.slice(0, 5), []);
+    check('نص→عدد: نصوص غير صالحة تفشل', ['', 'abc', '1e', '1.2.3', '--1', 'e5'].map(parse), ['فشل', 'فشل', 'فشل', 'فشل', 'فشل', 'فشل']); }
   // خطأ مصدر
   let err = ''; try { host.callFunctionExternally(compileWasm, ['دالة ف() { ارجع س }']); } catch (e) { err = e.message; }
   check('خطأ متغير غير معرّف', /غير معرّف/.test(err), true);
