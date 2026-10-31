@@ -15,7 +15,7 @@ const analyze = host.modules.get('محلل.dhad').exports.get('حلّل');
 const lower = host.modules.get('مترجم.dhad').exports.get('صرّف');
 const exec = host.modules.get('آلة.dhad').exports.get('شغّل');
 
-function norm(m) { return String(m).replace(/^(آلة\.dhad، )?السطر (\d+): /, 'السطر $2: ').replace(/^آلة\.dhad، السطر \d+: /, ''); }
+function norm(m) { return String(m).replace(/^(محلل|مترجم|مرمز)\.dhad، السطر \d+: /, '').replace(/^(آلة\.dhad، )?السطر (\d+): /, 'السطر $2: ').replace(/^آلة\.dhad، السطر \d+: /, ''); }
 function viaKernel(code) {
   const out = [];
   const guest = new api.VM({ maxSteps: 1e15, onPrint: l => out.push(l), onInput: () => 'ضاد' });
