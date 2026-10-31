@@ -71,6 +71,8 @@ function emit(url, opt) { urls.push(url); write(url.replace(/^\//, '') + 'index.
 {
   const src = ['front.js', 'compiler.js', 'vm.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n;\n');
   write('assets/engine.js', `(function(){var module=undefined;\n${src}\n;window.DhadRunApp=function(code,root,outEl,errEl){try{var c=compile(parse(code));var vm=new VM({maxSteps:150000000,domRoot:root,onPrint:function(l){outEl.textContent+=(outEl.textContent?"\\n":"")+l},onSaveFile:function(p,content){if(/\.html?$/i.test(p)){document.open();document.write(content);document.close()}}});vm.run(c.mainChunkIndex,c.functionChunks)}catch(e){errEl.textContent="✗ "+e.message}};window.DhadRun=function(code){var out=[];try{var c=compile(parse(code));var vm=new VM({maxSteps:150000000,onPrint:function(l){out.push(l)},onSaveFile:function(){}});vm.run(c.mainChunkIndex,c.functionChunks);return{ok:true,out:out}}catch(e){return{ok:false,out:out,error:e.message}}};})();`);
+  // نسخة المحرك لخادم الوكلاء (api/run.js): نفس الشيفرة في سياق منعزل، تُجلب وقت التشغيل من الموقع نفسه فلا تتقادم
+  write('assets/engine.api.js', src + '\n;this.__api={parse,compile,VM,MemoryFS,KEYWORDS,tokenize,STDLIB_SOURCES};');
   fs.copyFileSync(path.join(__dirname, 'assets/site.css'), path.join(DIST, 'assets/site.css'));
   fs.copyFileSync(path.join(__dirname, 'assets/site.js'), path.join(DIST, 'assets/site.js'));
 }
