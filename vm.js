@@ -3686,6 +3686,7 @@ class VM {
     });
     g.set("أضف", (lst, val) => { if (lst instanceof Set) { setElem("أضف", val); lst.add(val); return lst; } if (!Array.isArray(lst)) throw new VMRuntimeError("أضف() تحتاج قائمة أو مجموعة"); lst.push(val); return lst; });
     g.set("نص", (x) => toDisplay(x));
+    g.set("@قالب", (x) => toDisplay(x)); // داخلي: يُولَّد من القوالب النصية قالب"…{تعبير}…"
     // رمز(حرف) ترجع رقم الحرف في يونيكود، وحرف(رقم) ترجع الحرف من رقمه: هما أساس مكتبة النصوص المكتوبة بضاد
     g.set("رمز", (c) => { if (typeof c !== "string" || c.length === 0) throw new VMRuntimeError("رمز() تحتاج نصًا فيه حرف واحد على الأقل"); return c.codePointAt(0); });
     g.set("حرف", (n) => { if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 0x10FFFF) throw new VMRuntimeError("حرف() تحتاج رقمًا صحيحًا بين ٠ و ١١١٤١١١"); return String.fromCodePoint(n); });

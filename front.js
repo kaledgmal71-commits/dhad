@@ -52,6 +52,74 @@ function tokenize(src) {
   let i = 0, line = 1;
   const n = src.length;
 
+  function readString(template) {
+      const quote = src[i];
+      i++;
+      let buf = "";
+      const pieces = []; // للقالب: نص أو {expr: رموز}
+      while (i < n && src[i] !== quote) {
+        if (template && src[i] === "{") { // تعبير داخل قالب: يُرمَّز بشكل متداخل
+          let j = i + 1, depth = 1;
+          while (j < n && depth > 0) {
+            const c = src[j];
+            if (c === '"' || c === "'") { j++; while (j < n && src[j] !== c) { if (src[j] === "\\") j++; j++; } }
+            else if (c === "{") depth++;
+            else if (c === "}") depth--;
+            j++;
+          }
+          if (depth > 0) throw new LexError(`السطر ${line}: تعبير القالب غير مغلق (نسيت })`);
+          const exprSrc = src.slice(i + 1, j - 1);
+          if (exprSrc.trim() === "") throw new LexError(`السطر ${line}: تعبير فارغ داخل القالب {}`);
+          let inner;
+          try { inner = tokenize(exprSrc); } catch (e) { if (e instanceof LexError) throw new LexError(`السطر ${line}: في تعبير القالب: ${e.message}`); throw e; }
+          inner.pop(); // EOF
+          if (buf !== "") pieces.push(buf);
+          buf = "";
+          pieces.push({ expr: inner.map(t => ({ ...t, line })) });
+          i = j;
+          continue;
+        }
+        if (src[i] === "\\" && i + 1 < n) {
+          const nxt = src[i + 1];
+          if (nxt === "x" || nxt === "u") { // \xHH و\uHHHH و\u{H…}
+            const isHex = (c) => c !== undefined && /[0-9a-fA-F]/.test(c);
+            let j = i + 2, hex = "";
+            if (nxt === "u" && src[j] === "{") {
+              j++;
+              while (j < n && isHex(src[j])) { hex += src[j]; j++; }
+              if (src[j] !== "}" || hex.length === 0 || hex.length > 6) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\u{…} يحتاج من ١ إلى ٦ أرقام سداسية ثم })`);
+              j++;
+            } else {
+              const need = nxt === "x" ? 2 : 4;
+              while (hex.length < need && isHex(src[j])) { hex += src[j]; j++; }
+              if (hex.length < need) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\${nxt} يحتاج ${nxt === "x" ? "رقمين" : "أربعة أرقام"} سداسية عشرية)`);
+            }
+            const cp = parseInt(hex, 16);
+            if (cp > 0x10FFFF) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (القيمة خارج النطاق 10FFFF)`);
+            buf += String.fromCodePoint(cp);
+            i = j;
+            continue;
+          }
+          const esc = { n: "\n", t: "\t", r: "\r", "0": "\0", "\\": "\\", '"': '"', "'": "'" }[nxt];
+          buf += esc !== undefined ? esc : nxt;
+          i += 2;
+        } else {
+          buf += src[i]; i++;
+        }
+      }
+      if (i >= n) throw new LexError(`السطر ${line}: نص غير مغلق (نسيت علامة الاقتباس)`);
+      i++;
+      if (!template || pieces.length === 0) { tokens.push({ type: "STRING", value: buf, line }); return; }
+      if (buf !== "") pieces.push(buf);
+      tokens.push({ type: "LPAREN", value: "(", line });
+      pieces.forEach((pc, k) => {
+        if (k > 0) tokens.push({ type: "PLUS", value: "+", line });
+        if (typeof pc === "string") tokens.push({ type: "STRING", value: pc, line });
+        else { tokens.push({ type: "IDENT", value: "@قالب", line }, { type: "LPAREN", value: "(", line }, ...pc.expr, { type: "RPAREN", value: ")", line }); }
+      });
+      tokens.push({ type: "RPAREN", value: ")", line });
+  }
+
   while (i < n) {
     const ch = src[i];
 
@@ -97,44 +165,7 @@ function tokenize(src) {
       continue;
     }
 
-    if (ch === '"' || ch === "'") {
-      const quote = ch;
-      i++;
-      let buf = "";
-      while (i < n && src[i] !== quote) {
-        if (src[i] === "\\" && i + 1 < n) {
-          const nxt = src[i + 1];
-          if (nxt === "x" || nxt === "u") { // \xHH و\uHHHH و\u{H…}
-            const isHex = (c) => c !== undefined && /[0-9a-fA-F]/.test(c);
-            let j = i + 2, hex = "";
-            if (nxt === "u" && src[j] === "{") {
-              j++;
-              while (j < n && isHex(src[j])) { hex += src[j]; j++; }
-              if (src[j] !== "}" || hex.length === 0 || hex.length > 6) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\u{…} يحتاج من ١ إلى ٦ أرقام سداسية ثم })`);
-              j++;
-            } else {
-              const need = nxt === "x" ? 2 : 4;
-              while (hex.length < need && isHex(src[j])) { hex += src[j]; j++; }
-              if (hex.length < need) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\${nxt} يحتاج ${nxt === "x" ? "رقمين" : "أربعة أرقام"} سداسية عشرية)`);
-            }
-            const cp = parseInt(hex, 16);
-            if (cp > 0x10FFFF) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (القيمة خارج النطاق 10FFFF)`);
-            buf += String.fromCodePoint(cp);
-            i = j;
-            continue;
-          }
-          const esc = { n: "\n", t: "\t", r: "\r", "0": "\0", "\\": "\\", '"': '"', "'": "'" }[nxt];
-          buf += esc !== undefined ? esc : nxt;
-          i += 2;
-        } else {
-          buf += src[i]; i++;
-        }
-      }
-      if (i >= n) throw new LexError(`السطر ${line}: نص غير مغلق (نسيت علامة الاقتباس)`);
-      i++;
-      tokens.push({ type: "STRING", value: buf, line });
-      continue;
-    }
+    if (ch === '"' || ch === "'") { readString(false); continue; }
 
     if (isIdentStart(ch)) {
       const start = i;
@@ -149,6 +180,7 @@ function tokenize(src) {
         i++;
         continue;
       }
+      if (word === "قالب" && (src[i] === '"' || src[i] === "'")) { readString(true); continue; } // قالب نصي بتعابير {…}
       const ttype = KEYWORDS[word] || "IDENT";
       tokens.push({ type: ttype, value: word, line });
       continue;
