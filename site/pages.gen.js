@@ -153,11 +153,11 @@ emit('/ai/', { title: 'ضاد والذكاء الاصطناعي', desc: 'كيف 
 <div class="codebox"><div class="bar"><span>طلب وردّ</span><button data-copy="apireq">نسخ</button></div><pre id="apireq" style="white-space:pre-wrap">POST ${SITE}/api/run
 Content-Type: application/json
 
-{"action": "run", "code": "متغير م = ٠\nمن_أجل (ع من ١ إلى ٣) { م = م + ع }\nاطبع(م)"}
+{"action": "run", "code": "متغير م = ٠\\nمن_أجل (ع من ١ إلى ٣) { م = م + ع }\\nاطبع(م)"}
 
 ← {"ok": true, "output": ["٦"], "steps": 41}
 
-{"action": "grade", "challenge_id": "hello", "code": "اطبع(\"اسمي ضاد\")"}
+{"action": "grade", "challenge_id": "hello", "code": "اطبع(\\"اسمي ضاد\\")"}
 
 ← {"ok": true, "passed": false, "message": "المتوقع: ..."}</pre></div>
 <div class="prose"><p>الواجهة عامة بلا مفتاح ولا حساب، مع تقييد بسيط لعدد الطلبات من العنوان الواحد. هذا هو نفس المحرك الذي يعمل في المتصفح، فلا اختلاف بين ما يراه الوكيل وما تراه أنت.</p>
