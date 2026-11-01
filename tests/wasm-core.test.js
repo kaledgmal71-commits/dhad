@@ -88,7 +88,7 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
 }`);
   check('مخصِّص', m.ex.اختبر(), 1);
   // ---- مكتبة التشغيل (selfhost/نواة-تشغيل.dhad): نصوص وقوائم وخرائط فوق المخصِّص ----
-  const lib = fs.readFileSync(path.join(dir, 'نواة-تشغيل.dhad'), 'utf8');
+  const lib = fs.readFileSync(path.join(dir, 'نواة-تشغيل.dhad'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'نواة-قيم.dhad'), 'utf8') + '\n' + fs.readFileSync(path.join(dir, 'نواة-أعداد.dhad'), 'utf8'); // (قيم تستدعي ف٦٤_باقي من أعداد) التشغيل يستدعي ق_تجزئة وق_يساوي للخرائط من النوع ٢
   const buildLib = async src => { const bytes = Uint8Array.from(host.callFunctionExternally(compileWithLib, [lib, src])); const printed = []; const { instance } = await WebAssembly.instantiate(bytes, { 'بيئة': { 'اطبع_رقم': n => printed.push(n) } }); return { ex: instance.exports, printed }; };
   const libSrc = `صدّر دالة قوائم(ن) { متغير ق = قائمة_جديدة()
     من_أجل (ي من ١ إلى ن) { قائمة_أضف(ق، ي * ٣) }
@@ -216,7 +216,7 @@ const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
   check('f64: جذر وضرب ومقارنة', [m.ex.جذر(144), m.ex.جذر(2)], [Math.trunc(Math.sqrt(144) * Math.sqrt(144)) + 10000, Math.trunc(Math.sqrt(2) * Math.sqrt(2)) + 10000]);
   check('f64: NaN لا يساوي نفسه ويخالفها', m.ex.نان(), (NaN === NaN ? 10 : 0) + (NaN !== NaN ? 1 : 0));
   // ---- أعداد: باقي القسمة والتحويل إلى نص ----
-  const numLib = fs.readFileSync(path.join(dir, 'نواة-أعداد.dhad'), 'utf8');
+  const numLib = ''; // مدموجة في lib أعلاه
   const buildNum = async src => { const bytes = Uint8Array.from(host.callFunctionExternally(compileWithLib, [lib + '\n' + numLib, src])); const { instance } = await WebAssembly.instantiate(bytes, { 'بيئة': { 'اطبع_رقم': () => {} } }); return instance.exports; };
   const nx = await buildNum(`صدّر دالة نص_عدد(منخفض، مرتفع) { ف٦٤_ثابت(١٢٨، مرتفع، منخفض)\n ارجع عدد_إلى_نص(١٢٨) }
 صدّر دالة باقي(ملأ، مرتأ، ملب، مرتب) { ف٦٤_ثابت(١٣٦، مرتأ، ملأ)\n ف٦٤_ثابت(١٤٤، مرتب، ملب)\n ف٦٤_باقي(١٥٢، ١٣٦، ١٤٤)\n ارجع حمّل(١٥٢) }
