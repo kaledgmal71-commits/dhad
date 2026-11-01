@@ -22,6 +22,14 @@ function highlightToHTML(src) {
     if (ch === "\n") { push("\n", null); i++; continue; }
     if (ch === " " || ch === "\t" || ch === "\r") { push(ch, null); i++; continue; }
 
+    if (ch === "/" && src[i + 1] === "*") {
+      const start = i; i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i = Math.min(n, i + 2);
+      push(src.slice(start, i), "tok-comment");
+      continue;
+    }
+
     if (ch === "#") {
       const start = i;
       while (i < n && src[i] !== "\n") i++;
@@ -31,7 +39,11 @@ function highlightToHTML(src) {
 
     if (isDigitChar(ch)) {
       const start = i;
-      while (i < n && (isDigitChar(src[i]) || src[i] === ".")) i++;
+      if (src[i] === "0" && /[xXbBoO]/.test(src[i + 1] || "")) { i += 2; while (i < n && (/[0-9a-fA-F_]/.test(src[i]))) i++; }
+      else {
+        while (i < n && (isDigitChar(src[i]) || src[i] === "." || src[i] === "_")) i++;
+        if (/[eE]/.test(src[i] || "") && (isDigitChar(src[i + 1] || "") || (/[+-]/.test(src[i + 1] || "") && isDigitChar(src[i + 2] || "")))) { i += 2; while (i < n && isDigitChar(src[i])) i++; }
+      }
       push(src.slice(start, i), "tok-number");
       continue;
     }

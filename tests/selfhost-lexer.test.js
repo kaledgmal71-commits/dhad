@@ -34,6 +34,8 @@ function soup() { let n = 1 + Math.floor(rnd() * 30), t = ''; while (n--) t += p
 const cases = [];
 for (const f of files(path.join(__dirname, '..'))) cases.push({ n: f, t: fs.readFileSync(f, 'utf8') });
 for (let i = 0; i < N; i++) cases.push({ n: 'soup' + i, t: soup() });
+const numCases = ['0xFF', '0XfF', '0b1010', '0B11', '0o17', '0O7', '1_000', '1_0_0', '1_000.5_5', '1e3', '1E3', '1e+3', '1e-3', '1.5e10', '2e', '2e+', '2ex', '1else', '0x', '0xG', '0b2', '0o8', '0b', '1__0', '1_', '_1', '1._5', '1_.5', '0x_1', '0x1_', '0x1__2', '0x1_F', '٣e٢', '١_٠٠٠', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '9007199254740993', '0.1e1_0', '5.e3', '1.2.3', '12abc', '0b102'];
+for (const t of numCases) cases.push({ n: 'عدد ' + t, t: 'س = ' + t + ' + 1' });
 cases.push({ n: 'تعليق كتلة', t: 'اطبع(١) /* أ */ اطبع(٢)' }, { n: 'تعليق كتلة متعدد الأسطر', t: 'أ /* س\nص\n*/ ب\n؟' }, { n: 'تعليق كتلة غير مغلق', t: 'أ /* ب\nج' }, { n: 'نجمة وشرطة', t: '/*/ x */ y' }, { n: 'قسمة ونجمة', t: '٦ / ٣ * ٢' }, { n: 'تعليق في نص', t: '"/* لا */"' }, { n: 'فارغ', t: '' }, { n: 'اقتباس_أخير', t: '"abc\\' }, { n: 'شرطة_أخيرة', t: 'x\\' });
 function ref(t) { try { return { ok: tokenize(t) }; } catch (e) { return { err: e.message }; } }
 let pass = 0, fail = 0;

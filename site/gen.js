@@ -20,7 +20,7 @@ function hl(code) {
     if (c === '#') { let j = code.indexOf('\n', i); if (j < 0) j = n; out += `<span class="hl-c">${esc(code.slice(i, j))}</span>`; i = j; }
     else if (c === '/' && code[i + 1] === '*') { let j = code.indexOf('*/', i + 2); j = j < 0 ? n : j + 2; out += `<span class="hl-c">${esc(code.slice(i, j))}</span>`; i = j; }
     else if (c === '"') { let j = i + 1; while (j < n && code[j] !== '"') { if (code[j] === '\\') j++; j++; } j = Math.min(j + 1, n); out += `<span class="hl-s">${esc(code.slice(i, j))}</span>`; i = j; }
-    else if (/[0-9٠-٩]/.test(c)) { let j = i; while (j < n && /[0-9٠-٩.]/.test(code[j])) j++; out += `<span class="hl-n">${esc(code.slice(i, j))}</span>`; i = j; }
+    else if (/[0-9٠-٩]/.test(c)) { let j = i; if (c === '0' && /[xXbBoO]/.test(code[j + 1] || '')) { j += 2; while (j < n && /[0-9a-fA-F_]/.test(code[j])) j++; } else { while (j < n && /[0-9٠-٩._]/.test(code[j])) j++; if (/[eE]/.test(code[j] || '') && (/[0-9٠-٩]/.test(code[j + 1] || '') || (/[+-]/.test(code[j + 1] || '') && /[0-9٠-٩]/.test(code[j + 2] || '')))) { j += 2; while (j < n && /[0-9٠-٩]/.test(code[j])) j++; } } out += `<span class="hl-n">${esc(code.slice(i, j))}</span>`; i = j; }
     else if (isId(c)) { let j = i; while (j < n && isId(code[j])) j++; const w = code.slice(i, j); out += KW.has(w) ? `<span class="hl-k">${esc(w)}</span>` : (BI.has(w) ? `<span class="hl-f">${esc(w)}</span>` : esc(w)); i = j; }
     else { out += esc(c); i++; }
   }

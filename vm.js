@@ -3695,7 +3695,7 @@ class VM {
       if (typeof x === "number") return x;
       // الفاصلة العشرية العربية ٫ تُعامَل كنقطة، والتحويل صارم: النص كله رقم أو خطأ
       const normalized = typeof x === "string" ? normalizeDigits(x).replace(/٫/g, ".").trim() : x;
-      if (typeof normalized !== "string" || !/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(normalized)) throw new VMRuntimeError(`لا يمكن تحويل "${toDisplay(x)}" إلى رقم`);
+      if (typeof normalized !== "string" || !/^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(normalized)) throw new VMRuntimeError(`لا يمكن تحويل "${toDisplay(x)}" إلى رقم`);
       return parseFloat(normalized);
     });
     g.set("احفظ_ملف", (path, content) => { this.onSaveFile(path, content); return path; });

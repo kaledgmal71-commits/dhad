@@ -67,8 +67,33 @@ function tokenize(src) {
 
     if (isDigitChar(ch)) {
       const start = i;
-      while (i < n && (isDigitChar(src[i]) || src[i] === "." || src[i] === "٫")) i++;
-      tokens.push({ type: "NUMBER", value: normalizeDigits(src.slice(start, i).replace(/٫/g, ".")), line });
+      const radixCh = (src[i] === "0" && i + 1 < n) ? src[i + 1].toLowerCase() : "";
+      const radix = radixCh === "x" ? 16 : radixCh === "b" ? 2 : radixCh === "o" ? 8 : 0;
+      if (radix) { // سداسي عشري 0x وثنائي 0b وثماني 0o (الفاصل _ بين رقمين)
+        const digitVal = (c) => { const d = isDigitChar(c) ? Number(normalizeDigits(c)) : (/[a-fA-F]/.test(c) ? c.toLowerCase().charCodeAt(0) - 87 : -1); return d >= 0 && d < radix ? d : -1; };
+        i += 2;
+        let v = 0, count = 0, prevUnderscore = false;
+        while (i < n && (digitVal(src[i]) >= 0 || src[i] === "_")) {
+          if (src[i] === "_") {
+            if (count === 0 || prevUnderscore) throw new LexError(`السطر ${line}: الفاصل _ في الرقم يجب أن يقع بين رقمين`);
+            prevUnderscore = true;
+          } else { v = v * radix + digitVal(src[i]); count++; prevUnderscore = false; }
+          i++;
+        }
+        if (count === 0) throw new LexError(`السطر ${line}: رقم بالأساس ${radix} بلا أرقام بعد ${src.slice(start, i)}`);
+        if (prevUnderscore) throw new LexError(`السطر ${line}: الفاصل _ في الرقم يجب أن يقع بين رقمين`);
+        tokens.push({ type: "NUMBER", value: String(v), line });
+        continue;
+      }
+      while (i < n && (isDigitChar(src[i]) || src[i] === "." || src[i] === "٫" || src[i] === "_")) i++;
+      if (i < n && (src[i] === "e" || src[i] === "E")) { // الأس العلمي: e أو E ثم +/- اختياري ثم أرقام
+        let j = i + 1;
+        if (j < n && (src[j] === "+" || src[j] === "-")) j++;
+        if (j < n && isDigitChar(src[j])) { while (j < n && isDigitChar(src[j])) j++; i = j; }
+      }
+      const raw = src.slice(start, i);
+      if (/(^|[^0-9٠-٩۰-۹])_|_($|[^0-9٠-٩۰-۹])|__/.test(raw)) throw new LexError(`السطر ${line}: الفاصل _ في الرقم يجب أن يقع بين رقمين`);
+      tokens.push({ type: "NUMBER", value: normalizeDigits(raw.replace(/٫/g, ".").replace(/_/g, "")), line });
       continue;
     }
 
@@ -607,7 +632,7 @@ class Parser {
       const f = this.primary(); f.isAsync = true; return f;
     }
     const tok = this.peek();
-    if (tok.type === "NUMBER") { this.advance(); return { kind: "Number", value: tok.value.includes(".") ? parseFloat(tok.value) : parseInt(tok.value, 10) }; }
+    if (tok.type === "NUMBER") { this.advance(); return { kind: "Number", value: parseFloat(tok.value) }; }
     if (tok.type === "STRING") { this.advance(); return { kind: "String", value: tok.value }; }
     if (tok.type === "TRUE") { this.advance(); return { kind: "Boolean", value: true }; }
     if (tok.type === "FALSE") { this.advance(); return { kind: "Boolean", value: false }; }

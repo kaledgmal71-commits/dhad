@@ -1,0 +1,26 @@
+// بند ١-٢ من سجل النواقص: أشكال الأعداد (0x 0b 0o، الفاصل _، الأس العلمي) في المنفِّذ الأصلي؛ المطابقة مع مرمز ضاد في selfhost-lexer.
+const R = require('../site/run.js'); const api = R.api;
+let pass = 0, fail = 0;
+const check = (n, g, w) => { if (JSON.stringify(g) === JSON.stringify(w)) pass++; else { fail++; console.log('اختلاف:', n, g, w); } };
+const run = src => { try { const c = api.compile(api.parse(src)); const o = []; const vm = new api.VM({ maxSteps: 1e6, maxMs: 2000, onPrint: l => o.push(String(l)) }); vm.run(c.mainChunkIndex, c.functionChunks); return o.join('|'); } catch (e) { return 'ERR ' + e.message; } };
+check('سداسي', run('اطبع(0xFF)'), '٢٥٥');
+check('سداسي بحروف كبيرة وصغيرة', run('اطبع(0XaB)'), '١٧١');
+check('ثنائي', run('اطبع(0b1010)'), '١٠');
+check('ثماني', run('اطبع(0o17)'), '١٥');
+check('فاصل', run('اطبع(1_000_000)'), '١٠٠٠٠٠٠');
+check('فاصل في الكسر', run('اطبع(1_0.2_5)'), '١٠٫٢٥');
+check('فاصل في سداسي', run('اطبع(0xFF_FF)'), '٦٥٥٣٥');
+check('علمي', run('اطبع(1e3)'), '١٠٠٠');
+check('علمي بأس سالب', run('اطبع(25e-2)'), '٠٫٢٥');
+check('علمي بأس موجب صريح وحرف كبير', run('اطبع(2E+2)'), '٢٠٠');
+check('علمي بأرقام هندية', run('اطبع(١e٣)'), '١٠٠٠');
+check('الصفر قبل الفاصلة لا يلتبس', run('اطبع(0 + 5)'), '٥');
+check('e بلا أرقام ليست أسًّا', run('متغير e = 3\nاطبع(2 * e)'), '٦');
+check('عدد من نص علمي', run('اطبع(عدد("1.5e2"))'), '١٥٠');
+check('عدد ما زال صارمًا', run('اطبع(عدد("1e"))'), 'ERR السطر 1: لا يمكن تحويل "1e" إلى رقم');
+check('سداسي بلا أرقام', run('اطبع(0x)'), 'ERR السطر 1: رقم بالأساس 16 بلا أرقام بعد 0x');
+check('ثنائي بحرف غير صالح', run('اطبع(0b12)'), 'ERR السطر 1: كنت أنتظر «)» لكن وجدت رقم «2»');
+check('فاصل مزدوج', run('اطبع(1__0)'), 'ERR السطر 1: الفاصل _ في الرقم يجب أن يقع بين رقمين');
+check('فاصل أخير', run('اطبع(1_)'), 'ERR السطر 1: الفاصل _ في الرقم يجب أن يقع بين رقمين');
+check('فاصل بعد نقطة', run('اطبع(1._5)'), 'ERR السطر 1: الفاصل _ في الرقم يجب أن يقع بين رقمين');
+console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);
