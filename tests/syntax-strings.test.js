@@ -1,0 +1,23 @@
+// بند ١-٣ من سجل النواقص: تسلسلات الهروب والنص الخام (المطابقة مع مرمز ضاد في selfhost-lexer).
+const R = require('../site/run.js'); const api = R.api;
+let pass = 0, fail = 0;
+const check = (n, g, w) => { if (JSON.stringify(g) === JSON.stringify(w)) pass++; else { fail++; console.log('اختلاف:', n, g, w); } };
+const run = src => { try { const c = api.compile(api.parse(src)); const o = []; const vm = new api.VM({ maxSteps: 1e6, maxMs: 2000, onPrint: l => o.push(String(l)) }); vm.run(c.mainChunkIndex, c.functionChunks); return o.join('|'); } catch (e) { return 'ERR ' + e.message; } };
+check('x', run('اطبع("a\\x41b")'), 'aAb');
+check('u أربعة', run('اطبع("\\u0627\\u0644")'), 'ال');
+check('u بأقواس', run('اطبع("\\u{1F600}")'), '😀');
+check('u بأقواس قصيرة', run('اطبع("\\u{41}")'), 'A');
+check('طول نقطة فوق BMP (وحدات UTF-16 حاليًا)', run('اطبع(طول("\\u{1F600}"))'), '٢');
+check('r وطولها', run('اطبع(طول("a\\rb"))'), '٣');
+check('NUL', run('اطبع(رمز("\\0"))'), '٠');
+check('هروب قديم سليم', run('اطبع("a\\nb\\t\\\\\\"")'), 'a\nb\t\\"');
+check('هروب مجهول يبقى حرفه', run('اطبع("\\q")'), 'q');
+check('نص خام', run('اطبع(خام"a\\nb\\x41")'), 'a\\nb\\x41');
+check('نص خام بمفرد', run("اطبع(خام'c:\\\\dir')"), 'c:\\\\dir');
+check('خام متغير عادي بلا اقتباس لاصق', run('متغير خام = 5\nاطبع(خام + ١)'), '٦');
+check('x ناقص', run('اطبع("\\x4")'), 'ERR السطر 1: تسلسل هروب غير صالح (\\x يحتاج رقمين سداسية عشرية)');
+check('u ناقص', run('اطبع("\\u004")'), 'ERR السطر 1: تسلسل هروب غير صالح (\\u يحتاج أربعة أرقام سداسية عشرية)');
+check('u فارغ', run('اطبع("\\u{}")'), 'ERR السطر 1: تسلسل هروب غير صالح (\\u{…} يحتاج من ١ إلى ٦ أرقام سداسية ثم })');
+check('u خارج النطاق', run('اطبع("\\u{110000}")'), 'ERR السطر 1: تسلسل هروب غير صالح (القيمة خارج النطاق 10FFFF)');
+check('خام غير مغلق', run('اطبع(خام"ب)'), 'ERR السطر 1: نص غير مغلق (نسيت علامة الاقتباس)');
+console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);

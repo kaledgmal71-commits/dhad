@@ -104,7 +104,26 @@ function tokenize(src) {
       while (i < n && src[i] !== quote) {
         if (src[i] === "\\" && i + 1 < n) {
           const nxt = src[i + 1];
-          const esc = { n: "\n", t: "\t", "\\": "\\", '"': '"', "'": "'" }[nxt];
+          if (nxt === "x" || nxt === "u") { // \xHH و\uHHHH و\u{H…}
+            const isHex = (c) => c !== undefined && /[0-9a-fA-F]/.test(c);
+            let j = i + 2, hex = "";
+            if (nxt === "u" && src[j] === "{") {
+              j++;
+              while (j < n && isHex(src[j])) { hex += src[j]; j++; }
+              if (src[j] !== "}" || hex.length === 0 || hex.length > 6) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\u{…} يحتاج من ١ إلى ٦ أرقام سداسية ثم })`);
+              j++;
+            } else {
+              const need = nxt === "x" ? 2 : 4;
+              while (hex.length < need && isHex(src[j])) { hex += src[j]; j++; }
+              if (hex.length < need) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (\\${nxt} يحتاج ${nxt === "x" ? "رقمين" : "أربعة أرقام"} سداسية عشرية)`);
+            }
+            const cp = parseInt(hex, 16);
+            if (cp > 0x10FFFF) throw new LexError(`السطر ${line}: تسلسل هروب غير صالح (القيمة خارج النطاق 10FFFF)`);
+            buf += String.fromCodePoint(cp);
+            i = j;
+            continue;
+          }
+          const esc = { n: "\n", t: "\t", r: "\r", "0": "\0", "\\": "\\", '"': '"', "'": "'" }[nxt];
           buf += esc !== undefined ? esc : nxt;
           i += 2;
         } else {
@@ -121,6 +140,15 @@ function tokenize(src) {
       const start = i;
       while (i < n && isIdentPart(src[i])) i++;
       const word = src.slice(start, i);
+      if (word === "خام" && (src[i] === '"' || src[i] === "'")) { // نص خام: بلا هروب، ينتهي عند أول اقتباس مطابق
+        const q = src[i]; i++;
+        const s0 = i;
+        while (i < n && src[i] !== q) i++;
+        if (i >= n) throw new LexError(`السطر ${line}: نص غير مغلق (نسيت علامة الاقتباس)`);
+        tokens.push({ type: "STRING", value: src.slice(s0, i), line });
+        i++;
+        continue;
+      }
       const ttype = KEYWORDS[word] || "IDENT";
       tokens.push({ type: ttype, value: word, line });
       continue;
