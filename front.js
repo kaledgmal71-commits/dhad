@@ -58,6 +58,12 @@ function tokenize(src) {
     if (ch === "\n") { line++; i++; continue; }
     if (ch === " " || ch === "\t" || ch === "\r") { i++; continue; }
     if (ch === "#") { while (i < n && src[i] !== "\n") i++; continue; }
+    if (ch === "/" && src[i + 1] === "*") { // تعليق كتلة /* … */ (لا يتداخل)
+      const startLine = line; i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) { if (src[i] === "\n") line++; i++; }
+      if (i >= n) throw new LexError(`السطر ${startLine}: تعليق كتلة غير مغلق (نسيت */)`);
+      i += 2; continue;
+    }
 
     if (isDigitChar(ch)) {
       const start = i;
