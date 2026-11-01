@@ -17,6 +17,7 @@ for (const n of MODS) sources[n + '.dhad'] = fs.readFileSync(path.join(root, 'se
 sources['@boot'] = BOOT_SRC;
 sources['آلة.dhad'] = fs.readFileSync(path.join(root, 'selfhost', 'آلة.dhad'), 'utf8');
 sources['وازم.dhad'] = fs.readFileSync(path.join(root, 'selfhost', 'وازم.dhad'), 'utf8');
+sources['نطاقات.dhad'] = fs.readFileSync(path.join(root, 'selfhost', 'نطاقات.dhad'), 'utf8');
 for (const k of Object.keys(api.STDLIB_SOURCES).sort()) sources[k] = api.STDLIB_SOURCES[k];
 
 function canon(v) { return JSON.parse(JSON.stringify(v)); }

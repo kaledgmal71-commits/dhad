@@ -4,7 +4,7 @@ const fs = require('fs'), path = require('path');
 const R = require('../site/run.js'); const api = R.api;
 const dir = path.join(__dirname, '../selfhost');
 const files = {};
-for (const n of ['مرمز', 'محلل', 'وازم']) files[n + '.dhad'] = fs.readFileSync(path.join(dir, n + '.dhad'), 'utf8');
+for (const n of ['مرمز', 'محلل', 'نطاقات', 'وازم']) files[n + '.dhad'] = fs.readFileSync(path.join(dir, n + '.dhad'), 'utf8');
 const host = new api.VM({ maxSteps: 1e15, maxMs: 1e12, onPrint: () => {}, readModule: p => (files[p] !== undefined ? files[p] : null) });
 const boot = api.compile(api.parse('استورد("وازم")')); host.run(boot.mainChunkIndex, boot.functionChunks);
 const compileWithLib = host.modules.get('وازم.dhad').exports.get('صرّف_نواة_مع');
