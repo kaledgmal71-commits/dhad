@@ -36,10 +36,18 @@ for (const s of sheets) for (const row of s.rows) for (const cell of row) { let 
       add({ id: `explain/${s.id}/${records.length}`, source: 'explain', topic: s.title, title: cell.h, instruction: `${s.title} — ${cell.h}. ${last}`.slice(0, 600), code: p.src, virtual_fs: p.fs, ...(p.err ? { expect_error: true } : {}), url: `/explain/${s.id}/` }, { fs: new R.api.MemoryFS(p.fs) });
     }
   } }
+// ٤ب) مدوّنة الصياغة: أمثلة الميزات الجديدة وأزواج خطأ←إصلاح (كل زوج: يفشل الخاطئ وينجح المصحَّح)
+const syn = require('./content/syntax-corpus.js');
+for (const e of syn.examples) add({ id: 'syntax/' + e.id, source: 'syntax', topic: 'الصياغة', title: e.title, instruction: e.instruction, code: e.code });
+for (const f of syn.fixes) {
+  const okFix = R.run(f.fixed);
+  if (!okFix.ok) { problems.push(`مدوّنة الصياغة ${f.id}: المصحَّح يفشل: ${okFix.error}`); continue; }
+  add({ id: 'syntax/' + f.id, source: 'syntax-fix', topic: 'خطأ←إصلاح', title: f.instruction, instruction: f.instruction, code: f.bad, expect_error: true, fixed_code: f.fixed, fixed_output: okFix.out.join('\n'), explanation: f.why });
+}
 records.forEach((r, i) => { r.n = i + 1; });
 const jl = a => a.map(x => JSON.stringify(x)).join('\n') + '\n';
 write('ai/dhad-corpus.jsonl', jl(records.map(r => ({ ...r, engine: engineHash, verified: true, lang: 'ar', language: 'dhad' }))));
-write('ai/dhad-sft.jsonl', jl(records.filter(r => r.status === 'ok').map(r => ({ messages: [{ role: 'user', content: r.instruction }, { role: 'assistant', content: '```dhad\n' + r.code + '\n```' + (r.output ? '\n\nالمخرجات:\n```\n' + r.output + '\n```' : '') }], meta: { id: r.id, source: r.source, topic: r.topic, verified: true } }))));
+write('ai/dhad-sft.jsonl', jl(records.filter(r => r.status === 'ok').map(r => ({ messages: [{ role: 'user', content: r.instruction }, { role: 'assistant', content: '```dhad\n' + r.code + '\n```' + (r.output ? '\n\nالمخرجات:\n```\n' + r.output + '\n```' : '') }], meta: { id: r.id, source: r.source, topic: r.topic, verified: true } })).concat(records.filter(r => r.source === 'syntax-fix').map(r => ({ messages: [{ role: 'user', content: r.instruction + '\n\n```dhad\n' + r.code + '\n```\n\nرسالة الخطأ: ' + r.error }, { role: 'assistant', content: r.explanation + '\n\n```dhad\n' + r.fixed_code + '\n```' + (r.fixed_output ? '\n\nالمخرجات:\n```\n' + r.fixed_output + '\n```' : '') }], meta: { id: r.id, source: r.source, topic: r.topic, verified: true, kind: 'error_fix' } })))));
 
 // ٥) معيار القياس: تحدّيات الدروس بلا حلولها (حلولها داخل الواجهة فقط)، ويُشترط أن يجتاز كل حلٍّ مرجعي اختباراته
 const benchmark = []; const solutions = {};
