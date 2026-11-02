@@ -10,6 +10,7 @@ const SINGLE_CHAR = {
   "(": "LPAREN", ")": "RPAREN", "{": "LBRACE", "}": "RBRACE",
   "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", "،": "COMMA", ";": "SEMI", ":": "COLON",
   "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT",
+  "&": "BITAND", "|": "BITOR", "^": "BITXOR", "~": "BITNOT",
 };
 
 class LexError extends Error {}
@@ -187,7 +188,7 @@ function tokenize(src) {
     }
 
     const two = src.slice(i, i + 2);
-    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS" };
+    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS", "**": "POW", "//": "FLOORDIV", "<<": "SHL", ">>": "SHR" };
     if (twoMap[two]) { tokens.push({ type: twoMap[two], value: two, line }); i += 2; continue; }
 
     if (ch === "=") { tokens.push({ type: "ASSIGN", value: "=", line }); i++; continue; }
@@ -213,6 +214,7 @@ const TOKEN_AR = {
   LPAREN: "«(»", RPAREN: "«)»", LBRACE: "«{»", RBRACE: "«}»", LBRACKET: "«[»", RBRACKET: "«]»",
   COMMA: "«،»", SEMI: "«;»", COLON: "«:»", ASSIGN: "«=»", PLUS: "«+»", MINUS: "«-»", STAR: "«*»",
   SLASH: "«/»", PERCENT: "«%»", EQ: "«==»", NEQ: "«!=»", LT: "«<»", GT: "«>»", LTE: "«<=»", GTE: "«>=»",
+  POW: "«**»", FLOORDIV: "«//»", SHL: "«<<»", SHR: "«>>»", BITAND: "«&»", BITOR: "«|»", BITXOR: "«^»", BITNOT: "«~»",
   DOT: "«.»", NOT: "«!»", IDENT: "اسم (متغير أو دالة)", NUMBER: "رقم", STRING: "نص", EOF: "نهاية الكود",
   FUNC: "«دالة»", RETURN: "«ارجع»", IF: "«إذا»", ELSE: "«وإلا»", WHILE: "«طالما»", FOR: "«من_أجل»",
   FROM: "«من»", TO: "«إلى»", VAR: "«متغير»", TRUE: "«صحيح»", FALSE: "«خطأ»", NULL: "«لاشيء»",
@@ -606,15 +608,40 @@ class Parser {
     return expr;
   }
   comparison() {
-    let expr = this.term();
+    let expr = this.bitOr();
     while (["LT", "GT", "LTE", "GTE"].includes(this.peek().type) || (this.check("IDENT") && this.peek().value === "في")) {
       if (this.check("IDENT")) {   // س في قائمة  ==  يحوي(قائمة، س)
         this.advance();
-        expr = { kind: "Call", callee: { kind: "Identifier", name: "@في" }, args: [this.term(), expr] };
+        expr = { kind: "Call", callee: { kind: "Identifier", name: "@في" }, args: [this.bitOr(), expr] };
         continue;
       }
       const op = this.advance().type;
-      expr = { kind: "BinOp", op, left: expr, right: this.term() };
+      expr = { kind: "BinOp", op, left: expr, right: this.bitOr() };
+    }
+    return expr;
+  }
+  // العمليات البتّية والإزاحات (أدنى من الجمع وأعلى من المقارنة كما في بايثون)؛ تُفكَّك إلى مدمجات داخلية
+  bin2(name, left, right) { return { kind: "Call", callee: { kind: "Identifier", name }, args: [left, right] }; }
+  bitOr() {
+    let expr = this.bitXor();
+    while (this.check("BITOR")) { this.advance(); expr = this.bin2("@بتّ_أو", expr, this.bitXor()); }
+    return expr;
+  }
+  bitXor() {
+    let expr = this.bitAnd();
+    while (this.check("BITXOR")) { this.advance(); expr = this.bin2("@بتّ_خاص", expr, this.bitAnd()); }
+    return expr;
+  }
+  bitAnd() {
+    let expr = this.shift();
+    while (this.check("BITAND")) { this.advance(); expr = this.bin2("@بتّ_و", expr, this.shift()); }
+    return expr;
+  }
+  shift() {
+    let expr = this.term();
+    while (this.check("SHL") || this.check("SHR")) {
+      const left = this.advance().type === "SHL";
+      expr = this.bin2(left ? "@إزاحة_يسار" : "@إزاحة_يمين", expr, this.term());
     }
     return expr;
   }
@@ -628,8 +655,9 @@ class Parser {
   }
   factor() {
     let expr = this.unary();
-    while (["STAR", "SLASH", "PERCENT"].includes(this.peek().type)) {
+    while (["STAR", "SLASH", "PERCENT", "FLOORDIV"].includes(this.peek().type)) {
       const op = this.advance().type;
+      if (op === "FLOORDIV") { expr = this.bin2("@قسمة_صحيحة", expr, this.unary()); continue; }
       expr = { kind: "BinOp", op, left: expr, right: this.unary() };
     }
     return expr;
@@ -644,7 +672,14 @@ class Parser {
     }
     if (this.check("NOT")) { this.advance(); return { kind: "UnaryOp", op: "ليس", expr: this.unary() }; }
     if (this.check("MINUS")) { this.advance(); return { kind: "UnaryOp", op: "-", expr: this.unary() }; }
-    return this.callExpr();
+    if (this.check("BITNOT")) { this.advance(); return { kind: "Call", callee: { kind: "Identifier", name: "@بتّ_نفي" }, args: [this.unary()] }; }
+    return this.power();
+  }
+  // الأسّ ** : ينعقد لليمين ويربط أقوى من السالب الأحادي على يساره (-٢ ** ٢ = -٤) ويقبل سالبًا على يمينه (٢ ** -١)
+  power() {
+    const base = this.callExpr();
+    if (this.check("POW")) { this.advance(); return this.bin2("@أس", base, this.unary()); }
+    return base;
   }
   callExpr() {
     let expr = this.primary();

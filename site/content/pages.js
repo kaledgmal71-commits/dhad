@@ -22,7 +22,8 @@ const docs = [
 اطبع(ص())` },
 { id:'ops', title:'العوامل', body:`
 <div class="tablewrap"><table><tr><th>الفئة</th><th>العوامل</th></tr>
-<tr><td>حسابية</td><td><code>+ - * / %</code> (و<code>+</code> تدمج النصوص)</td></tr>
+<tr><td>حسابية</td><td><code>+ - * / %</code> (و<code>+</code> تدمج النصوص)، والقسمة الصحيحة <code>//</code> (تقريب نحو الأسفل: <code>-٧ // ٢</code> = <code>-٤</code>)، والأسّ <code>**</code> (ينعقد لليمين: <code>٢ ** ٣ ** ٢</code> = <code>٥١٢</code>، و<code>-٢ ** ٢</code> = <code>-٤</code>)</td></tr>
+<tr><td>بتّية</td><td><code>&amp;</code> <code>|</code> <code>^</code> <code>~</code> <code>&lt;&lt;</code> <code>&gt;&gt;</code> على الأعداد الصحيحة الآمنة؛ أولويتها أدنى من الجمع وأعلى من المقارنة، فـ<code>٥ &amp; ٣ == ١</code> تعني <code>(٥ &amp; ٣) == ١</code></td></tr>
 <tr><td>مقارنة</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td></tr>
 <tr><td>منطقية</td><td><code>و</code> <code>أو</code> <code>ليس</code> (وتصلح أيضًا <code>&amp;&amp;</code> <code>||</code> <code>!</code>)</td></tr></table></div>
 <p>القسمة على صفر خطأ تشغيلي، وتجاوز الزمن المسموح (٨ ثوانٍ) يوقف الحلقات اللانهائية. العمليات الحسابية تحتاج أرقامًا (<code>"أ" - ١</code> خطأ)، والجمع <code>+</code> يدمج إن كان أحد الطرفين نصًا.</p>`,

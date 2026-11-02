@@ -3687,6 +3687,25 @@ class VM {
     g.set("أضف", (lst, val) => { if (lst instanceof Set) { setElem("أضف", val); lst.add(val); return lst; } if (!Array.isArray(lst)) throw new VMRuntimeError("أضف() تحتاج قائمة أو مجموعة"); lst.push(val); return lst; });
     g.set("نص", (x) => toDisplay(x));
     g.set("@قالب", (x) => toDisplay(x)); // داخلي: يُولَّد من القوالب النصية قالب"…{تعبير}…"
+    // عوامل الأسّ والقسمة الصحيحة والبتّيات: يفكّكها المحلل إلى هذه المدمجات الداخلية (** // & | ^ ~ << >>)
+    const needNum = (op, a, b) => { if (typeof a !== "number" || typeof b !== "number") throw new VMRuntimeError(`العامل ${op} يحتاج رقمين`); };
+    const bitInts = (op, ...xs) => { for (const x of xs) if (typeof x !== "number" || !Number.isSafeInteger(x)) throw new VMRuntimeError(`العامل ${op} يحتاج أعدادًا صحيحة`); };
+    const bitOut = (op, big) => { if (big > 9007199254740991n || big < -9007199254740991n) throw new VMRuntimeError(`نتيجة العامل ${op} خارج مدى الأعداد الصحيحة الآمن`); return Number(big); };
+    g.set("@أس", (a, b) => {
+      needNum("**", a, b);
+      if (a === 0 && b < 0) throw new VMRuntimeError("قسمة على صفر");
+      const r = Math.pow(a, b);
+      if (Number.isNaN(r)) throw new VMRuntimeError("نتيجة العامل ** ليست عددًا حقيقيًّا");
+      if (!Number.isFinite(r)) throw new VMRuntimeError("نتيجة العامل ** أكبر من أن تُمثَّل");
+      return r;
+    });
+    g.set("@قسمة_صحيحة", (a, b) => { needNum("//", a, b); if (b === 0) throw new VMRuntimeError("قسمة على صفر"); return Math.floor(a / b); });
+    g.set("@بتّ_و", (a, b) => { bitInts("&", a, b); return bitOut("&", BigInt(a) & BigInt(b)); });
+    g.set("@بتّ_أو", (a, b) => { bitInts("|", a, b); return bitOut("|", BigInt(a) | BigInt(b)); });
+    g.set("@بتّ_خاص", (a, b) => { bitInts("^", a, b); return bitOut("^", BigInt(a) ^ BigInt(b)); });
+    g.set("@بتّ_نفي", (a) => { bitInts("~", a); return bitOut("~", ~BigInt(a)); });
+    g.set("@إزاحة_يسار", (a, n) => { bitInts("<<", a, n); if (n < 0) throw new VMRuntimeError("عدد الإزاحة لا يكون سالبًا"); if (n > 1100) throw new VMRuntimeError("نتيجة العامل << خارج مدى الأعداد الصحيحة الآمن"); return bitOut("<<", BigInt(a) << BigInt(n)); });
+    g.set("@إزاحة_يمين", (a, n) => { bitInts(">>", a, n); if (n < 0) throw new VMRuntimeError("عدد الإزاحة لا يكون سالبًا"); return bitOut(">>", BigInt(a) >> BigInt(Math.min(n, 1100))); });
     // رمز(حرف) ترجع رقم الحرف في يونيكود، وحرف(رقم) ترجع الحرف من رقمه: هما أساس مكتبة النصوص المكتوبة بضاد
     g.set("رمز", (c) => { if (typeof c !== "string" || c.length === 0) throw new VMRuntimeError("رمز() تحتاج نصًا فيه حرف واحد على الأقل"); return c.codePointAt(0); });
     g.set("حرف", (n) => { if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 0x10FFFF) throw new VMRuntimeError("حرف() تحتاج رقمًا صحيحًا بين ٠ و ١١١٤١١١"); return String.fromCodePoint(n); });

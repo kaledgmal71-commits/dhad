@@ -4,9 +4,9 @@
 
 متغير كلمات = {"دالة": "FUNC"، "ارجع": "RETURN"، "إذا": "IF"، "وإلا": "ELSE"، "طالما": "WHILE"، "من_أجل": "FOR"، "من": "FROM"، "إلى": "TO"، "متغير": "VAR"، "صحيح": "TRUE"، "خطأ": "FALSE"، "لاشيء": "NULL"، "و": "AND"، "أو": "OR"، "ليس": "NOT"، "توقف": "BREAK"، "أكمل": "CONTINUE"}
 
-متغير مفردة = {"(": "LPAREN"، ")": "RPAREN"، "{": "LBRACE"، "}": "RBRACE"، "[": "LBRACKET"، "]": "RBRACKET"، ",": "COMMA"، "،": "COMMA"، ";": "SEMI"، ":": "COLON"، "+": "PLUS"، "-": "MINUS"، "*": "STAR"، "/": "SLASH"، "%": "PERCENT"}
+متغير مفردة = {"(": "LPAREN"، ")": "RPAREN"، "{": "LBRACE"، "}": "RBRACE"، "[": "LBRACKET"، "]": "RBRACKET"، ",": "COMMA"، "،": "COMMA"، ";": "SEMI"، ":": "COLON"، "+": "PLUS"، "-": "MINUS"، "*": "STAR"، "/": "SLASH"، "%": "PERCENT"، "&": "BITAND"، "|": "BITOR"، "^": "BITXOR"، "~": "BITNOT"}
 
-متغير ثنائية = {"==": "EQ"، "!=": "NEQ"، "<=": "LTE"، ">=": "GTE"، "&&": "AND"، "||": "OR"، "+=": "PLUSEQ"، "-=": "MINUSEQ"، "*=": "STAREQ"، "/=": "SLASHEQ"، "%=": "PERCENTEQ"، "++": "PLUSPLUS"، "--": "MINUSMINUS"}
+متغير ثنائية = {"==": "EQ"، "!=": "NEQ"، "<=": "LTE"، ">=": "GTE"، "&&": "AND"، "||": "OR"، "+=": "PLUSEQ"، "-=": "MINUSEQ"، "*=": "STAREQ"، "/=": "SLASHEQ"، "%=": "PERCENTEQ"، "++": "PLUSPLUS"، "--": "MINUSMINUS"، "**": "POW"، "//": "FLOORDIV"، "<<": "SHL"، ">>": "SHR"}
 
 # علامات الترقيم العربية التي لا تُعدّ من المعرّفات رغم وقوعها في النطاق العربي
 متغير ترقيم_عربي = {}
