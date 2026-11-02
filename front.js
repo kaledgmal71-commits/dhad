@@ -627,14 +627,32 @@ class Parser {
   }
   comparison() {
     let expr = this.bitOr();
-    while (["LT", "GT", "LTE", "GTE"].includes(this.peek().type) || (this.check("IDENT") && this.peek().value === "في")) {
-      if (this.check("IDENT")) {   // س في قائمة  ==  يحوي(قائمة، س)
+    const REL = ["LT", "GT", "LTE", "GTE"];
+    while (true) {
+      const tk = this.peek();
+      if (REL.includes(tk.type)) { // أ < ب < ج: مقارنات متسلسلة، الأوسط يُحسب مرة واحدة
+        const operands = [expr], ops = [];
+        while (REL.includes(this.peek().type)) { ops.push(this.advance().type); operands.push(this.bitOr()); }
+        expr = ops.length === 1 ? { kind: "BinOp", op: ops[0], left: operands[0], right: operands[1] } : { kind: "CmpChain", operands, ops };
+        continue;
+      }
+      if (tk.type === "IDENT" && tk.value === "في") {   // س في قائمة  ==  يحوي(قائمة، س)
         this.advance();
         expr = { kind: "Call", callee: { kind: "Identifier", name: "@في" }, args: [this.bitOr(), expr] };
         continue;
       }
-      const op = this.advance().type;
-      expr = { kind: "BinOp", op, left: expr, right: this.bitOr() };
+      const nx = this.tokens[this.pos + 1];
+      if (tk.type === "NOT" && tk.value === "ليس" && nx && nx.type === "IDENT" && nx.value === "في") { // س ليس في قائمة
+        this.advance(); this.advance();
+        expr = { kind: "UnaryOp", op: "ليس", expr: { kind: "Call", callee: { kind: "Identifier", name: "@في" }, args: [this.bitOr(), expr] } };
+        continue;
+      }
+      if (tk.type === "IDENT" && tk.value === "هو" && this.pos > 0 && this.tokens[this.pos - 1].line === tk.line) { // س هو "نص": فحص النوع
+        this.advance();
+        expr = this.bin2("@هو", expr, this.bitOr());
+        continue;
+      }
+      break;
     }
     return expr;
   }

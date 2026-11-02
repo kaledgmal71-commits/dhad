@@ -3414,6 +3414,8 @@ class VM {
       case "CONST": this.push(frame.chunk.constants[args[0]]); return;
       case "POP": this.pop(); return;
       case "DUP": this.push(this.peek()); return;
+      case "TUCK": { const b = this.pop(), a = this.pop(); this.push(b); this.push(a); this.push(b); return; }
+      case "SWAP": { const b = this.pop(), a = this.pop(); this.push(b); this.push(a); return; }
       case "GET_LOCAL": this.push(frame.locals[args[0]]); return;
       case "SET_LOCAL": frame.locals[args[0]] = this.peek(); return;
       case "GET_UP": { let e = frame.env; for (let k = 0; k < args[0]; k++) e = e.parent; this.push(e.locals[args[1]]); return; }
@@ -3687,6 +3689,7 @@ class VM {
     });
     g.set("أضف", (lst, val) => { if (lst instanceof Set) { setElem("أضف", val); lst.add(val); return lst; } if (!Array.isArray(lst)) throw new VMRuntimeError("أضف() تحتاج قائمة أو مجموعة"); lst.push(val); return lst; });
     g.set("نص", (x) => toDisplay(x));
+    g.set("@هو", (x, t) => { if (typeof t !== "string") throw new VMRuntimeError("العامل هو يحتاج اسم نوع نصيًّا في طرفه الأيمن (مثل \"رقم\")"); return typeName(x).replace(/[«»]/g, "") === t; }); // س هو "رقم"
     g.set("@قالب", (x) => toDisplay(x)); // داخلي: يُولَّد من القوالب النصية قالب"…{تعبير}…"
     // عوامل الأسّ والقسمة الصحيحة والبتّيات: يفكّكها المحلل إلى هذه المدمجات الداخلية (** // & | ^ ~ << >>)
     const needNum = (op, a, b) => { if (typeof a !== "number" || typeof b !== "number") throw new VMRuntimeError(`العامل ${op} يحتاج رقمين`); };

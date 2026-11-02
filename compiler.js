@@ -506,6 +506,30 @@ class Compiler {
   }
 
 
+  // مقارنات متسلسلة أ < ب < ج: الأوسط يُحسب مرة واحدة، وتتوقف عند أول كذب (نتيجتها القيمة المنطقية الكاذبة نفسها)
+  expr_CmpChain(node) {
+    const map = { LT: "LT", GT: "GT", LTE: "LTE", GTE: "GTE" };
+    this.compileExpr(node.operands[0]);
+    this.compileExpr(node.operands[1]);
+    const falses = [];
+    for (let k = 0; k < node.ops.length; k++) {
+      if (k < node.ops.length - 1) {
+        this.chunk.emit("TUCK");
+        this.chunk.emit(map[node.ops[k]]);
+        falses.push(this.chunk.emit("JUMP_IF_FALSE", -1));
+        this.chunk.emit("POP");
+        this.compileExpr(node.operands[k + 2]);
+      } else {
+        this.chunk.emit(map[node.ops[k]]);
+      }
+    }
+    const jEnd = this.chunk.emit("JUMP", -1);
+    const here = this.chunk.here();
+    falses.forEach((f) => this.chunk.patch(f, [here]));
+    if (falses.length) { this.chunk.emit("SWAP"); this.chunk.emit("POP"); }
+    this.chunk.patch(jEnd, [this.chunk.here()]);
+  }
+
   // الشرط الثلاثي: ش ? أ : ب
   expr_Cond(node) {
     this.compileExpr(node.cond);

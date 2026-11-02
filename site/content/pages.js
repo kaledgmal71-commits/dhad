@@ -23,6 +23,7 @@ const docs = [
 { id:'ops', title:'العوامل', body:`
 <div class="tablewrap"><table><tr><th>الفئة</th><th>العوامل</th></tr>
 <tr><td>حسابية</td><td><code>+ - * / %</code> (و<code>+</code> تدمج النصوص)، والقسمة الصحيحة <code>//</code> (تقريب نحو الأسفل: <code>-٧ // ٢</code> = <code>-٤</code>)، والأسّ <code>**</code> (ينعقد لليمين: <code>٢ ** ٣ ** ٢</code> = <code>٥١٢</code>، و<code>-٢ ** ٢</code> = <code>-٤</code>)</td></tr>
+<tr><td>مقارنة موسَّعة</td><td>مقارنات متسلسلة <code>١ &lt; س &lt; ١٠</code> (الأوسط يُحسب مرة واحدة وتتوقف عند أول كذب)، و<code>س ليس في قائمة</code>، وفحص النوع <code>س هو "رقم"</code> (أسماء الأنواع كما تعطيها <code>نوع</code>)</td></tr>
 <tr><td>شرطية</td><td>الشرط الثلاثي <code>شرط ? أ : ب</code> (ينفّذ فرعًا واحدًا فقط)، ودمج الفراغ <code>أ ?? ب</code> (يعطي <code>ب</code> فقط إن كانت <code>أ</code> لاشيء، فالصفر والنص الفارغ و<code>خطأ</code> تبقى كما هي)، والتسلسل الاختياري <code>م?.أ?.ب</code> و<code>م?.["ك"]</code> و<code>م?.ف(٤)</code> (يعطي <code>لاشيء</code> للتسلسل كله عند أول <code>لاشيء</code> بدل الخطأ)</td></tr>
 <tr><td>بتّية</td><td><code>&amp;</code> <code>|</code> <code>^</code> <code>~</code> <code>&lt;&lt;</code> <code>&gt;&gt;</code> على الأعداد الصحيحة الآمنة؛ أولويتها أدنى من الجمع وأعلى من المقارنة، فـ<code>٥ &amp; ٣ == ١</code> تعني <code>(٥ &amp; ٣) == ١</code></td></tr>
 <tr><td>مقارنة</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td></tr>
