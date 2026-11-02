@@ -36,10 +36,12 @@ class FunctionScope {
     this.nextSlot = 0;
     params.forEach((p) => this.declare(p));
   }
-  declare(name) {
+  declare(name, isConst) {
     const slot = this.nextSlot++;
     this.chunk.maxSlots = Math.max(this.chunk.maxSlots, this.nextSlot);
-    this.scopes[this.scopes.length - 1].set(name, slot);
+    const m = this.scopes[this.scopes.length - 1];
+    m.set(name, slot);
+    if (isConst) (m.consts || (m.consts = new Set())).add(name); else if (m.consts) m.consts.delete(name);
     return slot;
   }
   resolve(name) {
@@ -61,9 +63,11 @@ class BlockScope {
     this.nextSlot = 0;
     this.isBlock = true;
   }
-  declare(name) {
+  declare(name, isConst) {
     const slot = this.nextSlot++;
-    this.scopes[this.scopes.length - 1].set(name, slot);
+    const m = this.scopes[this.scopes.length - 1];
+    m.set(name, slot);
+    if (isConst) (m.consts || (m.consts = new Set())).add(name); else if (m.consts) m.consts.delete(name);
     return slot;
   }
   resolve(name) {
@@ -93,6 +97,7 @@ class Compiler {
     this.inFinally = 0;         // عمق كتل «أخيرًا» التي نصرّفها الآن
     this.finallyStack = [];     // كتل «أخيرًا» المفتوحة: { block, depth }
     this.tryDepth = 0;          // عمق كتل «حاول» المفتوحة (لإغلاقها عند توقف/أكمل)
+    this.globalConsts = new Set(); // ثوابت المستوى الأعلى (ثابت س = …)
     this.exportNames = [];      // أسماء ما عُلِّم بـ «صدّر» في المستوى الأعلى
   }
 
@@ -128,12 +133,26 @@ class Compiler {
     this.chunk.emit("POP");
   }
 
+  // هل الاسم المرئي الآن ثابتٌ؟ (يُبحث من أقرب نطاق محلي إلى الخارج ثم في ثوابت المستوى الأعلى)
+  isConstBinding(name) {
+    for (let i = this.stack.length - 1; i >= 1; i--) {
+      const sc = this.stack[i];
+      for (let j = sc.scopes.length - 1; j >= 0; j--) {
+        const m = sc.scopes[j];
+        if (m.has(name)) return !!(m.consts && m.consts.has(name));
+      }
+    }
+    return this.globalConsts.has(name);
+  }
+
   stmt_VarDecl(node) {
     this.compileExpr(node.expr);
     if (this.isTopLevel) {
+      if (this.globalConsts.has(node.name)) throw new CompileError(`الثابت «${node.name}» معرَّف سابقًا ولا يُعاد تعريفه`);
+      if (node.isConst) this.globalConsts.add(node.name);
       this.chunk.emit("DEFINE_GLOBAL", node.name);
     } else {
-      this.emitStore(this.declRef(node.name));
+      this.emitStore(this.declRef(node.name, node.isConst));
       this.chunk.emit("POP");
     }
   }
@@ -390,9 +409,9 @@ class Compiler {
     else this.chunk.emit("SET_LOCAL", ref.local);
   }
   // يحجز متغيرًا جديدًا في النطاق الحالي ويُرجع مرجعه: عامًّا في الرئيسي، وإلا خانة في الدالة أو في بيئة الدورة
-  declRef(name) {
+  declRef(name, isConst) {
     if (this.isTopLevel) return { global: name };
-    const slot = this.current.declare(name);
+    const slot = this.current.declare(name, isConst);
     return this.current.isBlock ? { up: 0, slot } : { local: slot };
   }
   // يفتح بيئة دورة جديدة؛ تُغلق بـ _endIterEnv
@@ -451,6 +470,7 @@ class Compiler {
 
   expr_Assign(node) {
     if (node.target.kind === "Identifier") {
+      if (this.isConstBinding(node.target.name)) throw new CompileError(`لا يمكن إعادة إسناد الثابت «${node.target.name}»`);
       this.compileExpr(node.expr);
       const r = this.lookup(node.target.name);
       if (r) { if (r.local !== undefined) this.chunk.emit("SET_LOCAL", r.local); else this.chunk.emit("SET_UP", r.up, r.slot); return; }

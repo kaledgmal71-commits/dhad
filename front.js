@@ -271,6 +271,7 @@ class Parser {
     if (this.check("FOR")) return this.forStmt();
     if (this.check("RETURN")) return this.returnStmt();
     if (this.check("VAR")) return this.varDecl();
+    if (this.isConstDecl()) return this.varDecl(true);
     if (this.check("LBRACE")) return this.block();
     if (this.check("BREAK")) { this.advance(); this.match("SEMI"); return { kind: "Break" }; }
     if (this.check("CONTINUE")) { this.advance(); this.match("SEMI"); return { kind: "Continue" }; }
@@ -284,6 +285,7 @@ class Parser {
     if (nx.type === "FUNC") return !!n2 && n2.type === "IDENT";
     if (nx.type === "IDENT" && nx.value === "غير_متزامنة" && !!n2 && n2.type === "FUNC") return !!this.tokens[this.pos + 3] && this.tokens[this.pos + 3].type === "IDENT";
     if (nx.type === "VAR") return true;
+    if (nx.type === "IDENT" && nx.value === "ثابت" && !!n2 && n2.line === nx.line && (n2.type === "IDENT" || n2.type === "LBRACKET" || n2.type === "LBRACE")) return true;
     return nx.type === "IDENT" && nx.value === "صنف" && !!n2 && n2.type === "IDENT";
   }
   exportStmt() {
@@ -476,21 +478,34 @@ class Parser {
     return { kind: "Return", expr };
   }
 
-  varDecl() {
-    this.expect("VAR");
+  // «ثابت» كلمة سياقية: تبدأ تعريف ثابت إن جاء بعدها على السطر نفسه اسم أو نمط تفكيك
+  isConstDecl() {
+    const t = this.peek(), nx = this.tokens[this.pos + 1];
+    return t.type === "IDENT" && t.value === "ثابت" && !!nx && nx.line === t.line && (nx.type === "IDENT" || nx.type === "LBRACKET" || nx.type === "LBRACE");
+  }
+  markConst(st) {
+    if (st.kind === "VarDecl") st.isConst = true;
+    else if (st.kind === "Multi") for (const x of st.statements) if (x.kind === "VarDecl" && !String(x.name).startsWith("@") && (st.names ? st.names.includes(x.name) : true)) x.isConst = true;
+    return st;
+  }
+  varDecl(isConst) {
+    if (isConst) this.advance(); else this.expect("VAR");
     if (this.check("LBRACKET") || this.check("LBRACE")) {
       const line = this.peek().line;
       const pat = this.pattern();
+      if (isConst && !this.check("ASSIGN")) throw new ParseError(`السطر ${line}: الثابت يحتاج قيمة ابتدائية: ثابت [أ، ب] = قيمة`);
       this.expect("ASSIGN");
       const expr = this.expression();
       this.match("SEMI");
-      return this.destructure(pat, expr, line);
+      const d = this.destructure(pat, expr, line);
+      return isConst ? this.markConst(d) : d;
     }
-    const name = this.expect("IDENT").value;
+    const nameTok = this.expect("IDENT"), name = nameTok.value;
+    if (isConst && !this.check("ASSIGN")) throw new ParseError(`السطر ${nameTok.line}: الثابت «${name}» يحتاج قيمة ابتدائية: ثابت ${name} = قيمة`);
     this.expect("ASSIGN");
     const expr = this.expression();
     this.match("SEMI");
-    return { kind: "VarDecl", name, expr };
+    return isConst ? { kind: "VarDecl", name, expr, isConst: true } : { kind: "VarDecl", name, expr };
   }
 
   // نمط التفكيك: [أ، ب، ...الباقي] للقوائم، و{اسم، عمر: ع} للخرائط، ويجوز التداخل
