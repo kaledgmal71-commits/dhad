@@ -188,7 +188,10 @@ function tokenize(src) {
     }
 
     const two = src.slice(i, i + 2);
-    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS", "**": "POW", "//": "FLOORDIV", "<<": "SHL", ">>": "SHR", "??": "QQ" };
+    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS", "**": "POW", "//": "FLOORDIV", "<<": "SHL", ">>": "SHR", "??": "QQ", "&=": "BITANDEQ", "|=": "BITOREQ", "^=": "BITXOREQ" };
+    const three = src.slice(i, i + 3);
+    const threeMap = { "**=": "POWEQ", "//=": "FLOORDIVEQ", "<<=": "SHLEQ", ">>=": "SHREQ", "??=": "QQEQ" };
+    if (threeMap[three]) { tokens.push({ type: threeMap[three], value: three, line }); i += 3; continue; }
     if (two === "?." && !isDigitChar(src[i + 2] || "")) { tokens.push({ type: "QDOT", value: "?.", line }); i += 2; continue; } // ?. إلا إذا تلاها رقم (شرط ثلاثي: س ?.٥ : ١)
     if (twoMap[two]) { tokens.push({ type: twoMap[two], value: two, line }); i += 2; continue; }
 
@@ -565,25 +568,53 @@ class Parser {
 
   exprStmt() {
     const expr = this.expression();
+    if (this.check("COMMA") && (expr.kind === "Identifier" || expr.kind === "Index")) return this.multiAssign(expr);
     this.match("SEMI");
     return { kind: "ExprStmt", expr };
+  }
+
+  // إسناد متعدد: أ، ب = ب، أ  — تُقيَّم كل القيم أولًا (في متغيرات مخفية) ثم تُسنَد، فيصح التبديل
+  multiAssign(first) {
+    const line = this.peek().line;
+    const targets = [first];
+    while (this.match("COMMA")) {
+      const t = this.ternary();
+      if (t.kind !== "Identifier" && t.kind !== "Index") throw new ParseError(`السطر ${line}: الطرف الأيسر للإسناد المتعدد يجب أن يكون متغيرًا أو عنصرًا بفهرس`);
+      targets.push(t);
+    }
+    if (!this.match("ASSIGN")) throw new ParseError(`السطر ${line}: بعد الأهداف المتعددة يلزم علامة = ثم القيم`);
+    const values = [this.expression()];
+    while (this.match("COMMA")) values.push(this.expression());
+    if (values.length !== targets.length) throw new ParseError(`السطر ${line}: عدد الأهداف (${targets.length}) لا يساوي عدد القيم (${values.length}) في الإسناد المتعدد`);
+    this.match("SEMI");
+    this.destructN = (this.destructN || 0) + 1;
+    const stmts = [], hid = [];
+    values.forEach((v) => { const h = "@إسناد_" + (++this.destructN); hid.push(h); stmts.push({ kind: "VarDecl", name: h, expr: v }); });
+    targets.forEach((t, i) => stmts.push({ kind: "ExprStmt", expr: { kind: "Assign", target: t, expr: { kind: "Identifier", name: hid[i] } } }));
+    return { kind: "Multi", statements: stmts, names: [], line };
   }
 
   expression() { return this.assignment(); }
 
   assignment() {
     const expr = this.ternary();
-    const COMPOUND = { PLUSEQ: "PLUS", MINUSEQ: "MINUS", STAREQ: "STAR", SLASHEQ: "SLASH", PERCENTEQ: "PERCENT" };
+    const COMPOUND = { PLUSEQ: "PLUS", MINUSEQ: "MINUS", STAREQ: "STAR", SLASHEQ: "SLASH", PERCENTEQ: "PERCENT", POWEQ: "@أس", FLOORDIVEQ: "@قسمة_صحيحة", BITANDEQ: "@بتّ_و", BITOREQ: "@بتّ_أو", BITXOREQ: "@بتّ_خاص", SHLEQ: "@إزاحة_يسار", SHREQ: "@إزاحة_يمين", QQEQ: "??" };
     const ct = this.peek().type;
     if (COMPOUND[ct] || ct === "PLUSPLUS" || ct === "MINUSMINUS") {
       this.advance();
       if (expr.kind !== "Identifier" && !(expr.kind === "Index" && this.simpleTarget(expr))) {
         throw new ParseError(`السطر ${this.peek().line}: الطرف الأيسر للإسناد المركّب يجب أن يكون متغيرًا أو عنصرًا بفهرس بسيط`);
       }
-      let op, value;
-      if (ct === "PLUSPLUS" || ct === "MINUSMINUS") { op = ct === "PLUSPLUS" ? "PLUS" : "MINUS"; value = { kind: "Number", value: 1 }; }
-      else { op = COMPOUND[ct]; value = this.assignment(); }
-      return { kind: "Assign", target: expr, expr: { kind: "BinOp", op, left: expr, right: value } };
+      let value, node;
+      if (ct === "PLUSPLUS" || ct === "MINUSMINUS") { node = { kind: "BinOp", op: ct === "PLUSPLUS" ? "PLUS" : "MINUS", left: expr, right: { kind: "Number", value: 1 } }; }
+      else {
+        value = this.assignment();
+        const op = COMPOUND[ct];
+        if (op === "??") node = { kind: "Coalesce", left: expr, right: value };
+        else if (op[0] === "@") node = this.bin2(op, expr, value);
+        else node = { kind: "BinOp", op, left: expr, right: value };
+      }
+      return { kind: "Assign", target: expr, expr: node };
     }
     if (this.check("ASSIGN")) {
       this.advance();
