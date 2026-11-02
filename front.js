@@ -207,7 +207,27 @@ function tokenize(src) {
   }
 
   tokens.push({ type: "EOF", value: null, line });
+  markBreaks(tokens);
   return tokens;
+}
+
+// قاعدة نهاية الجملة (بند ١-١٠): فاصل السطر ينهي الجملة إن بدأ السطر التالي بـ ( أو [ أو + أو - وكان خارج أي ( ) أو [ ] أو {} قيمة؛
+// فيُعلَّم الرمز بـ nl فلا يُعدّ استمرارًا للتعبير السابق (استدعاء أو فهرسة أو جمع). داخل الأقواس يبقى الاستمرار كما هو.
+const _VALUE_BEFORE_LBRACE = new Set(["ASSIGN", "LPAREN", "LBRACKET", "COMMA", "COLON", "RETURN", "QQ", "QMARK", "AND", "OR", "NOT", "PLUS", "MINUS", "STAR", "SLASH", "PERCENT", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "PLUSEQ", "MINUSEQ", "STAREQ", "SLASHEQ", "PERCENTEQ", "POWEQ", "FLOORDIVEQ", "BITANDEQ", "BITOREQ", "BITXOREQ", "SHLEQ", "SHREQ", "QQEQ"]);
+function markBreaks(tokens) {
+  const frames = []; let depth = 0;
+  for (let k = 0; k < tokens.length; k++) {
+    const t = tokens[k];
+    if (k > 0 && depth === 0 && t.line > tokens[k - 1].line && (t.type === "LPAREN" || t.type === "LBRACKET" || t.type === "PLUS" || t.type === "MINUS")) t.nl = true;
+    if (t.type === "LPAREN" || t.type === "LBRACKET") depth++;
+    else if (t.type === "RPAREN" || t.type === "RBRACKET") { if (depth > 0) depth--; }
+    else if (t.type === "LBRACE") {
+      if (k > 0 && _VALUE_BEFORE_LBRACE.has(tokens[k - 1].type)) { frames.push(-1); depth++; }
+      else { frames.push(depth); depth = 0; }
+    } else if (t.type === "RBRACE") {
+      if (frames.length) { const f = frames.pop(); if (f === -1) { if (depth > 0) depth--; } else depth = f; }
+    }
+  }
 }
 
 // ========================= المحلل النحوي (Parser) =========================
@@ -245,7 +265,7 @@ class Parser {
 
   parseProgram() {
     const statements = [];
-    while (!this.check("EOF")) statements.push(this.statement());
+    while (!this.check("EOF")) { if (this.match("SEMI")) continue; statements.push(this.statement()); }
     return { kind: "Program", statements };
   }
 
@@ -371,7 +391,7 @@ class Parser {
     this.expect("LBRACE");
     const stmts = [];
     this.depth++;
-    while (!this.check("RBRACE") && !this.check("EOF")) stmts.push(this.statement());
+    while (!this.check("RBRACE") && !this.check("EOF")) { if (this.match("SEMI")) continue; stmts.push(this.statement()); }
     this.depth--;
     this.expect("RBRACE");
     return { kind: "Block", statements: stmts };
@@ -729,7 +749,7 @@ class Parser {
   }
   term() {
     let expr = this.factor();
-    while (["PLUS", "MINUS"].includes(this.peek().type)) {
+    while (["PLUS", "MINUS"].includes(this.peek().type) && !this.peek().nl) {
       const op = this.advance().type;
       expr = { kind: "BinOp", op, left: expr, right: this.factor() };
     }
@@ -781,7 +801,7 @@ class Parser {
         } else this.expect("IDENT");
         continue;
       }
-      if (this.check("LPAREN")) {
+      if (this.check("LPAREN") && !this.peek().nl) {
         this.advance();
         const args = [];
         if (!this.check("RPAREN")) {
@@ -794,7 +814,7 @@ class Parser {
         this.advance();
         const nameTok = this.expect("IDENT");
         expr = { kind: "Index", obj: expr, index: { kind: "String", value: nameTok.value } };
-      } else if (this.check("LBRACKET")) {
+      } else if (this.check("LBRACKET") && !this.peek().nl) {
         this.advance();
         const Null = { kind: "Null" };
         if (this.check("COLON")) {            // ق[:ب]
