@@ -505,6 +505,54 @@ class Compiler {
     this.chunk.emit(op);
   }
 
+
+  // الشرط الثلاثي: ش ? أ : ب
+  expr_Cond(node) {
+    this.compileExpr(node.cond);
+    const jFalse = this.chunk.emit("JUMP_IF_FALSE", -1);
+    this.chunk.emit("POP");
+    this.compileExpr(node.then);
+    const jEnd = this.chunk.emit("JUMP", -1);
+    this.chunk.patch(jFalse, [this.chunk.here()]);
+    this.chunk.emit("POP");
+    this.compileExpr(node.else);
+    this.chunk.patch(jEnd, [this.chunk.here()]);
+  }
+
+  // اختبار «غير لاشيء» لقمة المكدّس مع إبقائها: ينتهي والمكدّس [القيمة، منطقي] ثم قفزة إن كان لاشيء
+  _nonNullTest() {
+    this.chunk.emit("DUP");
+    this.chunk.emit("CONST", this.chunk.addConstant(null));
+    this.chunk.emit("NEQ");
+    return this.chunk.emit("JUMP_IF_FALSE", -1);
+  }
+
+  // أ ?? ب
+  expr_Coalesce(node) {
+    this.compileExpr(node.left);
+    const jNull = this._nonNullTest();
+    this.chunk.emit("POP");
+    const jEnd = this.chunk.emit("JUMP", -1);
+    this.chunk.patch(jNull, [this.chunk.here()]);
+    this.chunk.emit("POP"); this.chunk.emit("POP");
+    this.compileExpr(node.right);
+    this.chunk.patch(jEnd, [this.chunk.here()]);
+  }
+
+  // تسلسل اختياري: يُحسب expr ثم تُطبَّق السلسلة عليه إن لم يكن لاشيء، وإلا فالنتيجة لاشيء كاملةً
+  expr_Opt(node) {
+    this.compileExpr(node.expr);
+    const jNull = this._nonNullTest();
+    this.chunk.emit("POP");
+    this.compileExpr(node.chain);
+    const jEnd = this.chunk.emit("JUMP", -1);
+    this.chunk.patch(jNull, [this.chunk.here()]);
+    this.chunk.emit("POP"); this.chunk.emit("POP");
+    this.chunk.emit("CONST", this.chunk.addConstant(null));
+    this.chunk.patch(jEnd, [this.chunk.here()]);
+  }
+  expr_ChainBase() { /* القيمة موجودة على المكدّس أصلًا */ }
+
   expr_Call(node) {
     this.compileExpr(node.callee);
     node.args.forEach((a) => this.compileExpr(a));

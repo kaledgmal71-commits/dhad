@@ -10,7 +10,7 @@ const SINGLE_CHAR = {
   "(": "LPAREN", ")": "RPAREN", "{": "LBRACE", "}": "RBRACE",
   "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", "،": "COMMA", ";": "SEMI", ":": "COLON",
   "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT",
-  "&": "BITAND", "|": "BITOR", "^": "BITXOR", "~": "BITNOT",
+  "&": "BITAND", "|": "BITOR", "^": "BITXOR", "~": "BITNOT", "?": "QMARK",
 };
 
 class LexError extends Error {}
@@ -188,7 +188,8 @@ function tokenize(src) {
     }
 
     const two = src.slice(i, i + 2);
-    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS", "**": "POW", "//": "FLOORDIV", "<<": "SHL", ">>": "SHR" };
+    const twoMap = { "==": "EQ", "!=": "NEQ", "<=": "LTE", ">=": "GTE", "&&": "AND", "||": "OR", "+=": "PLUSEQ", "-=": "MINUSEQ", "*=": "STAREQ", "/=": "SLASHEQ", "%=": "PERCENTEQ", "++": "PLUSPLUS", "--": "MINUSMINUS", "**": "POW", "//": "FLOORDIV", "<<": "SHL", ">>": "SHR", "??": "QQ" };
+    if (two === "?." && !isDigitChar(src[i + 2] || "")) { tokens.push({ type: "QDOT", value: "?.", line }); i += 2; continue; } // ?. إلا إذا تلاها رقم (شرط ثلاثي: س ?.٥ : ١)
     if (twoMap[two]) { tokens.push({ type: twoMap[two], value: two, line }); i += 2; continue; }
 
     if (ch === "=") { tokens.push({ type: "ASSIGN", value: "=", line }); i++; continue; }
@@ -214,7 +215,7 @@ const TOKEN_AR = {
   LPAREN: "«(»", RPAREN: "«)»", LBRACE: "«{»", RBRACE: "«}»", LBRACKET: "«[»", RBRACKET: "«]»",
   COMMA: "«،»", SEMI: "«;»", COLON: "«:»", ASSIGN: "«=»", PLUS: "«+»", MINUS: "«-»", STAR: "«*»",
   SLASH: "«/»", PERCENT: "«%»", EQ: "«==»", NEQ: "«!=»", LT: "«<»", GT: "«>»", LTE: "«<=»", GTE: "«>=»",
-  POW: "«**»", FLOORDIV: "«//»", SHL: "«<<»", SHR: "«>>»", BITAND: "«&»", BITOR: "«|»", BITXOR: "«^»", BITNOT: "«~»",
+  POW: "«**»", FLOORDIV: "«//»", SHL: "«<<»", SHR: "«>>»", BITAND: "«&»", BITOR: "«|»", BITXOR: "«^»", BITNOT: "«~»", QMARK: "«?»", QQ: "«??»", QDOT: "«?.»",
   DOT: "«.»", NOT: "«!»", IDENT: "اسم (متغير أو دالة)", NUMBER: "رقم", STRING: "نص", EOF: "نهاية الكود",
   FUNC: "«دالة»", RETURN: "«ارجع»", IF: "«إذا»", ELSE: "«وإلا»", WHILE: "«طالما»", FOR: "«من_أجل»",
   FROM: "«من»", TO: "«إلى»", VAR: "«متغير»", TRUE: "«صحيح»", FALSE: "«خطأ»", NULL: "«لاشيء»",
@@ -378,7 +379,7 @@ class Parser {
       do {
         const name = this.expect("IDENT").value;
         params.push(name);
-        if (this.match("ASSIGN")) defaults.push({ name, expr: this.logicOr() });
+        if (this.match("ASSIGN")) defaults.push({ name, expr: this.ternary() });
         else if (defaults.length) throw new ParseError(`السطر ${this.peek().line}: بعد معامل له قيمة افتراضية يجب أن تكون بقية المعاملات كذلك`);
       } while (this.match("COMMA"));
     }
@@ -556,7 +557,7 @@ class Parser {
   expression() { return this.assignment(); }
 
   assignment() {
-    const expr = this.logicOr();
+    const expr = this.ternary();
     const COMPOUND = { PLUSEQ: "PLUS", MINUSEQ: "MINUS", STAREQ: "STAR", SLASHEQ: "SLASH", PERCENTEQ: "PERCENT" };
     const ct = this.peek().type;
     if (COMPOUND[ct] || ct === "PLUSPLUS" || ct === "MINUSMINUS") {
@@ -589,6 +590,23 @@ class Parser {
     return false;
   }
 
+  // الشرط الثلاثي  ش ؟ أ : ب  (ينعقد لليمين) ودمج الفراغ  أ ?? ب  (أدنى من أو/و وأعلى من الشرط الثلاثي)
+  ternary() {
+    const cond = this.coalesce();
+    if (this.check("QMARK")) {
+      this.advance();
+      const a = this.assignment();
+      this.expect("COLON");
+      const b = this.assignment();
+      return { kind: "Cond", cond, then: a, else: b };
+    }
+    return cond;
+  }
+  coalesce() {
+    let expr = this.logicOr();
+    while (this.check("QQ")) { this.advance(); expr = { kind: "Coalesce", left: expr, right: this.logicOr() }; }
+    return expr;
+  }
   logicOr() {
     let expr = this.logicAnd();
     while (this.check("OR")) { this.advance(); expr = { kind: "BinOp", op: "أو", left: expr, right: this.logicAnd() }; }
@@ -683,7 +701,22 @@ class Parser {
   }
   callExpr() {
     let expr = this.primary();
+    const guards = []; // تسلسل اختياري ?. : كل حارس تعبيرٌ يُقطع التسلسل عند لاشيء فيه
     while (true) {
+      if (this.check("QDOT")) {
+        this.advance();
+        guards.push(expr);
+        const base = { kind: "ChainBase" };
+        if (this.check("IDENT")) { expr = { kind: "Index", obj: base, index: { kind: "String", value: this.advance().value } }; }
+        else if (this.check("LBRACKET")) { this.advance(); const idx = this.expression(); this.expect("RBRACKET"); expr = { kind: "Index", obj: base, index: idx }; }
+        else if (this.check("LPAREN")) {
+          this.advance(); const args = [];
+          if (!this.check("RPAREN")) { args.push(this.expression()); while (this.match("COMMA")) args.push(this.expression()); }
+          this.expect("RPAREN");
+          expr = { kind: "Call", callee: base, args };
+        } else this.expect("IDENT");
+        continue;
+      }
       if (this.check("LPAREN")) {
         this.advance();
         const args = [];
@@ -719,6 +752,7 @@ class Parser {
         expr = { kind: "Index", obj: expr, index: idx };
       } else break;
     }
+    for (let k = guards.length - 1; k >= 0; k--) expr = { kind: "Opt", expr: guards[k], chain: expr };
     return expr;
   }
   primary() {

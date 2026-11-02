@@ -42,6 +42,8 @@ const tplCases = ['قالب"أ{س}ب"', 'قالب"{س}"', 'قالب"{س}{ص}"', 
 for (const t of tplCases) cases.push({ n: 'قالب ' + t, t: 's = ' + t });
 const opCases = ['a ** b', 'a**b**c', 'a // b', 'a//b', 'a & b | c ^ d ~ e', 'a << b >> c', 'a<<=b', 'a>>=b', 'a **= b', 'a //= b', 'a && b || c', 'a &&& b', '2**-1', '2 ***3', '// x', '~~a', 'a <b> c', 'a<=b>=c', 'a <<< b'];
 for (const t of opCases) cases.push({ n: 'عامل ' + t, t: 's = ' + t });
+const qCases = ['a ? b : c', 'a?b:c', 'a ?? b', 'a??b', 'a?.b', 'a ?.5 : 1', 'a?.٥', 'a ?. b', 'a ??? b', 'a ?', '?', '??', '?.', 'a?.[1]', 'a?.(2)', 'a ?? ? b'];
+for (const t of qCases) cases.push({ n: 'استفهام ' + t, t: 's = ' + t });
 cases.push({ n: 'تعليق كتلة', t: 'اطبع(١) /* أ */ اطبع(٢)' }, { n: 'تعليق كتلة متعدد الأسطر', t: 'أ /* س\nص\n*/ ب\n؟' }, { n: 'تعليق كتلة غير مغلق', t: 'أ /* ب\nج' }, { n: 'نجمة وشرطة', t: '/*/ x */ y' }, { n: 'قسمة ونجمة', t: '٦ / ٣ * ٢' }, { n: 'تعليق في نص', t: '"/* لا */"' }, { n: 'فارغ', t: '' }, { n: 'اقتباس_أخير', t: '"abc\\' }, { n: 'شرطة_أخيرة', t: 'x\\' });
 function ref(t) { try { return { ok: tokenize(t) }; } catch (e) { return { err: e.message }; } }
 let pass = 0, fail = 0;

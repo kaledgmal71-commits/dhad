@@ -3413,6 +3413,7 @@ class VM {
       case "HALT": this.frames.pop(); return;
       case "CONST": this.push(frame.chunk.constants[args[0]]); return;
       case "POP": this.pop(); return;
+      case "DUP": this.push(this.peek()); return;
       case "GET_LOCAL": this.push(frame.locals[args[0]]); return;
       case "SET_LOCAL": frame.locals[args[0]] = this.peek(); return;
       case "GET_UP": { let e = frame.env; for (let k = 0; k < args[0]; k++) e = e.parent; this.push(e.locals[args[1]]); return; }
