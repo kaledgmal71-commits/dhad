@@ -45,6 +45,10 @@ const snippets = [
   'متغير ه = س\nهو = ٥\nاطبع(هو، س هو "نص"، ليس (س هو "قائمة")، ١ < ٢ في [صحيح]، أ ليس في ب ليس في ج)',
   'ثابت أ = ١\nثابت [ب، ج] = [٢، ٣]\nثابت {د، ه: و} = خ\nصدّر ثابت ز = ٤\nدالة ف() { ثابت ح = ٥\n ارجع ح }',
   'ثابت\nأ = ٢\nثابت أ\nثابت ب',
+  '# dhad: english\nvar t = 0\nfor (i from 1 to 5) { t += i }\nprint(t)\nfunction f(n) { if (n <= 1) { return 1 } return n * f(n - 1) }',
+  '# dhad: english\ntry { throw("x") } catch (e) { print(e) } finally { print(1) }\nclass A extends B { function constructor(n) { this.n = n } }\nconst z = [1] is "list"',
+  '# dhad: arabic\nvar a = 1\nfor (i from 1 to 3) { }',
+  'متغير constructor = ١\nمتغير toString = constructor\nمتغير خ = {"valueOf": hasOwnProperty}',
   'متغير أ = ١\n(٢)\nمتغير ب = أ\n-٢\n[١، ٢]\nأ + ب\n+ ٣',
   ';;; اطبع(١);; إذا (صحيح) { ; اطبع(٢) ; } ; دالة ف() { ;; }',
   'متغير خ = {\n"أ": ١\n- ٢،\n"ب": [١\n+ ٢]\n}\nف(١\n(٢)\n[٣])\nع(دالة() {\nأ\n(٢)\n})',
@@ -93,7 +97,7 @@ for (let i = 0; i < cases.length; i += B) {
     const want = ref(c.t), g = strip(canon(got[k]));
     if (want.ok) okCount++;
     const a = JSON.stringify(want), b = JSON.stringify(g);
-    if (a === b) pass++; else { fail++; if (fail <= 5) { let d = 0; while (d < a.length && a[d] === b[d]) d++; console.log('اختلاف في', c.n, '\n  الأصل:', a.slice(Math.max(0, d - 60), d + 200), '\n  ضاد :', b.slice(Math.max(0, d - 60), d + 200)); } }
+    if (a === b) pass++; else { fail++; if (fail <= 5) { let d = 0; while (d < a.length && a[d] === b[d]) d++; console.log('اختلاف في', c.n, JSON.stringify(c.t).slice(0,300), '\n  الأصل:', a.slice(Math.max(0, d - 60), d + 200), '\n  ضاد :', b.slice(Math.max(0, d - 60), d + 200)); } }
   });
 }
 console.log(`pass ${pass} fail ${fail} (منها ${okCount} تحليلًا ناجحًا والباقي أخطاء متطابقة)`);

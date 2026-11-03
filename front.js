@@ -1,4 +1,110 @@
 // ========================= المحلل الرمزي (Lexer) =========================
+// الصياغة الإنجليزية الاختيارية (بند ١-١١): أول سطر غير فارغ `# dhad: english` يفعّل تحويل الكلمات الإنجليزية إلى مقابلاتها العربية عند المسح
+// <english-table>
+const ENGLISH_WORDS = {
+  "function": "دالة",
+  "return": "ارجع",
+  "if": "إذا",
+  "else": "وإلا",
+  "while": "طالما",
+  "for": "من_أجل",
+  "from": "من",
+  "in": "في",
+  "class": "صنف",
+  "extends": "يرث",
+  "export": "صدّر",
+  "to": "إلى",
+  "var": "متغير",
+  "true": "صحيح",
+  "false": "خطأ",
+  "null": "لاشيء",
+  "and": "و",
+  "or": "أو",
+  "not": "ليس",
+  "break": "توقف",
+  "continue": "أكمل",
+  "print": "اطبع",
+  "length": "طول",
+  "append": "أضف",
+  "sort": "رتب",
+  "pop": "انزع",
+  "insert": "أدرج",
+  "range": "مدى",
+  "reverse": "اعكس",
+  "toNumber": "عدد",
+  "slice": "اقتطع",
+  "replace": "استبدل",
+  "includes": "يحوي",
+  "split": "افصل",
+  "join": "اربط",
+  "trim": "قصّ",
+  "toCodeString": "نص_برمجي",
+  "sqrt": "جذر",
+  "pow": "قوة",
+  "abs": "مطلق",
+  "round": "جولة",
+  "floor": "أرضية",
+  "ceil": "سقف",
+  "max": "الأكبر",
+  "min": "الأصغر",
+  "random": "عشوائي",
+  "eval": "نفّذ",
+  "saveFile": "احفظ_ملف",
+  "getRoot": "الجذر",
+  "createElement": "عنصر_جديد",
+  "setText": "عيّن_نص",
+  "setStyle": "عيّن_نمط",
+  "addClass": "أضف_فئة",
+  "appendChild": "أضف_ابن",
+  "removeElement": "امسح_عنصر",
+  "getValue": "اقرأ_قيمة",
+  "setValue": "عيّن_قيمة",
+  "onClick": "عند_نقر",
+  "try": "حاول",
+  "catch": "التقط",
+  "finally": "أخيرًا",
+  "async": "غير_متزامنة",
+  "await": "انتظر",
+  "keys": "مفاتيح",
+  "values": "قيم",
+  "delete": "احذف",
+  "map": "طبّق",
+  "filter": "رشّح",
+  "reduce": "اختصر",
+  "repeat": "كرّر",
+  "import": "استورد",
+  "sum": "جمع",
+  "indexOf": "موضع",
+  "now": "الوقت",
+  "type": "نوع",
+  "set": "مجموعة",
+  "union": "اتحاد",
+  "intersection": "تقاطع",
+  "difference": "فرق",
+  "subset": "جزء_من",
+  "pairs": "أزواج",
+  "sleep": "نم",
+  "resolved": "وعد_جاهز",
+  "all": "كل_الوعود",
+  "race": "أول_وعد",
+  "throw": "أطلق_خطأ",
+  "input": "ادخل",
+  "let": "متغير",
+  "const": "ثابت",
+  "is": "هو",
+  "this": "هذا",
+  "super": "الأب",
+  "constructor": "جديد",
+  "step": "بخطوة",
+  "raw": "خام",
+  "template": "قالب",
+};
+// </english-table>
+const ENGLISH_PRAGMA = /^#\s*(?:dhad|ضاد)\s*:\s*english$/;
+function hasEnglishPragma(src) {
+  for (const ln of src.split("\n")) { const t = ln.replace(/^\uFEFF/, "").trim(); if (t === "") continue; return ENGLISH_PRAGMA.test(t); }
+  return false;
+}
 const KEYWORDS = {
   "دالة": "FUNC", "ارجع": "RETURN", "إذا": "IF", "وإلا": "ELSE",
   "طالما": "WHILE", "من_أجل": "FOR", "من": "FROM", "إلى": "TO",
@@ -48,8 +154,9 @@ function isIdentPart(ch) {
   return isIdentStart(ch) || /[0-9]/.test(ch);
 }
 
-function tokenize(src) {
+function tokenize(src, forceEnglish) {
   const tokens = [];
+  const english = !!forceEnglish || hasEnglishPragma(src);
   let i = 0, line = 1;
   const n = src.length;
 
@@ -72,7 +179,7 @@ function tokenize(src) {
           const exprSrc = src.slice(i + 1, j - 1);
           if (exprSrc.trim() === "") throw new LexError(`السطر ${line}: تعبير فارغ داخل القالب {}`);
           let inner;
-          try { inner = tokenize(exprSrc); } catch (e) { if (e instanceof LexError) throw new LexError(`السطر ${line}: في تعبير القالب: ${e.message}`); throw e; }
+          try { inner = tokenize(exprSrc, english); } catch (e) { if (e instanceof LexError) throw new LexError(`السطر ${line}: في تعبير القالب: ${e.message}`); throw e; }
           inner.pop(); // EOF
           if (buf !== "") pieces.push(buf);
           buf = "";
@@ -171,7 +278,8 @@ function tokenize(src) {
     if (isIdentStart(ch)) {
       const start = i;
       while (i < n && isIdentPart(src[i])) i++;
-      const word = src.slice(start, i);
+      let word = src.slice(start, i);
+      if (english && Object.prototype.hasOwnProperty.call(ENGLISH_WORDS, word)) word = ENGLISH_WORDS[word];
       if (word === "خام" && (src[i] === '"' || src[i] === "'")) { // نص خام: بلا هروب، ينتهي عند أول اقتباس مطابق
         const q = src[i]; i++;
         const s0 = i;
@@ -182,7 +290,7 @@ function tokenize(src) {
         continue;
       }
       if (word === "قالب" && (src[i] === '"' || src[i] === "'")) { readString(true); continue; } // قالب نصي بتعابير {…}
-      const ttype = KEYWORDS[word] || "IDENT";
+      const ttype = Object.prototype.hasOwnProperty.call(KEYWORDS, word) ? KEYWORDS[word] : "IDENT"; // لا تلتقط أسماء خصائص Object مثل constructor وtoString
       tokens.push({ type: ttype, value: word, line });
       continue;
     }
@@ -228,6 +336,78 @@ function markBreaks(tokens) {
       if (frames.length) { const f = frames.pop(); if (f === -1) { if (depth > 0) depth--; } else depth = f; }
     }
   }
+}
+
+// ---------- عرضان للشيفرة نفسها (بند ١-١١): تحويل مصدر ضاد بين الصياغة العربية والإنجليزية دون تغيير الدلالة ----------
+// يمشي على المصدر نفسه فيحافظ على التعليقات والنصوص والمسافات، ويحوّل الكلمات فقط (وداخل أقواس القالب النصي).
+// إلى الإنجليزية: يرفض إن وُجد في المصدر معرّف لاتيني هو مفتاح في الجدول (لأن الوضع الإنجليزي سيلتقطه ويغيّر معناه).
+function convertSource(src, to) {
+  if (to !== "english" && to !== "arabic") throw new Error("الوجهة english أو arabic");
+  const toEn = to === "english";
+  const rev = {};
+  if (toEn) for (const [en, ar] of Object.entries(ENGLISH_WORDS)) if (!(ar in rev)) rev[ar] = en;
+  const hadPragma = hasEnglishPragma(src);
+  if (!toEn && !hadPragma) {
+    // الوجهة عربية والمصدر ليس إنجليزي الصياغة: لا شيء يُحوَّل
+    return src;
+  }
+  const clashes = new Set();
+  const conv = (word) => {
+    if (toEn) {
+      if (Object.prototype.hasOwnProperty.call(rev, word)) return rev[word];
+      if (!hadPragma && Object.prototype.hasOwnProperty.call(ENGLISH_WORDS, word)) clashes.add(word);
+      return word;
+    }
+    return Object.prototype.hasOwnProperty.call(ENGLISH_WORDS, word) ? ENGLISH_WORDS[word] : word;
+  };
+  const walk = (text) => {
+    let out = "", i = 0; const n = text.length;
+    while (i < n) {
+      const ch = text[i];
+      if (ch === "#") { let j = i; while (j < n && text[j] !== "\n") j++; out += text.slice(i, j); i = j; continue; }
+      if (ch === "/" && text[i + 1] === "*") { let j = i + 2; while (j < n && !(text[j] === "*" && text[j + 1] === "/")) j++; j = Math.min(n, j + 2); out += text.slice(i, j); i = j; continue; }
+      if (ch === '"' || ch === "'") { // نص عادي: يُنسخ كما هو
+        let j = i + 1; while (j < n && text[j] !== ch) { if (text[j] === "\\") j++; j++; }
+        out += text.slice(i, Math.min(n, j + 1)); i = Math.min(n, j + 1); continue;
+      }
+      if (isIdentStart(ch)) {
+        let j = i; while (j < n && isIdentPart(text[j])) j++;
+        const word = text.slice(i, j), arWord = (!toEn && Object.prototype.hasOwnProperty.call(ENGLISH_WORDS, word)) ? ENGLISH_WORDS[word] : word;
+        const isRaw = arWord === "خام", isTpl = arWord === "قالب";
+        const q = text[j];
+        if ((isRaw || isTpl) && (q === '"' || q === "'")) {
+          out += conv(word); let k = j + 1;
+          if (isRaw) { while (k < n && text[k] !== q) k++; out += text.slice(j, Math.min(n, k + 1)); i = Math.min(n, k + 1); continue; }
+          out += q;
+          while (k < n && text[k] !== q) {
+            if (text[k] === "\\" && k + 1 < n) { out += text.slice(k, k + 2); k += 2; continue; }
+            if (text[k] === "{") {
+              let m = k + 1, depth = 1;
+              while (m < n && depth > 0) {
+                const c = text[m];
+                if (c === '"' || c === "'") { m++; while (m < n && text[m] !== c) { if (text[m] === "\\") m++; m++; } }
+                else if (c === "{") depth++; else if (c === "}") depth--;
+                m++;
+              }
+              out += "{" + walk(text.slice(k + 1, m - 1)) + "}"; k = m; continue;
+            }
+            out += text[k]; k++;
+          }
+          out += k < n ? q : ""; i = Math.min(n, k + 1); continue;
+        }
+        out += conv(word); i = j; continue;
+      }
+      out += ch; i++;
+    }
+    return out;
+  };
+  const body = walk(src);
+  if (clashes.size) throw new Error("لا يمكن التحويل إلى الإنجليزية: في المصدر معرّفات لاتينية تتصادم مع كلمات الصياغة الإنجليزية (" + [...clashes].join("، ") + ")؛ غيّر أسماءها أولًا");
+  // سطر التفعيل
+  const lines = body.split("\n"); let k = 0;
+  while (k < lines.length && lines[k].replace(/^\uFEFF/, "").trim() === "") k++;
+  if (toEn) return hadPragma ? body : "# dhad: english\n" + body;
+  lines.splice(k, 1); return lines.join("\n");
 }
 
 // ========================= المحلل النحوي (Parser) =========================
@@ -895,4 +1075,4 @@ function parse(src) {
   return new Parser(tokens).parseProgram();
 }
 
-if (typeof module !== 'undefined') { module.exports = { tokenize, parse, LexError, ParseError, toArabicIndicDigits, normalizeDigits, KEYWORDS, isDigitChar, isIdentStart, isIdentPart }; }
+if (typeof module !== 'undefined') { module.exports = { convertSource, hasEnglishPragma, ENGLISH_WORDS, tokenize, parse, LexError, ParseError, toArabicIndicDigits, normalizeDigits, KEYWORDS, isDigitChar, isIdentStart, isIdentPart }; }
