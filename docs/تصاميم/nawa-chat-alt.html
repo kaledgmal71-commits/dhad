@@ -1,0 +1,61 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ن — المحادثة</title>
+<style>
+:root{--bg:#fff;--panel:#f6f6f4;--ink:#1f1b13;--mut:#5f5a4e;--line:#dcdbd5;--acc:#9a6b12;--acc2:#0f5c5a;--btn:#e4e4e0;--code:#16130d;--codeink:#f3ead4;--ok:#1f7a4d;--bad:#a63a2a}
+@media(prefers-color-scheme:dark){:root{--bg:#14110b;--panel:#1c1810;--ink:#efe7d3;--mut:#a79c82;--line:#35301f;--acc:#d9a845;--acc2:#5fc2bd;--btn:#2a2517;--ok:#5fc29a;--bad:#e0806e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:6px;padding:10px 18px;border-bottom:1px solid var(--line)}
+.top b{font-size:20px;margin-inline-end:14px}
+.top a{padding:6px 14px;border-radius:10px;color:var(--mut);text-decoration:none}
+.top a.on{background:var(--btn);color:var(--ink);font-weight:700}
+.top .nn{font-weight:800;color:var(--acc)}
+.sub{display:flex;gap:4px;padding:8px 18px;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto}
+.sub a{padding:5px 14px;border-radius:999px;color:var(--mut);text-decoration:none;white-space:nowrap;font-size:14px}
+.sub a.on{background:var(--acc2);color:#fff}
+.sp{flex:1}
+.install{border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 14px;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.install:hover{background:var(--btn)}
+main{flex:1;width:100%;max-width:860px;margin:0 auto;padding:24px 18px 8px;display:flex;flex-direction:column;gap:20px}
+.me{align-self:flex-start;max-width:80%;background:var(--btn);padding:10px 16px;border-radius:16px 16px 4px 16px}
+.bot{align-self:stretch;display:flex;gap:12px}
+.av{flex:none;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800}
+.body{flex:1;min-width:0}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chip{font-size:12.5px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
+.chip.ok::before{content:"✓ ";color:var(--ok)}.chip.skip{opacity:.6}
+pre{direction:ltr;text-align:left;margin:10px 0;background:var(--code);color:var(--codeink);padding:14px 16px;border-radius:12px;overflow:auto;font:14px/1.6 ui-monospace,Consolas,monospace}
+.bar{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut)}
+.bar .v{color:var(--ok);font-weight:700}
+.bar button{border:0;background:var(--btn);color:var(--ink);padding:4px 12px;border-radius:8px;font:inherit;font-size:13px;cursor:pointer}
+.out{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:14px;direction:ltr;text-align:left}
+.src{margin-top:10px;font-size:13px;color:var(--mut);display:flex;gap:10px;flex-wrap:wrap}.src a{color:var(--acc2);text-decoration:none;border-bottom:1px dotted}
+footer{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 24%);padding:18px 18px 16px}
+.box{max-width:860px;margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:10px 12px}
+.box textarea{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;resize:none;height:48px}
+.tools{display:flex;align-items:center;gap:6px}.tools .c{font-size:13px;padding:3px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;font-family:inherit}
+.tools .c:hover{color:var(--ink);border-color:var(--acc)}
+.send{margin-inline-start:auto;background:var(--acc);color:#fff;border:0;width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer}
+@media(max-width:640px){.top a:not(.on):not(.nn){display:none}.me{max-width:92%}}
+</style></head><body>
+<nav class="top"><b>ضاد</b><a href="#">ضاد</a><a href="#" class="on"><span class="nn">ن</span></a><a href="#">المحرر</a><span class="sp"></span><button class="install">⤓ تثبيت التطبيق</button></nav>
+<div class="sub"><a href="#" class="on">المحادثة</a><a href="#">دروس</a><a href="#">شروحات</a><a href="#">الذاكرة</a><a href="#">المحركات</a><a href="#">الدليل</a></div>
+<main>
+<div class="me">اكتب لي برنامج مجموع الأعداد من ١ إلى ٥</div>
+<div class="bot"><div class="av">ن</div><div class="body">
+<div class="steps"><span class="chip ok">محلل المهام · كتابة برنامج</span><span class="chip ok">ذاكرة</span><span class="chip ok">توليف الشيفرة</span><span class="chip ok">منفذ معزول</span></div>
+<pre>متغير م = ٠
+من_أجل (ي من ١ إلى ٥) { م = م + ي }
+اطبع(م)</pre>
+<div class="bar"><span class="v">✓ جُرِّب فأعاد الناتج المتوقع</span><button>تشغيل</button><button>نسخ</button><button>فتح في المحرر</button></div>
+<div class="out">١٥</div>
+<div class="src">المصدر: <a href="#">مثال · مجموع الأعداد</a></div>
+</div></div>
+<div class="me">لماذا لا يعمل هذا؟ اطبع(عدادد)</div>
+<div class="bot"><div class="av">ن</div><div class="body">
+<div class="steps"><span class="chip ok">محلل المهام · إصلاح خطأ</span><span class="chip ok">منفذ معزول</span><span class="chip ok">محلل الأخطاء</span><span class="chip skip">استرجاع</span></div>
+<p style="margin:0 0 6px">الاسم <b>عدادد</b> غير معرَّف. ربما تقصد <b>عداد</b>.</p>
+<pre>اطبع(<span style="color:var(--bad)">عدادد</span>)   →   اطبع(عداد)</pre>
+<div class="bar"><button>تطبيق الإصلاح</button><button>شرح أوسع</button></div>
+</div></div>
+</main>
+<footer><div class="box"><textarea placeholder="اكتب طلبك…"></textarea><div class="tools"><button class="c">/ اكتب برنامجًا</button><button class="c">/ اشرح</button><button class="c">/ أصلح</button><button class="c">/ ابحث</button><button class="send">↑</button></div></div></footer>
+</body></html>
