@@ -1,0 +1,47 @@
+// جلسة نواة (ضاد/نواة_جلسة) كما تستعملها الصفحة: معالج مضيف، حالة باقية، ملفات المستخدم، استخراج docx/html
+const fs=require('fs'),path=require('path');
+const R=require(path.join(__dirname,'..','site','run.js')),api=R.api;
+let pass=0,fail=0;
+const ok=(c,m)=>{if(c)pass++;else{fail++;console.log('FAIL',m);}};
+const conv=v=>Object.prototype.toString.call(v)==='[object Map]'?Object.fromEntries([...v].map(([k,x])=>[k,conv(x)])):Array.isArray(v)?v.map(conv):v;
+const mk=()=>{const c=api.compile(api.parse('استورد("ضاد/نواة_جلسة")'));const vm=new api.VM({maxSteps:1e8,onPrint:()=>{}});vm.run(c.mainChunkIndex,c.functionChunks);return vm;};
+const L={maxSteps:4e9,maxMs:300000};
+const ask=(vm,a,x,y)=>conv(vm.callHost([a,x===undefined?null:x,y===undefined?null:y],L));
+const base=path.join(__dirname,'..','dist','nawa','base.json');
+if(!fs.existsSync(base)){console.log('تخطّي: لا dist/nawa/base.json (شغّل site/pages.gen.js)');process.exit(0);}
+const B=fs.readFileSync(base,'utf8');
+// معالج بلا تهيئة
+{const vm=mk();let e=null;try{ask(vm,'اسأل','مرحبا');}catch(x){e=x.message;}ok(e&&e.includes('لم تُهيَّأ'),'ask-before-init: '+e);}
+{const vm=mk();let e=null;try{ask(vm,'فعل_خيالي');}catch(x){e=x.message;}ok(e&&e.includes('فعل غير معروف'),'unknown-action');}
+{const vm=new api.VM({});let e=null;try{vm.callHost([]);}catch(x){e=x.message;}ok(e&&e.includes('معالج'),'no-handler-registered');}
+const vm=mk();
+const init=ask(vm,'تهيئة',B);ok(init['جاهز']===true&&init['أمثلة']>=200,'init '+JSON.stringify(init));
+// أسئلة المعرفة
+{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes','synth primes');
+ const run=api.compile(api.parse(r['نتائج']['توليف']['شيفرة']));const out=[];new api.VM({maxSteps:1e8,onPrint:l=>out.push(l)}).run(run.mainChunkIndex,run.functionChunks);ok(out[0]&&out[0].startsWith('[٢، ٣، ٥'),'synth code really runs: '+out[0]);}
+{const r=ask(vm,'اسأل','اشرح لي الإغلاقات');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures'),'explain closures');}
+{const r=ask(vm,'اسأل','لماذا لا يعمل هذا الخطأ؟ ```\nمتغير عداد = ١\nاطبع(عدادد)\n```');ok(r['نتائج']['تشخيص']['تصنيف']==='اسم_غير_معرف'&&r['نتائج']['تشخيص']['أقرب_اسم']==='عداد'&&r['نتائج']['تشخيص']['سطر']===2,'diagnose typo');}
+{const r=ask(vm,'اسأل','مرحبا');ok(r['رد'].includes('لم أجد'),'chat fallback reply');}
+{const r=ask(vm,'اسأل','ابنِ لي لعبة فضاء ثلاثية الأبعاد بمحرك فيزياء');ok(!r['نتائج']['توليف']||!r['نتائج']['توليف']['وُجد'],'no invented program');}
+// الحالة تبقى بين النداءات
+ok(ask(vm,'مستندات')['مستندات'].length===0,'no docs yet');
+const book=('باب الصلاة: الصلاة عماد الدين وهي خمس صلوات في اليوم والليلة. '.repeat(20))+'\n\n'+('باب الزكاة: تجب الزكاة في المال إذا بلغ النصاب وحال عليه الحول وهو مقدار مئتي درهم. '.repeat(20))+'\n\n'+('باب الصيام: يصوم المسلم شهر رمضان من طلوع الفجر إلى غروب الشمس. '.repeat(20));
+{const r=ask(vm,'مستند','كتاب.txt',book);ok(r['مقاطع']>=3,'doc chunks '+r['مقاطع']);}
+{const r=ask(vm,'اسأل','ما نصاب الزكاة؟');const p=r['نتائج']['مستندات'];ok(p&&p.length&&p[0]['مقتطف'].includes('الزكاة')&&p[0]['معرف'].startsWith('كتاب.txt#'),'doc search finds zakat passage');}
+{const r=ask(vm,'اسأل','متى يصوم المسلم؟');ok(r['نتائج']['مستندات'][0]['مقتطف'].includes('رمضان'),'doc search finds siyam');}
+{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ok(!r['نتائج']['مستندات'],'code requests do not search user docs');}
+// docx / html
+const docx='<w:document><w:body><w:p><w:r><w:t>كتاب الطهارة</w:t></w:r></w:p><w:p><w:r><w:t xml:space="preserve">الماء الطهور هو الباقي على أصل خلقته &amp; يرفع الحدث</w:t></w:r></w:p></w:body></w:document>';
+{const r=ask(vm,'مستند_docx','طهارة.docx',docx);ok(r['مقاطع']===1,'docx ingest');const q=ask(vm,'اسأل','ما الماء الطهور؟');ok(q['نتائج']['مستندات']&&q['نتائج']['مستندات'][0]['مقتطف'].includes('& يرفع'),'docx entities decoded + searchable');}
+{const r=ask(vm,'مستند_html','فصل.html','<html><body><h1>العنوان</h1><p>نص عن الحج والعمرة وأركانهما.</p><script>var a="<p>x</p>"</script></body></html>');ok(r['مقاطع']===1,'html ingest');const q=ask(vm,'اسأل','أركان الحج');ok(q['نتائج']['مستندات']&&q['نتائج']['مستندات'][0]['مقتطف'].includes('الحج')&&!q['نتائج']['مستندات'][0]['مقتطف'].includes('var a'),'html script stripped');}
+// إزالة وإعادة فهرسة وقائمة
+ok(ask(vm,'مستندات')['مستندات'].length===3,'three docs listed');
+ask(vm,'إزالة','كتاب.txt');
+ok(ask(vm,'مستندات')['مستندات'].map(d=>d['اسم']).join()==='طهارة.docx,فصل.html'||ask(vm,'مستندات')['مستندات'].length===2,'doc removed');
+{const q=ask(vm,'اسأل','ما نصاب الزكاة؟');ok(!q['نتائج']['مستندات']||q['نتائج']['مستندات'].every(x=>!x['معرف'].startsWith('كتاب.txt')),'removed doc no longer searched');}
+// استبدال مستند بنفس الاسم لا يضاعف مقاطعه
+{ask(vm,'مستند','ثابت.txt','نص قصير عن الوقف.');ask(vm,'مستند','ثابت.txt','نص قصير عن الوقف.');ok(ask(vm,'مستندات')['مستندات'].filter(d=>d['اسم']==='ثابت.txt').length===1,'same name replaces');}
+// فهرس فارغ بعد إزالة الكل
+for(const d of ask(vm,'مستندات')['مستندات'])ask(vm,'إزالة',d['اسم']);
+{const q=ask(vm,'اسأل','ما نصاب الزكاة؟');ok(!q['نتائج']['مستندات'],'no docs → no doc search');}
+console.log('pass',pass,'fail',fail);
