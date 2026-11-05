@@ -26,41 +26,49 @@
     });
   }
   function dbDo(mode, fn) { return openDB().then(function (db) { if (!db) return null; return new Promise(function (res) { var tx = db.transaction('docs', mode), st = tx.objectStore('docs'), q = fn(st); tx.oncomplete = function () { res(q && q.result); }; tx.onerror = function () { res(null); }; }); }); }
-  function sendDoc(name, r) { return call(r.kind === 'docx' ? 'مستند_docx' : r.kind === 'html' ? 'مستند_html' : 'مستند', name, r.content); }
+  // الربط (link): مكتبة دائمة تُحفظ في المتصفح وتُفهرس تلقائيًا؛ الإرفاق (attach): ملف عابر للمحادثة الحالية يُحلَّل كاملًا
+  var fileMode = 'attach';
+  function sendDoc(name, r, mode) { var base = mode === 'attach' ? 'مرفق' : 'مستند'; return call(r.kind === 'docx' ? base + '_docx' : r.kind === 'html' ? base + '_html' : base, name, r.content); }
   function restoreDocs() {
     return dbDo('readonly', function (st) { return st.getAll(); }).then(function (all) {
-      (all || []).forEach(function (d) { docs[d.name] = { state: 'busy', size: d.size }; });
+      (all || []).forEach(function (d) { docs['link:' + d.name] = { name: d.name, mode: 'link', state: 'busy', size: d.size }; });
       renderDocs();
       (all || []).forEach(function (d) {
-        queue = queue.then(function () { return sendDoc(d.name, d).then(function (res) { docs[d.name] = { state: 'ok', chunks: res['مقاطع'], size: d.size }; }, function () { docs[d.name] = { state: 'bad', note: 'تعذّرت الفهرسة', size: d.size }; }).then(renderDocs); });
+        var k = 'link:' + d.name;
+        queue = queue.then(function () { return sendDoc(d.name, d, 'link').then(function (res) { docs[k] = { name: d.name, mode: 'link', state: 'ok', chunks: res['مقاطع'], size: d.size }; }, function () { docs[k] = { name: d.name, mode: 'link', state: 'bad', note: 'تعذّرت الفهرسة', size: d.size }; }).then(renderDocs); });
       });
     });
   }
-  function ingest(file, quiet) {
-    var name = (file.webkitRelativePath || file.name).replace(/#/g, '＃');
+  function ingest(file, quiet, mode) {
+    var name = (file.webkitRelativePath || file.name).replace(/#/g, '＃'), k = mode + ':' + name;
     if (!window.NawaFiles.supported[window.NawaFiles.ext(file.name)] && quiet) return;
-    docs[name] = { state: 'busy', size: file.size }; renderDocs();
+    docs[k] = { name: name, mode: mode, state: 'busy', size: file.size }; renderDocs();
     queue = queue.then(function () {
       return window.NawaFiles.read(file).then(function (r) {
-        dbDo('readwrite', function (st) { return st.put({ name: name, kind: r.kind, content: r.content, size: file.size }); });
-        return sendDoc(name, r);
-      }).then(function (res) { docs[name] = { state: 'ok', chunks: res['مقاطع'], size: file.size }; },
+        if (mode === 'link') dbDo('readwrite', function (st) { return st.put({ name: name, kind: r.kind, content: r.content, size: file.size }); });
+        return sendDoc(name, r, mode);
+      }).then(function (res) { docs[k] = { name: name, mode: mode, state: 'ok', chunks: res['مقاطع'], size: file.size }; },
         function (err) {
           var m = String(err && err.message);
-          docs[name] = { state: 'bad', size: file.size, note: m === 'unsupported' ? 'صيغة غير مدعومة بعد' : m === 'large' ? 'الملف أكبر من الحد' : 'تعذّرت القراءة' };
+          docs[k] = { name: name, mode: mode, state: 'bad', size: file.size, note: m === 'unsupported' ? 'صيغة غير مدعومة بعد' : m === 'large' ? 'الملف أكبر من الحد' : 'تعذّرت القراءة' };
         }).then(renderDocs);
     });
   }
-  function removeDoc(name) {
-    delete docs[name]; renderDocs();
-    dbDo('readwrite', function (st) { return st.delete(name); });
-    queue = queue.then(function () { return call('إزالة', name).catch(function () {}); });
+  function removeDoc(k) {
+    var d = docs[k]; if (!d) return;
+    delete docs[k]; renderDocs();
+    if (d.mode === 'link') dbDo('readwrite', function (st) { return st.delete(d.name); });
+    queue = queue.then(function () { return call(d.mode === 'attach' ? 'إزالة_مرفق' : 'إزالة', d.name).catch(function () {}); });
+  }
+  function clearAttached() {
+    Object.keys(docs).forEach(function (k) { if (docs[k].mode === 'attach') delete docs[k]; });
+    renderDocs(); queue = queue.then(function () { return call('صفّر_المرفقات').catch(function () {}); });
   }
   function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' م.ب' : Math.max(1, Math.round(n / 1024)) + ' ك.ب'; }
   function renderDocs() {
     var names = Object.keys(docs), box = $('#files'); box.innerHTML = '';
     names.forEach(function (n) {
-      var d = docs[n], r = el('div', 'fr'), t = el('div', 't'), b = el('b', '', n), s = el('span', d.state === 'bad' ? 'bad' : '', d.state === 'busy' ? 'تُفهرَس الآن…' : d.state === 'ok' ? kb(d.size) + ' · ' + d.chunks + ' مقطعًا' : d.note);
+      var d = docs[n], r = el('div', 'fr'), t = el('div', 't'), b = el('b', '', d.name), s = el('span', d.state === 'bad' ? 'bad' : '', d.state === 'busy' ? 'تُفهرَس الآن…' : d.state === 'ok' ? kb(d.size) + ' · ' + d.chunks + ' مقطعًا · ' + (d.mode === 'attach' ? 'مرفق' : 'مربوط') : d.note);
       t.appendChild(b); t.appendChild(s); r.appendChild(t);
       var x = el('button', '', '×'); x.title = 'إزالة'; x.onclick = function () { removeDoc(n); }; r.appendChild(x); box.appendChild(r);
     });
@@ -68,7 +76,7 @@
     var ok = names.filter(function (n) { return docs[n].state !== 'bad'; }), busy = names.some(function (n) { return docs[n].state === 'busy'; });
     if (ok.length) { var s = el('span', 'att' + (busy ? ' busy' : '')); s.innerHTML = '<b></b> ملف'; s.firstChild.textContent = ok.length; s.onclick = openConn; a.appendChild(s); }
   }
-  function take(list, quiet) { [].slice.call(list).forEach(function (f) { ingest(f, quiet); }); }
+  function take(list, quiet, mode) { [].slice.call(list).forEach(function (f) { ingest(f, quiet, mode); }); }
 
   // ===== المحادثة =====
   var inp = $('#in'), send = $('#send'), col = $('#col'), scroll = $('#scroll'), hist = $('#hist'), hero = $('#hero'), busyAsk = false;
@@ -151,7 +159,7 @@
     renderHist();
   }
   $('#newchat').onclick = function () {
-    curConv = null; col.innerHTML = '';
+    curConv = null; col.innerHTML = ''; clearAttached();
     hero = el('div', 'hero'); hero.id = 'hero'; hero.innerHTML = '<div class="mark">ن</div><h1>ماذا تريد أن تبني اليوم؟</h1>'; col.appendChild(hero);
     $('#chips').style.display = ''; renderHist(); inp.focus();
   };
@@ -161,22 +169,22 @@
   var menu = $('#menu');
   $('#plus').onclick = function (e) { e.stopPropagation(); menu.classList.toggle('open'); };
   document.addEventListener('click', function () { menu.classList.remove('open'); });
-  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; if (a === 'files') $('#fileIn').click(); else if (a === 'folder') $('#dirIn').click(); else openConn(); }; });
+  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; if (a === 'files') { fileMode = 'attach'; $('#fileIn').click(); } else if (a === 'folder') { fileMode = 'link'; $('#dirIn').click(); } else openConn(); }; });
   function openConn() { $('#ov').classList.add('open'); }
   $('#openConn').onclick = openConn;
   $('#closeConn').onclick = function () { $('#ov').classList.remove('open'); };
   $('#ov').onclick = function (e) { if (e.target === this) this.classList.remove('open'); };
-  $('#pickFiles').onclick = function () { $('#fileIn').click(); };
-  $('#pickFolder').onclick = function () { $('#dirIn').click(); };
-  $('#fileIn').onchange = function () { take(this.files, false); this.value = ''; };
-  $('#dirIn').onchange = function () { take(this.files, true); this.value = ''; };
+  $('#pickFiles').onclick = function () { fileMode = 'link'; $('#fileIn').click(); };
+  $('#pickFolder').onclick = function () { fileMode = 'link'; $('#dirIn').click(); };
+  $('#fileIn').onchange = function () { take(this.files, false, fileMode); this.value = ''; };
+  $('#dirIn').onchange = function () { take(this.files, true, 'link'); this.value = ''; };
   var drop = $('#drop');
   ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
   ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-  drop.addEventListener('drop', function (e) { take(e.dataTransfer.files, false); });
+  drop.addEventListener('drop', function (e) { take(e.dataTransfer.files, false, 'link'); });
   // إفلات الملفات في أي مكان من الصفحة
   window.addEventListener('dragover', function (e) { e.preventDefault(); });
-  window.addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#drop')) return; e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) take(e.dataTransfer.files, false); });
+  window.addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#drop')) return; e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) take(e.dataTransfer.files, false, 'attach'); });
 
   // ===== تثبيت التطبيق =====
   var deferred = null, ib = $('#install');

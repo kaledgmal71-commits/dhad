@@ -35,7 +35,7 @@
     return entryBytes(z, e).then(function (d) { return new TextDecoder('utf-8').decode(d); });
   }
   function ext(name) { var m = /\.([^.]+)$/.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
-  var SUPPORTED = { txt: 1, md: 1, markdown: 1, csv: 1, json: 1, html: 1, htm: 1, xhtml: 1, docx: 1, epub: 1 };
+  var SUPPORTED = { txt: 1, md: 1, markdown: 1, csv: 1, json: 1, html: 1, htm: 1, xhtml: 1, docx: 1, epub: 1, dhad: 1, py: 1, js: 1, ts: 1, css: 1, xml: 1, yaml: 1, yml: 1, log: 1 };
   // يعيد وعدًا بـ {نوع: 'نص'|'docx'|'html', محتوى} أو يرفض برسالة
   function read(file) {
     var e = ext(file.name);

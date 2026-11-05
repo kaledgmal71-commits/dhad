@@ -79,7 +79,7 @@ function page() {
       <div class="row"><button class="ibtn" id="pickFiles">اختيار ملفات</button><button class="ibtn" id="pickFolder">اختيار مجلد</button></div>
     </div>
     <div class="files" id="files"></div>
-    <input type="file" id="fileIn" multiple accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.xhtml,.docx,.epub,.pdf" hidden>
+    <input type="file" id="fileIn" multiple accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.xhtml,.docx,.epub,.pdf,.dhad,.py,.js,.ts,.css,.xml,.yaml,.yml,.log" hidden>
     <input type="file" id="dirIn" webkitdirectory multiple hidden>
   </div>
 </div></div>
