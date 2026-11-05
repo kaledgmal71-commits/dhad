@@ -111,3 +111,46 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .fr button:hover{background:var(--accbg);color:var(--bad)}
 @media(max-width:860px){aside.side{display:none}nav.tabs a{font-size:13px}.ibtn span{display:none}.tools .ibtn{padding:0 10px}}
 @media(max-width:640px){header.top .in{grid-template-columns:auto 1fr auto;gap:8px}.logo span{display:none}nav.tabs{padding:3px}nav.tabs a{font-size:12.5px;height:32px;padding:0 8px}}
+
+/* إضافات وظيفية فوق التصميم المعتمد (لا تغيّر عنصرًا قائمًا) */
+.msg .tx ul{margin:0 0 10px;padding-inline-start:22px}
+.msg .tx li{margin:2px 0}
+.msg .tx li.sub{list-style:circle;margin-inline-start:16px;color:var(--mut);font-size:15px}
+.msg .tx code{direction:rtl;font-family:Cairo,monospace;background:var(--accbg);padding:0 6px;border-radius:6px}
+.acts{display:flex;gap:2px;flex-wrap:wrap;margin:4px 0 0}
+.acts button{height:30px;min-width:30px;padding:0 8px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--mut);font:600 12.5px Cairo;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.acts button:hover{background:var(--accbg);color:var(--ink)}
+.acts button.on{color:var(--acc);background:var(--accbg)}
+.acts svg,.medit svg,.tobottom svg,.hbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.trace{margin:6px 0 4px;border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:6px 12px;font-size:13.5px}
+.trace .ts{display:flex;gap:10px;align-items:baseline;padding:3px 0;flex-wrap:wrap}
+.trace .ts b{color:var(--acc2)}
+.trace .ts .s{color:var(--ok);font-weight:700;font-size:12.5px}
+.trace .ts em{color:var(--mut);font-style:normal}
+.medit{width:30px;height:30px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--mut);opacity:0;display:grid;place-items:center;align-self:flex-start;margin-top:2px;transition:opacity .12s}
+.msg.u:hover .medit,.medit:focus{opacity:1}
+@media(hover:none){.medit{opacity:.6}}
+.medit:hover{background:var(--accbg);color:var(--ink)}
+.tobottom{position:absolute;bottom:128px;inset-inline-start:50%;transform:translateX(50%);width:38px;height:38px;border-radius:50%;border:1px solid var(--btnline);background:var(--bg);box-shadow:0 6px 18px -8px rgba(0,0,0,.4);cursor:pointer;display:grid;place-items:center;z-index:5}
+.tobottom[hidden]{display:none}
+.att .x{font-style:normal;margin-inline-start:2px;color:var(--mut);cursor:pointer;padding:0 3px;border-radius:5px}
+.att .x:hover{background:var(--accbg);color:var(--bad)}
+.hsearch{height:34px;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:0 10px;font:500 14px Cairo;color:var(--ink);outline:0;margin:2px 0 4px}
+.hsearch:focus{border-color:var(--acc)}
+.hlist{display:flex;flex-direction:column;gap:2px}
+.hi{position:relative;border-radius:8px}
+.hi:hover,.hi.on{background:var(--accbg)}
+.hi>button{width:100%;text-align:right;border:0;background:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hx{position:absolute;inset-inline-start:2px;top:2px;display:none;gap:2px;background:var(--accbg);border-radius:8px}
+.hi:hover .hx,.hi:focus-within .hx{display:flex}
+.hx button{border:0;background:none;padding:4px 7px;border-radius:7px;cursor:pointer;font:600 12px Cairo;color:var(--mut);width:auto}
+.hx button:hover{background:var(--btnh);color:var(--ink)}
+.hbtn{display:none;position:absolute;top:8px;inset-inline-end:10px;width:36px;height:36px;border-radius:10px;border:1px solid var(--btnline);background:var(--btn);cursor:pointer;place-items:center;z-index:6}
+.bd{display:none;position:fixed;inset:0;background:rgba(20,16,8,.4);z-index:39}
+.bd.open{display:block}
+@media(max-width:860px){
+  .hbtn{display:grid}
+  aside.side.open{display:flex;position:fixed;top:0;bottom:0;inset-inline-start:0;width:min(310px,86vw);z-index:40;border:0;border-inline-end:1px solid var(--line)}
+  .hi .hx{display:flex;position:static;background:none;margin-top:-2px;padding:0 6px 4px;justify-content:flex-start}
+  .hi{display:block}
+}

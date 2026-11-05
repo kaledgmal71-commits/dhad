@@ -34,5 +34,13 @@ const file=(b64,n)=>new File([Buffer.from(b64,'base64')],n);
     ok(fs.readFileSync(path.join(__dirname,'..','dist','index.html'),'utf8').length>0,'home exists');
     const home=fs.readFileSync(path.join(__dirname,'..','dist','learn','index.html'),'utf8');ok(home.includes('href="/nawa/"'),'site nav links to nawa');
   }
+    // إضافات المحادثة القياسية
+    {
+      const js=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.js'),'utf8'),css=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.css'),'utf8');
+      for(const f of ['function actions','function exportConv','function startEdit','function renderHist','function rich','function textOf','function drawer','صفّر_السياق','المسار','حفظ المحادثة','بحث في المحادثات'])ok(js.includes(f),'ui has '+f);
+      for(const c of ['.acts','.trace','.medit','.tobottom','.hsearch','.hbtn','.hx'])ok(css.includes(c),'css has '+c);
+      ok(js.includes("mode === 'attach'")&&js.includes("'link'"),'attach/link modes');
+      ok(!/innerHTML\s*=\s*[^;]*(p\['|r\['|m\.text)/.test(js.replace(/IC\./g,'')),'no raw answer text injected as HTML');
+    }
   console.log('pass',pass,'fail',fail);
 })();

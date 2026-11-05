@@ -96,4 +96,34 @@ for(const d of ask(vm,'مستندات')['مستندات'])ask(vm,'إزالة',d[
   ok(p2.length>0&&p2[0]['معرف'].startsWith('صلاة.txt#'),'related attachment shown first');
   ask(vm,'صفّر_المرفقات');ask(vm,'إزالة','وقف.txt');
 }
+
+// ===== السياق بين الرسائل: شغّله، اشرحه، المزيد =====
+{
+  ask(vm,'صفّر_السياق');
+  {const r=ask(vm,'اسأل','شغّله');ok(r['نوع']==='متابعة'&&r['رد'].includes('لا أرى برنامجًا سابقًا'),'follow-up without context: '+r['رد']);}
+  ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');
+  {const r=ask(vm,'اسأل','شغّله');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح']&&r['نتائج']['تنفيذ']['مخرجات'][0].startsWith('[٢، ٣، ٥')&&r['رد'].includes('شُغِّل البرنامج السابق'),'run last program: '+JSON.stringify(r['نتائج']['تنفيذ']));}
+  {const r=ask(vm,'اسأل','جرّبه');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح'],'جرّبه also runs');}
+  {const r=ask(vm,'اسأل','اشرح الكود');ok(r['نتائج']['استرجاع']&&r['نتائج']['استرجاع'].length>0,'explain follow-up retrieves about the program topic: '+r['نوع']);}
+  // اشرحه بعد شرح مفهوم لا يخلط بالبرنامج
+  ask(vm,'صفّر_السياق');
+  ask(vm,'اسأل','اشرح لي الإغلاقات');
+  {const r=ask(vm,'اسأل','المزيد');ok(r['نوع']==='متابعة'&&r['نتائج']['استرجاع'].every(x=>x['معرف']!=='lesson/closures'),'more excludes already shown: '+JSON.stringify(r['نتائج']['استرجاع'].map(x=>x['معرف'])));
+   const r2=ask(vm,'اسأل','المزيد');const a=r['نتائج']['استرجاع'].map(x=>x['معرف']),b=r2['نتائج']['استرجاع'].map(x=>x['معرف']);ok(b.every(x=>!a.includes(x)),'second more gives different ones: '+a+' / '+b);}
+  // طلب جديد يغيّر السياق، فلا يُشغَّل برنامج قديم
+  ask(vm,'صفّر_السياق');ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ask(vm,'اسأل','اشرح لي القوائم');
+  {const r=ask(vm,'اسأل','شغّله');ok(r['نتائج']['تنفيذ']&&r['نتائج']['تنفيذ']['ناجح'],'program context survives a later explanation');}
+  // جملة طويلة فيها «شغّل» ليست متابعة
+  {const r=ask(vm,'اسأل','اكتب لي برنامج يشغّل عدادا ويطبع الأرقام من واحد إلى عشرة');ok(r['نوع']==='كتابة_برنامج','long request not a follow-up: '+r['نوع']);}
+  ask(vm,'صفّر_السياق');
+}
+
+// ===== تحية + طلب في رسالة واحدة =====
+{
+  ask(vm,'صفّر_السياق');
+  {const r=ask(vm,'اسأل','السلام عليكم، اكتب لي برنامج الأعداد الأولية');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes'&&r['بادئة'].startsWith('وعليكم السلام'),'greeting does not pollute synthesis: '+r['نوع']+' '+JSON.stringify(r['بادئة']));}
+  {const r=ask(vm,'اسأل','مرحبا اشرح لي الإغلاقات');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures')&&r['بادئة']==='أهلًا بك.','greeting + explain');}
+  {const r=ask(vm,'اسأل','شغّله');ok(r['نتائج']['تنفيذ']&&r['نتائج']['تنفيذ']['ناجح'],'program from greeting-prefixed request is runnable');}
+  ask(vm,'صفّر_السياق');
+}
 console.log('pass',pass,'fail',fail);
