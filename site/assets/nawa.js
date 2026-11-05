@@ -95,7 +95,11 @@
     path: '<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="6" cy="18" r="2"/><path d="M8 6h5a3 3 0 0 1 3 3v1M8 18h5a3 3 0 0 0 3-3v-1"/></svg>',
     edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>',
     down2: '<svg viewBox="0 0 24 24"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></svg>',
-    menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>'
+    menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+    stop: '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+    retry: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg>',
+    gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>',
+    ghost: '<svg viewBox="0 0 24 24"><path d="M5 21V11a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2-2-2z"/><circle cx="9.5" cy="11" r=".8" fill="currentColor"/><circle cx="14.5" cy="11" r=".8" fill="currentColor"/></svg>'
   };
   function ibtn(icon, label, cls) { var b = el('button', cls || ''); b.type = 'button'; b.innerHTML = icon + (label ? '<span></span>' : ''); if (label) b.lastChild.textContent = label; b.title = label || ''; return b; }
   function flash(b, txt) { var sp = b.querySelector('span'); if (!sp) return; var o = sp.textContent; sp.textContent = txt; setTimeout(function () { sp.textContent = o; }, 1300); }
@@ -134,14 +138,15 @@
   }
 
   // ===== المحادثة =====
+  var sendIc = $('#send').innerHTML, curPending = null, reqId = 0, tempMode = false;
   var inp = $('#in'), send = $('#send'), col = $('#col'), scroll = $('#scroll'), hist = $('#hist'), hero = $('#hero'), busyAsk = false;
   var convs = [], curConv = null;
   try { convs = JSON.parse(ls('nawa.convs') || '[]'); } catch (e) { convs = []; }
-  function saveConvs() { try { ls('nawa.convs', JSON.stringify(convs.slice(0, 30))); } catch (e) {} }
-  function grow() { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 200) + 'px'; send.disabled = busyAsk || !inp.value.trim(); }
+  function saveConvs() { try { ls('nawa.convs', JSON.stringify(convs.filter(function (c) { return !c.temp; }).slice(0, 30))); } catch (e) {} }
+  function grow() { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 200) + 'px'; send.disabled = !busyAsk && !inp.value.trim(); if (send.classList.contains('stop') !== busyAsk) { send.classList.toggle('stop', busyAsk); send.innerHTML = busyAsk ? IC.stop : sendIc; send.setAttribute('aria-label', busyAsk ? 'إيقاف' : 'إرسال'); } }
   inp.addEventListener('input', grow);
   inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } });
-  send.onclick = go;
+  send.onclick = function () { if (busyAsk) stopAsk(); else go(); };
   document.querySelectorAll('.chip').forEach(function (c) { c.onclick = function () { inp.value = c.dataset.q || c.textContent; grow(); inp.focus(); }; });
 
   var editIdx = null;
@@ -248,7 +253,7 @@
   function go() {
     var t = inp.value.trim(); if (!t || busyAsk) return;
     hideHero();
-    if (!curConv) { curConv = { id: Date.now(), title: t.slice(0, 48), msgs: [] }; convs.unshift(curConv); }
+    if (!curConv) { curConv = { id: Date.now(), title: t.slice(0, 48), msgs: [], temp: tempMode }; if (!tempMode) convs.unshift(curConv); }
     if (editIdx !== null) {
       var at = editIdx; cancelEdit();
       [].slice.call(col.querySelectorAll('.msg')).forEach(function (n) { if (Number(n.dataset.i) >= at) n.remove(); });
@@ -256,13 +261,16 @@
     }
     msg('u', t, curConv.msgs.length); inp.value = ''; busyAsk = true; grow();
     curConv.msgs.push({ role: 'u', text: t });
-    var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length);
+    var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length), my = ++reqId; curPending = pending;
+    col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
     ready.then(function () { return call('اسأل', t); }).then(function (r) {
+      if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
-      var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node);
+      var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2);
     }, function (err) {
+      if (my !== reqId) return 'x';
       pending.querySelector('.tx').replaceChildren(el('p', '', 'تعذّر إتمام الطلب: ' + (err && err.message ? err.message : ''))); curConv.msgs.push({ role: 'a', text: 'تعذّر إتمام الطلب' });
-    }).then(function () { busyAsk = false; grow(); saveConvs(); renderHist(); scroll.scrollTop = scroll.scrollHeight; });
+    }).then(function (x) { if (x === 'x') return; busyAsk = false; curPending = null; grow(); saveConvs(); renderHist(); scroll.scrollTop = scroll.scrollHeight; });
   }
   var hq = '', hlist = null;
   function renderHist() {
@@ -315,7 +323,7 @@
   document.addEventListener('keydown', function (e) {
     var typing = /^(INPUT|TEXTAREA)$/.test((e.target.tagName || '')), mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#newchat').click(); drawer(false); }
-    else if (e.key === 'Escape') { $('#menu').classList.remove('open'); $('#ov').classList.remove('open'); drawer(false); if (editIdx !== null) { cancelEdit(); inp.value = ''; grow(); } }
+    else if (e.key === 'Escape') { $('#menu').classList.remove('open'); $('#ov').classList.remove('open'); $('#sov').classList.remove('open'); drawer(false); if (editIdx !== null) { cancelEdit(); inp.value = ''; grow(); } }
     else if (e.key === '/' && !typing && !mod) { e.preventDefault(); inp.focus(); }
     else if (e.key === 'ArrowUp' && e.target === inp && !inp.value && curConv) {
       for (var i = curConv.msgs.length - 1; i >= 0; i--) if (curConv.msgs[i].role === 'u') { e.preventDefault(); startEdit(i, curConv.msgs[i].text); break; }
@@ -342,6 +350,54 @@
   // إفلات الملفات في أي مكان من الصفحة
   window.addEventListener('dragover', function (e) { e.preventDefault(); });
   window.addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#drop')) return; e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) take(e.dataTransfer.files, false, 'attach'); });
+
+  // ===== إيقاف، إعادة المحاولة، اقتراحات المتابعة =====
+  function stopAsk() {
+    if (!busyAsk) return;
+    reqId++; busyAsk = false;
+    if (curPending) { curPending.querySelector('.tx').replaceChildren(el('p', '', 'أُوقف الطلب.')); curPending = null; }
+    if (curConv) curConv.msgs.push({ role: 'a', text: 'أُوقف الطلب.' });
+    grow(); saveConvs();
+  }
+  function addExtras(r, node, t, uidx) {
+    var a = node.querySelector('.acts');
+    if (a) { var rt = ibtn(IC.retry, 'إعادة'); rt.classList.add('rt'); rt.onclick = function () { if (busyAsk) return; editIdx = uidx; inp.value = t; go(); }; a.insertBefore(rt, a.firstChild); }
+    var n = r['نتائج'] || {}, qs = [], syn = n['توليف'];
+    if (syn && syn['وُجد']) { qs.push('شغّله'); qs.push('اشرح الكود'); }
+    else if ((n['استرجاع'] && n['استرجاع'].length) || (n['مستندات'] && n['مستندات'].length)) { qs.push('المزيد'); }
+    if (r['نوع'] === 'حوار' && !qs.length) { qs = ['اكتب لي برنامج الأعداد الأولية', 'اشرح لي الإغلاقات']; }
+    if (!qs.length) return;
+    var w = el('div', 'sugg'); qs.forEach(function (q) { var b = el('button', '', q); b.type = 'button'; b.onclick = function () { if (busyAsk) return; inp.value = q; go(); }; w.appendChild(b); });
+    node.appendChild(w);
+  }
+
+  // ===== محادثة مؤقتة والإعدادات في أسفل الشريط الجانبي =====
+  var foot = el('div', 'sfoot'), tmp = ibtn(IC.ghost, 'محادثة مؤقتة'), st = ibtn(IC.gear, 'الإعدادات');
+  tmp.onclick = function () { tempMode = !tempMode; tmp.classList.toggle('on', tempMode); $('#newchat').click(); drawer(false); };
+  foot.appendChild(tmp); foot.appendChild(st); $('.side').appendChild(foot);
+  var zoom = Number(ls('nawa.zoom') || 1) || 1; col.style.zoom = zoom;
+  var sov = el('div', 'ov'), sd = el('div', 'dlg'); sov.id = 'sov'; sd.setAttribute('role', 'dialog'); sd.setAttribute('aria-modal', 'true');
+  sd.innerHTML = '<header><h2>الإعدادات</h2><button class="ibtn" id="sclose">إغلاق</button></header><div class="body sbody"></div>';
+  sov.appendChild(sd); document.body.appendChild(sov);
+  function row(label, node) { var r = el('div', 'srow'); r.appendChild(el('span', '', label)); r.appendChild(node); return r; }
+  function sbtn(txt, fn) { var b = el('button', 'ibtn', txt); b.type = 'button'; b.onclick = fn; return b; }
+  function buildSettings() {
+    var b = sd.querySelector('.sbody'); b.innerHTML = '';
+    var sz = el('span', 'seg'); [['صغير', 0.9], ['عادي', 1], ['كبير', 1.15]].forEach(function (z) { var x = sbtn(z[0], function () { zoom = z[1]; col.style.zoom = zoom; ls('nawa.zoom', String(zoom)); buildSettings(); }); if (z[1] === zoom) x.classList.add('on'); sz.appendChild(x); });
+    b.appendChild(row('حجم الخط', sz));
+    b.appendChild(row('السمة', sbtn('تبديل', function () { $('#theme').click(); })));
+    b.appendChild(row('تصدير كل المحادثات', sbtn('تصدير', function () {
+      var out = []; convs.forEach(function (c) { out.push('# ' + c.title, ''); c.msgs.forEach(function (m) { out.push((m.role === 'u' ? '**أنا:** ' : '**نواة:** ') + (m.text || m.txt || ''), ''); }); });
+      var bl = new Blob([out.join('\n')], { type: 'text/markdown;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'كل-محادثات-نواة.md'; document.body.appendChild(a); a.click(); a.remove();
+    })));
+    b.appendChild(row('مسح كل المحادثات', sbtn('مسح', function () { if (!confirm('مسح كل المحادثات المحفوظة؟')) return; convs = []; saveConvs(); $('#newchat').click(); sov.classList.remove('open'); })));
+    b.appendChild(row('إزالة ملفات المكتبة', sbtn('إزالة', function () { if (!confirm('إزالة كل الملفات المربوطة؟')) return; Object.keys(docs).forEach(function (k) { removeDoc(k); }); })));
+    var kb2 = el('div', 'keys'); [['Ctrl+K', 'محادثة جديدة'], ['/', 'الانتقال إلى الكتابة'], ['↑', 'تعديل آخر رسالة'], ['Esc', 'إغلاق']].forEach(function (k) { var d = el('div'); d.appendChild(el('kbd', '', k[0])); d.appendChild(el('span', '', k[1])); kb2.appendChild(d); });
+    b.appendChild(row('الاختصارات', kb2));
+  }
+  st.onclick = function () { buildSettings(); sov.classList.add('open'); drawer(false); };
+  sd.querySelector('#sclose').onclick = function () { sov.classList.remove('open'); };
+  sov.onclick = function (e) { if (e.target === sov) sov.classList.remove('open'); };
 
   // ===== تثبيت التطبيق =====
   var deferred = null, ib = $('#install');

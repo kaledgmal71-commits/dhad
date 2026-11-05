@@ -42,5 +42,12 @@ const file=(b64,n)=>new File([Buffer.from(b64,'base64')],n);
       ok(js.includes("mode === 'attach'")&&js.includes("'link'"),'attach/link modes');
       ok(!/innerHTML\s*=\s*[^;]*(p\['|r\['|m\.text)/.test(js.replace(/IC\./g,'')),'no raw answer text injected as HTML');
     }
+    // إيقاف وإعادة المحاولة واقتراحات المتابعة والإعدادات والمحادثة المؤقتة
+    {
+      const js=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.js'),'utf8'),css=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.css'),'utf8');
+      for(const f of ['function stopAsk','function addExtras','function buildSettings','tempMode','محادثة مؤقتة','الإعدادات','أُوقف الطلب','تصدير كل المحادثات'])ok(js.includes(f),'ui has '+f);
+      for(const c of ['.sugg','.sfoot','.sbody','.cbtn.send.stop'])ok(css.includes(c),'css has '+c);
+      ok(js.includes('filter(function (c) { return !c.temp; })'),'temporary chats are never persisted');
+    }
   console.log('pass',pass,'fail',fail);
 })();

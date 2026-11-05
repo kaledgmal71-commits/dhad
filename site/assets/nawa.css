@@ -154,3 +154,21 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
   .hi .hx{display:flex;position:static;background:none;margin-top:-2px;padding:0 6px 4px;justify-content:flex-start}
   .hi{display:block}
 }
+
+/* إيقاف، اقتراحات المتابعة، الإعدادات، المحادثة المؤقتة (إضافات فقط) */
+.cbtn.send.stop{background:var(--ink,#222);color:var(--bg,#fff)}
+.cbtn.send.stop svg{transform:none!important;stroke:none}
+.sugg{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
+.sugg button{border:1px solid var(--btnline);background:var(--btn);border-radius:999px;padding:6px 14px;font:600 13px Cairo;cursor:pointer;color:var(--ink)}
+.sugg button:hover{background:var(--accbg);color:var(--acc)}
+.sfoot{margin-top:auto;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:8px}
+.sfoot button{display:flex;align-items:center;gap:9px;height:38px;padding:0 10px;border:0;background:none;border-radius:9px;cursor:pointer;color:var(--ink);font:600 14px Cairo;text-align:start}
+.sfoot button:hover{background:var(--accbg)}
+.sfoot button.on{color:var(--acc);background:var(--accbg)}
+.sfoot svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sbody .srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-weight:600}
+.sbody .srow:last-child{border:0}
+.seg{display:inline-flex;gap:4px}
+.seg .ibtn.on{background:var(--accbg);color:var(--acc)}
+.keys{display:grid;gap:6px;font-weight:500;font-size:13px}
+.keys kbd{display:inline-block;min-width:54px;text-align:center;margin-inline-end:10px;padding:1px 8px;border:1px solid var(--btnline);border-radius:6px;background:var(--btn);font:600 12px monospace}
