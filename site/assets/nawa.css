@@ -218,3 +218,9 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .att.badc em{font-style:normal;font-size:12px;color:var(--bad)}
 .pas a.pl{display:block;font-size:13px;font-weight:700;color:var(--acc2);margin-bottom:2px;text-decoration:none;border-bottom:1px dotted}
 .ibtn{white-space:nowrap}
+
+/* الاسم الكامل بجانب الرمز ن */
+.logo span{display:flex;flex-direction:column;line-height:1.05}
+.logo span b{font-weight:800;font-size:19px}
+.logo span small{font:700 10.5px/1 Cairo,sans-serif;letter-spacing:.14em;color:var(--mut)}
+@media(max-width:640px){header.top .logo span{display:flex}.logo span b{font-size:15px}.logo span small{font-size:9px}header.top .in{gap:6px}}

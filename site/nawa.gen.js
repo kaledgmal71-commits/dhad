@@ -26,14 +26,14 @@ const PLUS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
 function page() {
   const tabs = TABS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('');
   return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>نواة — الذكاء الاصطناعي المبني بضاد</title><meta name="description" content="نواة: مساعد ذكي أجزاؤه كلها مكتوبة بلغة ضاد؛ يكتب البرامج ويتحقق منها بالتشغيل، ويشخّص الأخطاء، ويبحث في معرفة الموقع وفي ملفاتك.">
+<title>نواة NAWA — الذكاء الاصطناعي المبني بضاد</title><meta name="description" content="نواة: مساعد ذكي أجزاؤه كلها مكتوبة بلغة ضاد؛ يكتب البرامج ويتحقق منها بالتشغيل، ويشخّص الأخطاء، ويبحث في معرفة الموقع وفي ملفاتك.">
 <link rel="canonical" href="${SITE}/nawa/"><link rel="icon" href="${FAV}"><link rel="manifest" href="/nawa/manifest.webmanifest"><meta name="theme-color" content="#9a6b12">
-<meta property="og:title" content="نواة"><meta property="og:description" content="مساعد ذكي مبني بالكامل بلغة ضاد."><meta property="og:type" content="website"><meta property="og:locale" content="ar_AR">
+<meta property="og:title" content="نواة NAWA"><meta property="og:description" content="مساعد ذكي مبني بالكامل بلغة ضاد."><meta property="og:type" content="website"><meta property="og:locale" content="ar_AR">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/nawa.css"></head><body>
 <header class="top"><div class="in">
-  <a class="logo" href="/nawa/"><i>ن</i><span>نواة</span></a>
+  <a class="logo" href="/nawa/"><i>ن</i><span><b>نواة</b><small>NAWA</small></span></a>
   <nav class="tabs">${tabs}</nav>
   <div class="tools">
     <button class="ibtn" id="install" hidden><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>تثبيت التطبيق</span></button>
@@ -96,7 +96,7 @@ function build(G) {
     : [{ src: '/nawa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }];
   if (png) { fs.copyFileSync(path.join(__dirname, 'assets', 'nawa-icon-192.png'), path.join(DIST, 'nawa', 'icon-192.png')); fs.copyFileSync(path.join(__dirname, 'assets', 'nawa-icon-512.png'), path.join(DIST, 'nawa', 'icon-512.png')); }
   wr('nawa/icon.svg', ICON('#9a6b12'));
-  wr('nawa/manifest.webmanifest', JSON.stringify({ name: 'نواة', short_name: 'نواة', description: 'مساعد ذكي مبني بلغة ضاد', start_url: '/nawa/', scope: '/nawa/', display: 'standalone', dir: 'rtl', lang: 'ar', background_color: '#ffffff', theme_color: '#9a6b12', icons: iconsList }));
+  wr('nawa/manifest.webmanifest', JSON.stringify({ name: 'نواة NAWA', short_name: 'نواة', description: 'مساعد ذكي مبني بلغة ضاد', start_url: '/nawa/', scope: '/nawa/', display: 'standalone', dir: 'rtl', lang: 'ar', background_color: '#ffffff', theme_color: '#9a6b12', icons: iconsList }));
   // عامل الخدمة: أصول التطبيق تُحفظ لتعمل الصفحة بلا اتصال بعد أول زيارة؛ الطلبات الأخرى من الشبكة
   wr('nawa/sw.js', `const C='nawa-v1',A=['/nawa/','/assets/nawa.css','/assets/nawa.js','/assets/nawa.files.js','/assets/nawa.worker.js','/assets/engine.api.js','/nawa/base.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)).then(()=>self.skipWaiting()))});
