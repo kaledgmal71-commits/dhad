@@ -45,9 +45,17 @@ const file=(b64,n)=>new File([Buffer.from(b64,'base64')],n);
     // إيقاف وإعادة المحاولة واقتراحات المتابعة والإعدادات والمحادثة المؤقتة
     {
       const js=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.js'),'utf8'),css=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.css'),'utf8');
-      for(const f of ['function stopAsk','function addExtras','function buildSettings','tempMode','محادثة مؤقتة','الإعدادات','أُوقف الطلب','تصدير كل المحادثات'])ok(js.includes(f),'ui has '+f);
+      for(const f of ['function stopAsk','function addExtras','tempMode','محادثة مؤقتة','الإعدادات','أُوقف الطلب','تصدير كل المحادثات'])ok(js.includes(f),'ui has '+f);
       for(const c of ['.sugg','.sfoot','.sbody','.cbtn.send.stop'])ok(css.includes(c),'css has '+c);
       ok(js.includes('filter(function (c) { return !c.temp; })'),'temporary chats are never persisted');
+    }
+    // الربط موصّل (مراجع لا نسخ) والشريط والإعدادات المرتبة
+    {
+      const js=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.js'),'utf8'),css=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.css'),'utf8');
+      for(const f of ['function prepareLinked','function pickDir','showDirectoryPicker','function openProjects','function openArtifacts','function openSkills','var SECTIONS','عدد_مربوط','صفّر_المكتبة','مربوط، يُقرأ عند الحاجة'])ok(js.includes(f),'ui has '+f);
+      for(const c of ['.snav','.stabs','.tg','.prow'])ok(css.includes(c),'css has '+c);
+      ok(!/st\.put\(\{ name: name, kind: r\.kind, content/.test(js),'linking never stores file content');
+      ok(js.includes("st.clear()"),'old stored copies are purged');
     }
   console.log('pass',pass,'fail',fail);
 })();

@@ -56,11 +56,14 @@ for(const d of ask(vm,'مستندات')['مستندات'])ask(vm,'إزالة',d[
   // تحليل المرفق كاملًا لا رمي مقاطع
   {const r=ask(vm,'اسأل','حلل هذا الملف واكتب عنه تقييما');ok(r['نوع']==='تحليل_ملف'&&r['رد'].includes('تحليل الملف «ملاحظات.txt»')&&r['رد'].includes('أبرز المصطلحات')&&!r['رد'].includes('مكتبة.txt'),'analysis targets the attachment only: '+r['رد'].slice(0,200));}
   // الحوار لا يتأثر بالملفات ويذكرها
+  ask(vm,'عدد_مربوط',3);
   {const r=ask(vm,'اسأل','ماذا تفعل؟');ok(r['نوع']==='حوار'&&r['رد'].includes('ملف مرفق: ملاحظات.txt')&&r['رد'].includes('المكتبة المربوطة'),'capabilities mention both: '+r['رد']);}
   {const r=ask(vm,'اسأل','السلام عليكم');ok(r['رد'].startsWith('وعليكم السلام')&&r['نوع']==='حوار','salam');}
   // سؤال عادي يبحث في المرفق أولًا ثم المكتبة
   {const r=ask(vm,'اسأل','ما نصاب الزكاة؟');const p=r['نتائج']['مستندات'];ok(p&&p[0]['معرف'].startsWith('ملاحظات.txt#'),'question searches attachment first');}
   {const r=ask(vm,'اسأل','ما هو الوقف؟');const p=r['نتائج']['مستندات'];ok(p&&p.some(x=>x['معرف'].startsWith('مكتبة.txt#')&&x['مقتطف'].includes('الوقف')),'question also reaches the linked library');}
+  {const r=ask(vm,'اسأل','ماذا تفعل؟');ok(r['رد'].includes('٣ ملف'),'linked count comes from the connector, not from fetched files');}
+  ask(vm,'صفّر_المكتبة');ok(!ask(vm,'مستندات')['مستندات'].some(d=>d['نوع']==='ربط'),'clearing the library drops fetched files only');ask(vm,'مستند','مكتبة.txt',lib);
   // إزالة المرفق لا تمسّ المكتبة، وبعدها لا ملف للتحليل
   ask(vm,'إزالة_مرفق','ملاحظات.txt');
   ok(ask(vm,'مستندات')['مستندات'].every(d=>d['نوع']==='ربط'),'attach removed, library intact');

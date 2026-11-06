@@ -22,30 +22,102 @@
   var docs = {}, idb = null, queue = Promise.resolve();
   function openDB() {
     return new Promise(function (res) {
-      try { var r = indexedDB.open('nawa', 1); r.onupgradeneeded = function () { r.result.createObjectStore('docs', { keyPath: 'name' }); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { res(null); }; } catch (e) { res(null); }
+      try { var r = indexedDB.open('nawa', 2); r.onupgradeneeded = function () { var d = r.result; if (!d.objectStoreNames.contains('docs')) d.createObjectStore('docs', { keyPath: 'name' }); if (!d.objectStoreNames.contains('handles')) d.createObjectStore('handles', { keyPath: 'name' }); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { res(null); }; } catch (e) { res(null); }
     });
   }
-  function dbDo(mode, fn) { return openDB().then(function (db) { if (!db) return null; return new Promise(function (res) { var tx = db.transaction('docs', mode), st = tx.objectStore('docs'), q = fn(st); tx.oncomplete = function () { res(q && q.result); }; tx.onerror = function () { res(null); }; }); }); }
+  function dbDo(mode, fn, store) { return openDB().then(function (db) { if (!db) return null; return new Promise(function (res) { var tx = db.transaction(store || 'docs', mode), st = tx.objectStore(store || 'docs'), q = fn(st); tx.oncomplete = function () { res(q && q.result); }; tx.onerror = function () { res(null); }; }); }); }
   // الربط (link): مكتبة دائمة تُحفظ في المتصفح وتُفهرس تلقائيًا؛ الإرفاق (attach): ملف عابر للمحادثة الحالية يُحلَّل كاملًا
   var fileMode = 'attach';
   function sendDoc(name, r, mode) { var base = mode === 'attach' ? 'مرفق' : 'مستند'; return call(r.kind === 'docx' ? base + '_docx' : r.kind === 'html' ? base + '_html' : base, name, r.content); }
+  // الربط كموصّل: مراجع للملفات لا نسخ لمحتواها. لا يُقرأ ملف ولا يُفهرَس عند الربط؛ يُجلب عند الحاجة وحدها، كما يُجلب ملف من مستودع.
+  var linked = {};
+  function saveNames() { try { ls('nawa.linkNames', JSON.stringify(Object.keys(linked).slice(0, 3000))); } catch (e) {} }
+  function syncLinked() { saveNames(); call('عدد_مربوط', Object.keys(linked).length).catch(function () {}); lastSel = null; }
+  function addLinked(path, size, ref) { linked[path] = { size: size, file: ref.file, fh: ref.fh }; docs['link:' + path] = { name: path, mode: 'link', state: 'ok', size: size }; }
+  function supportedName(n) { return !!window.NawaFiles.supported[window.NawaFiles.ext(n)]; }
+  function walkDir(dh, base, st) {
+    var run = (async function rec(d, pre) {
+      for await (var en of d.entries()) {
+        if (st.n >= 5000) return;
+        var nm = en[0], h = en[1];
+        if (h.kind === 'directory') await rec(h, pre + nm + '/');
+        else if (supportedName(nm)) { var pth = (pre + nm).replace(/#/g, '＃'); st.n++; addLinked(pth, 0, { fh: h }); }
+      }
+    })(dh, base + '/');
+    return run;
+  }
+  function useHandle(h, rec) {
+    var st = { n: 0 }; delete docs['link:' + rec.name + '/'];
+    return walkDir(h, h.name, st).then(function () { syncLinked(); renderDocs(); });
+  }
   function restoreDocs() {
-    return dbDo('readonly', function (st) { return st.getAll(); }).then(function (all) {
-      (all || []).forEach(function (d) { docs['link:' + d.name] = { name: d.name, mode: 'link', state: 'busy', size: d.size }; });
-      renderDocs();
-      (all || []).forEach(function (d) {
-        var k = 'link:' + d.name;
-        queue = queue.then(function () { return sendDoc(d.name, d, 'link').then(function (res) { docs[k] = { name: d.name, mode: 'link', state: 'ok', chunks: res['مقاطع'], size: d.size }; }, function () { docs[k] = { name: d.name, mode: 'link', state: 'bad', note: 'تعذّرت الفهرسة', size: d.size }; }).then(renderDocs); });
+    // محتوى مخزَّن بنسخ قديمة: لا يحتفظ الربط بمحتوى بعد الآن
+    dbDo('readwrite', function (st) { return st.clear(); });
+    var names = []; try { names = JSON.parse(ls('nawa.linkNames') || '[]'); } catch (e) {}
+    return dbDo('readonly', function (st) { return st.getAll(); }, 'handles').then(function (hs) {
+      (hs || []).forEach(function (rec) {
+        var h = rec.handle; if (!h || !h.queryPermission) return;
+        h.queryPermission({ mode: 'read' }).then(function (p) {
+          if (p === 'granted') return useHandle(h, rec);
+          docs['link:' + rec.name + '/'] = { name: rec.name + '/', mode: 'link', state: 'bad', note: 'مجلد مربوط — يحتاج إذن الوصول', size: 0, grant: function () { return h.requestPermission({ mode: 'read' }).then(function (q) { if (q === 'granted') return useHandle(h, rec); }); } };
+          renderDocs();
+        }).catch(function () {});
       });
+      if (!(hs && hs.length)) names.forEach(function (n) { if (!linked[n]) docs['link:' + n] = { name: n, mode: 'link', state: 'bad', note: 'أعد اختيار المجلد لاستئناف الوصول', size: 0 }; });
+      renderDocs();
     });
+  }
+  function pickDir() {
+    fileMode = 'link';
+    if (!window.showDirectoryPicker) { $('#dirIn').click(); return; }
+    window.showDirectoryPicker({ mode: 'read' }).then(function (h) {
+      var rec = { name: h.name, handle: h };
+      dbDo('readwrite', function (st) { return st.put(rec); }, 'handles');
+      return useHandle(h, rec);
+    }).catch(function () {});
+  }
+  // جلب ما يخص المهمة من الملفات المربوطة: يُقرأ من المصدر عند الحاجة ويُسلَّم للجلسة، ثم تُفرَّغ مكتبتها عند اختلاف المهمة
+  var lastSel = null, rcache = {}, rorder = [];
+  function normQ(t) { return String(t).replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase(); }
+  var STOP = {}; 'ابحث اريد اكتب ملفاتي ملفي الملفات مكتبتي المكتبه هذا هذه عن على الي الذي التي ماذا كيف هل لماذا اين متى اعطني اذكر حلل لخص اشرح وضح ثم ايضا كل بعض'.split(' ').forEach(function (w) { STOP[w] = 1; });
+  function qTokens(t) { return normQ(t).split(/[^ء-غف-يa-z0-9]+/).map(function (w) { return w.replace(/^(وال|بال|لل|ال)/, ''); }).filter(function (w) { return w.length >= 3 && !STOP[w]; }); }
+  function readLinked(p) {
+    if (rcache[p]) return Promise.resolve(rcache[p]);
+    var e = linked[p]; if (!e) return Promise.resolve(null);
+    return Promise.resolve(e.file || e.fh.getFile()).then(function (f) { e.size = f.size; return window.NawaFiles.read(f); }).then(function (r) {
+      if (r.content.length > 600000) r.content = r.content.slice(0, 600000);
+      rcache[p] = r; rorder.push(p); if (rorder.length > 12) delete rcache[rorder.shift()]; return r;
+    }, function () { return null; });
+  }
+  async function prepareLinked(q) {
+    var paths = Object.keys(linked); if (!paths.length) return;
+    var toks = qTokens(q), sel = [];
+    if (toks.length && !/^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)/.test(normQ(q).trim())) {
+      var sc = paths.map(function (p) { var np = normQ(p), s = 0; toks.forEach(function (t) { if (np.indexOf(t) >= 0) s += 5; }); return { p: p, s: s }; }).sort(function (a, b) { return b.s - a.s; });
+      var t0 = Date.now(), n = 0;
+      for (var i = 0; i < sc.length && n < 40 && Date.now() - t0 < 6000; i++) {
+        var it = sc[i], r = await readLinked(it.p); n++; if (!r) continue;
+        var low = normQ(r.content), hits = 0;
+        toks.forEach(function (t) { var k = low.indexOf(t); while (k >= 0 && hits < 200) { hits++; k = low.indexOf(t, k + t.length); } });
+        it.s += hits; it.r = r;
+      }
+      sel = sc.filter(function (x) { return x.s > 0 && x.r; }).slice(0, 5);
+    }
+    var key = sel.map(function (x) { return x.p; }).join('|');
+    if (key === lastSel) return;
+    lastSel = key; await call('صفّر_المكتبة');
+    for (var j = 0; j < sel.length; j++) await sendDoc(sel[j].p, sel[j].r, 'link');
   }
   function ingest(file, quiet, mode) {
     var name = (file.webkitRelativePath || file.name).replace(/#/g, '＃'), k = mode + ':' + name;
     if (!window.NawaFiles.supported[window.NawaFiles.ext(file.name)] && quiet) return;
+    if (mode === 'link') {
+      if (!supportedName(file.name)) { docs[k] = { name: name, mode: mode, state: 'bad', size: file.size, note: 'صيغة غير مدعومة بعد' }; renderDocs(); return; }
+      addLinked(name, file.size, { file: file }); syncLinked(); renderDocs(); return;
+    }
     docs[k] = { name: name, mode: mode, state: 'busy', size: file.size }; renderDocs();
     queue = queue.then(function () {
       return window.NawaFiles.read(file).then(function (r) {
-        if (mode === 'link') dbDo('readwrite', function (st) { return st.put({ name: name, kind: r.kind, content: r.content, size: file.size }); });
         return sendDoc(name, r, mode);
       }).then(function (res) { docs[k] = { name: name, mode: mode, state: 'ok', chunks: res['مقاطع'], size: file.size }; },
         function (err) {
@@ -57,8 +129,8 @@
   function removeDoc(k) {
     var d = docs[k]; if (!d) return;
     delete docs[k]; renderDocs();
-    if (d.mode === 'link') dbDo('readwrite', function (st) { return st.delete(d.name); });
-    queue = queue.then(function () { return call(d.mode === 'attach' ? 'إزالة_مرفق' : 'إزالة', d.name).catch(function () {}); });
+    if (d.mode === 'link') { delete linked[d.name]; delete rcache[d.name]; syncLinked(); return; }
+    queue = queue.then(function () { return call('إزالة_مرفق', d.name).catch(function () {}); });
   }
   function clearAttached() {
     Object.keys(docs).forEach(function (k) { if (docs[k].mode === 'attach') delete docs[k]; });
@@ -67,11 +139,15 @@
   function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' م.ب' : Math.max(1, Math.round(n / 1024)) + ' ك.ب'; }
   function renderDocs() {
     var names = Object.keys(docs), box = $('#files'); box.innerHTML = '';
+    var shown = 0, more = 0;
     names.forEach(function (n) {
-      var d = docs[n], r = el('div', 'fr'), t = el('div', 't'), b = el('b', '', d.name), s = el('span', d.state === 'bad' ? 'bad' : '', d.state === 'busy' ? 'تُفهرَس الآن…' : d.state === 'ok' ? kb(d.size) + ' · ' + d.chunks + ' مقطعًا · ' + (d.mode === 'attach' ? 'مرفق' : 'مربوط') : d.note);
+      if (docs[n].mode === 'link' && docs[n].state === 'ok' && ++shown > 30) { more++; return; }
+      var d = docs[n], r = el('div', 'fr'), t = el('div', 't'), b = el('b', '', d.name), s = el('span', d.state === 'bad' ? 'bad' : '', d.state === 'busy' ? 'تُفهرَس الآن…' : d.state === 'ok' ? (d.mode === 'attach' ? kb(d.size) + ' · ' + d.chunks + ' مقطعًا · مرفق' : (d.size ? kb(d.size) + ' · ' : '') + 'مربوط، يُقرأ عند الحاجة') : d.note);
       t.appendChild(b); t.appendChild(s); r.appendChild(t);
+      if (d.grant) { var gb = el('button', '', 'منح الوصول'); gb.onclick = function () { d.grant(); }; r.appendChild(gb); }
       var x = el('button', '', '×'); x.title = 'إزالة'; x.onclick = function () { removeDoc(n); }; r.appendChild(x); box.appendChild(r);
     });
+    if (more) { var mr = el('div', 'fr'), mt = el('div', 't'); mt.appendChild(el('span', '', 'و' + more + ' ملفًا مربوطًا آخر')); mr.appendChild(mt); box.appendChild(mr); }
     var a = $('#attached'); a.innerHTML = '';
     var ok = names.filter(function (n) { return docs[n].state !== 'bad'; }), linked = 0, linkBusy = false;
     ok.forEach(function (n) {
@@ -253,7 +329,7 @@
   function go() {
     var t = inp.value.trim(); if (!t || busyAsk) return;
     hideHero();
-    if (!curConv) { curConv = { id: Date.now(), title: t.slice(0, 48), msgs: [], temp: tempMode }; if (!tempMode) convs.unshift(curConv); }
+    if (!curConv) { curConv = { id: Date.now(), title: t.slice(0, 48), msgs: [], temp: tempMode }; if (curProj) curConv.proj = Number(curProj); if (!tempMode) convs.unshift(curConv); }
     if (editIdx !== null) {
       var at = editIdx; cancelEdit();
       [].slice.call(col.querySelectorAll('.msg')).forEach(function (n) { if (Number(n.dataset.i) >= at) n.remove(); });
@@ -263,10 +339,10 @@
     curConv.msgs.push({ role: 'u', text: t });
     var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length), my = ++reqId; curPending = pending;
     col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
-    ready.then(function () { return call('اسأل', t); }).then(function (r) {
+    ready.then(function () { return prepareLinked(t).catch(function () {}); }).then(function () { return call('اسأل', t); }).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
-      var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2);
+      var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
     }, function (err) {
       if (my !== reqId) return 'x';
       pending.querySelector('.tx').replaceChildren(el('p', '', 'تعذّر إتمام الطلب: ' + (err && err.message ? err.message : ''))); curConv.msgs.push({ role: 'a', text: 'تعذّر إتمام الطلب' });
@@ -286,6 +362,7 @@
     if (!list.length) { hlist.appendChild(el('div', 'none', convs.length ? 'لا نتائج' : 'لا محادثات بعد')); return; }
     list.forEach(function (c) {
       var row = el('div', 'hi' + (curConv && curConv.id === c.id ? ' on' : '')), b = el('button', '', (c.pin ? '📌 ' : '') + c.title);
+      if (c.proj) { var pj = (projects || []).filter(function (x) { return x.id === c.proj; })[0]; if (pj) b.title = pj.name; }
       b.onclick = function () { openConv(c); };
       var acts = el('span', 'hx'), pn = el('button', '', c.pin ? 'إلغاء التثبيت' : 'تثبيت'), rn = el('button', '', 'إعادة تسمية'), dl = el('button', '', 'حذف');
       pn.onclick = function (e) { e.stopPropagation(); c.pin = !c.pin; saveConvs(); renderHist(); };
@@ -323,7 +400,7 @@
   document.addEventListener('keydown', function (e) {
     var typing = /^(INPUT|TEXTAREA)$/.test((e.target.tagName || '')), mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#newchat').click(); drawer(false); }
-    else if (e.key === 'Escape') { $('#menu').classList.remove('open'); $('#ov').classList.remove('open'); $('#sov').classList.remove('open'); drawer(false); if (editIdx !== null) { cancelEdit(); inp.value = ''; grow(); } }
+    else if (e.key === 'Escape') { $('#menu').classList.remove('open'); $('#ov').classList.remove('open'); $('#sov').classList.remove('open'); $('#pov').classList.remove('open'); drawer(false); if (editIdx !== null) { cancelEdit(); inp.value = ''; grow(); } }
     else if (e.key === '/' && !typing && !mod) { e.preventDefault(); inp.focus(); }
     else if (e.key === 'ArrowUp' && e.target === inp && !inp.value && curConv) {
       for (var i = curConv.msgs.length - 1; i >= 0; i--) if (curConv.msgs[i].role === 'u') { e.preventDefault(); startEdit(i, curConv.msgs[i].text); break; }
@@ -334,13 +411,13 @@
   var menu = $('#menu');
   $('#plus').onclick = function (e) { e.stopPropagation(); menu.classList.toggle('open'); };
   document.addEventListener('click', function () { menu.classList.remove('open'); });
-  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; if (a === 'files') { fileMode = 'attach'; $('#fileIn').click(); } else if (a === 'folder') { fileMode = 'link'; $('#dirIn').click(); } else openConn(); }; });
+  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; if (a === 'files') { fileMode = 'attach'; $('#fileIn').click(); } else if (a === 'folder') { pickDir(); } else openConn(); }; });
   function openConn() { $('#ov').classList.add('open'); }
   $('#openConn').onclick = openConn;
   $('#closeConn').onclick = function () { $('#ov').classList.remove('open'); };
   $('#ov').onclick = function (e) { if (e.target === this) this.classList.remove('open'); };
   $('#pickFiles').onclick = function () { fileMode = 'link'; $('#fileIn').click(); };
-  $('#pickFolder').onclick = function () { fileMode = 'link'; $('#dirIn').click(); };
+  $('#pickFolder').onclick = pickDir;
   $('#fileIn').onchange = function () { take(this.files, false, fileMode); this.value = ''; };
   $('#dirIn').onchange = function () { take(this.files, true, 'link'); this.value = ''; };
   var drop = $('#drop');
@@ -371,33 +448,127 @@
     node.appendChild(w);
   }
 
-  // ===== محادثة مؤقتة والإعدادات في أسفل الشريط الجانبي =====
+  // ===== الشريط الجانبي: المشاريع والآثار والمهارات والموصّلات، وأسفله الإعدادات =====
+  var SET = {}; try { SET = JSON.parse(ls('nawa.set') || '{}'); } catch (e) {}
+  function saveSet() { ls('nawa.set', JSON.stringify(SET)); }
+  var zoom = Number(ls('nawa.zoom') || 1) || 1; col.style.zoom = zoom;
+  var projects = []; try { projects = JSON.parse(ls('nawa.projects') || '[]'); } catch (e) {}
+  var curProj = ls('nawa.curProj') || '';
+  function saveProj() { ls('nawa.projects', JSON.stringify(projects)); ls('nawa.curProj', curProj); }
+  var IC2 = {
+    proj: '<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    art: '<svg viewBox="0 0 24 24"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>',
+    skill: '<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>',
+    conn: '<svg viewBox="0 0 24 24"><path d="M9 7V3m6 4V3M7 11h10v3a5 5 0 0 1-10 0v-3zM12 19v2"/></svg>'
+  };
+  var pov = el('div', 'ov'), pd = el('div', 'dlg'), pt = el('h2'), pb = el('div', 'body sbody'), pc = el('button', 'ibtn', 'إغلاق');
+  pov.id = 'pov'; pd.setAttribute('role', 'dialog'); pd.setAttribute('aria-modal', 'true');
+  var ph = el('header'); ph.appendChild(pt); ph.appendChild(pc); pd.appendChild(ph); pd.appendChild(pb); pov.appendChild(pd); document.body.appendChild(pov);
+  pc.onclick = function () { pov.classList.remove('open'); }; pov.onclick = function (e) { if (e.target === pov) pov.classList.remove('open'); };
+  function openPanel(title, render) { pt.textContent = title; pb.innerHTML = ''; render(pb); pov.classList.add('open'); drawer(false); }
+  function item(titleTxt, sub, actions) { var r = el('div', 'prow'), t = el('div', 't'); t.appendChild(el('b', '', titleTxt)); if (sub) t.appendChild(el('span', '', sub)); r.appendChild(t); (actions || []).forEach(function (a) { var b = el('button', 'ibtn', a[0]); b.type = 'button'; b.onclick = a[1]; r.appendChild(b); }); return r; }
+  function empty(txt) { return el('div', 'none', txt); }
+
+  function openProjects() {
+    openPanel('المشاريع', function (b) {
+      var add = el('button', 'ibtn', 'مشروع جديد'); add.type = 'button';
+      add.onclick = function () { var n = prompt('اسم المشروع'); if (!n || !n.trim()) return; projects.unshift({ id: Date.now(), name: n.trim().slice(0, 50), notes: '' }); saveProj(); openProjects(); renderHist(); };
+      b.appendChild(add);
+      if (!projects.length) b.appendChild(empty('لا مشاريع بعد'));
+      projects.forEach(function (pr) {
+        var n = convs.filter(function (c) { return c.proj === pr.id; }).length;
+        b.appendChild(item(pr.name + (curProj == pr.id ? ' · نشط' : ''), n + ' محادثة' + (pr.notes ? ' — ' + pr.notes : ''), [
+          [curProj == pr.id ? 'إلغاء التنشيط' : 'تنشيط', function () { curProj = curProj == pr.id ? '' : String(pr.id); saveProj(); renderHist(); openProjects(); }],
+          ['ملاحظات', function () { var t = prompt('ملاحظات المشروع', pr.notes || ''); if (t !== null) { pr.notes = t.trim().slice(0, 200); saveProj(); openProjects(); } }],
+          ['حذف', function () { if (!confirm('حذف المشروع؟ تبقى محادثاته.')) return; projects = projects.filter(function (x) { return x !== pr; }); convs.forEach(function (c) { if (c.proj == pr.id) delete c.proj; }); if (curProj == pr.id) curProj = ''; saveProj(); saveConvs(); openProjects(); renderHist(); }]
+        ]));
+      });
+    });
+  }
+  function artifactsList() {
+    var out = [];
+    convs.forEach(function (c) { c.msgs.forEach(function (m) { var sy = m.res && m.res['نتائج'] && m.res['نتائج']['توليف']; if (sy && sy['وُجد']) out.push({ conv: c, src: sy['مصدر'], code: sy['شيفرة'] }); }); });
+    return out;
+  }
+  function openArtifacts() {
+    openPanel('الآثار', function (b) {
+      var list = artifactsList();
+      if (!list.length) b.appendChild(empty('البرامج التي تكتبها نواة وتتحقق منها تُجمع هنا'));
+      list.forEach(function (a, i) {
+        var r = item(a.src.split('/').pop(), a.conv.title, [['نسخ', function () { copyText(a.code); }], ['المحرر', function () { window.open('/editor/?code=' + encodeURIComponent(a.code), '_blank', 'noopener'); }], ['المحادثة', function () { pov.classList.remove('open'); openConv(a.conv); }]]);
+        var pre = el('pre', 'aprev'); pre.textContent = a.code.split('\n').slice(0, 6).join('\n'); r.appendChild(pre); b.appendChild(r);
+      });
+    });
+  }
+  var SKILLS = [
+    ['كتابة برنامج', 'يوفّق برنامجًا موثَّقًا لوصفك ويتحقق منه بالتشغيل قبل أن يعرضه', 'اكتب لي برنامج الأعداد الأولية'],
+    ['تشغيل وتشخيص', 'يشغّل شيفرتك في بيئة معزولة ويشخّص الخطأ ويقترح الإصلاح', 'لماذا لا يعمل هذا؟ اطبع(عدادد)'],
+    ['شرح اللغة', 'يشرح المفاهيم من الدروس والشروحات والمعجم', 'اشرح لي الإغلاقات'],
+    ['تحليل ملف', 'يقيس ملفًا مرفقًا ويستخرج بنيته وأبرز مصطلحاته', 'حلل هذا الملف'],
+    ['البحث في الملفات', 'يجلب من ملفاتك المربوطة ما يخص سؤالك', 'ابحث في ملفاتي']
+  ];
+  function openSkills() {
+    openPanel('المهارات', function (b) {
+      SKILLS.forEach(function (k) { b.appendChild(item(k[0], k[1], [['جرّب', function () { pov.classList.remove('open'); inp.value = k[2]; grow(); inp.focus(); }]])); });
+    });
+  }
+  var nav = el('div', 'snav');
+  [['المشاريع', IC2.proj, openProjects], ['الآثار', IC2.art, openArtifacts], ['المهارات', IC2.skill, openSkills], ['الموصّلات', IC2.conn, function () { drawer(false); openConn(); }]].forEach(function (x) { var b = ibtn(x[1], x[0]); b.onclick = x[2]; nav.appendChild(b); });
+  $('.side').insertBefore(nav, hist);
+
   var foot = el('div', 'sfoot'), tmp = ibtn(IC.ghost, 'محادثة مؤقتة'), st = ibtn(IC.gear, 'الإعدادات');
   tmp.onclick = function () { tempMode = !tempMode; tmp.classList.toggle('on', tempMode); $('#newchat').click(); drawer(false); };
   foot.appendChild(tmp); foot.appendChild(st); $('.side').appendChild(foot);
-  var zoom = Number(ls('nawa.zoom') || 1) || 1; col.style.zoom = zoom;
-  var sov = el('div', 'ov'), sd = el('div', 'dlg'); sov.id = 'sov'; sd.setAttribute('role', 'dialog'); sd.setAttribute('aria-modal', 'true');
-  sd.innerHTML = '<header><h2>الإعدادات</h2><button class="ibtn" id="sclose">إغلاق</button></header><div class="body sbody"></div>';
+
+  // الإعدادات: أقسام مرتبة، وفي كل قسم صفوف بأدوات تحكم من جنسها (مفتاح، اختيار، قائمة)
+  function toggle(on, fn) { var t = el('button', 'tg' + (on ? ' on' : '')); t.type = 'button'; t.setAttribute('role', 'switch'); t.setAttribute('aria-checked', on ? 'true' : 'false'); t.appendChild(el('i')); t.onclick = function () { on = !on; t.classList.toggle('on', on); t.setAttribute('aria-checked', on ? 'true' : 'false'); fn(on); }; return t; }
+  function seg(opts, cur, fn) { var w = el('span', 'seg'); opts.forEach(function (o) { var x = el('button', 'ibtn' + (o[1] === cur ? ' on' : ''), o[0]); x.type = 'button'; x.onclick = function () { [].slice.call(w.children).forEach(function (c) { c.classList.remove('on'); }); x.classList.add('on'); fn(o[1]); }; w.appendChild(x); }); return w; }
+  function srow(label, node, hint) { var r = el('div', 'srow'), t = el('div', 't'); t.appendChild(el('b', '', label)); if (hint) t.appendChild(el('span', '', hint)); r.appendChild(t); r.appendChild(node); return r; }
+  function act(txt, fn) { var b = el('button', 'ibtn', txt); b.type = 'button'; b.onclick = fn; return b; }
+  var SECTIONS = [
+    ['عام', function (b) {
+      b.appendChild(srow('حجم الخط', seg([['صغير', 0.9], ['عادي', 1], ['كبير', 1.15]], zoom, function (v) { zoom = v; col.style.zoom = v; ls('nawa.zoom', String(v)); })));
+      var th = ls('dhad.site.theme') || 'auto';
+      b.appendChild(srow('السمة', seg([['تلقائي', 'auto'], ['فاتح', 'light'], ['داكن', 'dark']], th, function (v) { if (v === 'auto') { document.documentElement.removeAttribute('data-theme'); try { localStorage.removeItem('dhad.site.theme'); } catch (e) {} } else { document.documentElement.setAttribute('data-theme', v); ls('dhad.site.theme', v); } })));
+      b.appendChild(srow('الإرسال بمفتاح Enter', toggle(SET.enter !== false, function (v) { SET.enter = v; saveSet(); }), 'وإلا فبالزر، ويكون Enter سطرًا جديدًا'));
+      b.appendChild(srow('إظهار المسار تلقائيًا', toggle(!!SET.autotrace, function (v) { SET.autotrace = v; saveSet(); }), 'يفتح خطوات المحركات تحت كل إجابة'));
+    }],
+    ['الذاكرة', function (b) {
+      var nm = convs.filter(function (c) { return !c.temp; }).length, nf = (JSON.parse(ls('nawa.linkNames') || '[]')).length;
+      b.appendChild(srow('المحادثات المحفوظة', el('span', 'val', String(nm)), 'تُحفظ في هذا المتصفح وحده'));
+      b.appendChild(srow('الملفات المربوطة', el('span', 'val', String(Object.keys(linked).length || nf)), 'مراجع لا نسخ؛ يُقرأ الملف عند الحاجة'));
+      b.appendChild(srow('الآثار المحفوظة', el('span', 'val', String(artifactsList().length)), 'برامج وُلّفت وتحقق منها'));
+      b.appendChild(srow('نسيان كل شيء', act('نسيان', function () { if (!confirm('مسح المحادثات والمشاريع وسياق الجلسة؟')) return; convs = []; projects = []; curProj = ''; saveConvs(); saveProj(); $('#newchat').click(); SECTIONS[1][1](b2()); })));
+    }],
+    ['الموصّلات', function (b) {
+      b.appendChild(srow('ربط مجلد أو ملفات', act('فتح', function () { sov.classList.remove('open'); openConn(); }), 'يبقى الوصول إلى مكانها دون نسخها هنا'));
+      b.appendChild(srow('إزالة كل الروابط', act('إزالة', function () { if (!confirm('إزالة كل الملفات المربوطة؟')) return; Object.keys(docs).forEach(function (k) { if (docs[k].mode === 'link') removeDoc(k); }); try { localStorage.removeItem('nawa.linkNames'); } catch (e) {} dbDo('readwrite', function (x) { return x.clear(); }, 'handles'); })));
+    }],
+    ['البيانات', function (b) {
+      b.appendChild(srow('تصدير كل المحادثات', act('تصدير', function () {
+        var out = []; convs.forEach(function (c) { out.push('# ' + c.title, ''); c.msgs.forEach(function (m) { out.push((m.role === 'u' ? '**أنا:** ' : '**نواة:** ') + (m.text || m.txt || ''), ''); }); });
+        var bl = new Blob([out.join('\n')], { type: 'text/markdown;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'كل-محادثات-نواة.md'; document.body.appendChild(a); a.click(); a.remove();
+      })));
+      b.appendChild(srow('مسح كل المحادثات', act('مسح', function () { if (!confirm('مسح كل المحادثات المحفوظة؟')) return; convs = []; saveConvs(); $('#newchat').click(); })));
+    }],
+    ['الاختصارات', function (b) {
+      [['Ctrl+K', 'محادثة جديدة'], ['/', 'الانتقال إلى الكتابة'], ['↑', 'تعديل آخر رسالة'], ['Esc', 'إغلاق']].forEach(function (k) { var v = el('kbd', '', k[0]); b.appendChild(srow(k[1], v)); });
+    }]
+  ];
+  var sov = el('div', 'ov'), sd = el('div', 'dlg sets'); sov.id = 'sov'; sd.setAttribute('role', 'dialog'); sd.setAttribute('aria-modal', 'true');
+  sd.innerHTML = '<header><h2>الإعدادات</h2><button class="ibtn" id="sclose">إغلاق</button></header><div class="stabs"></div><div class="body sbody"></div>';
   sov.appendChild(sd); document.body.appendChild(sov);
-  function row(label, node) { var r = el('div', 'srow'); r.appendChild(el('span', '', label)); r.appendChild(node); return r; }
-  function sbtn(txt, fn) { var b = el('button', 'ibtn', txt); b.type = 'button'; b.onclick = fn; return b; }
-  function buildSettings() {
-    var b = sd.querySelector('.sbody'); b.innerHTML = '';
-    var sz = el('span', 'seg'); [['صغير', 0.9], ['عادي', 1], ['كبير', 1.15]].forEach(function (z) { var x = sbtn(z[0], function () { zoom = z[1]; col.style.zoom = zoom; ls('nawa.zoom', String(zoom)); buildSettings(); }); if (z[1] === zoom) x.classList.add('on'); sz.appendChild(x); });
-    b.appendChild(row('حجم الخط', sz));
-    b.appendChild(row('السمة', sbtn('تبديل', function () { $('#theme').click(); })));
-    b.appendChild(row('تصدير كل المحادثات', sbtn('تصدير', function () {
-      var out = []; convs.forEach(function (c) { out.push('# ' + c.title, ''); c.msgs.forEach(function (m) { out.push((m.role === 'u' ? '**أنا:** ' : '**نواة:** ') + (m.text || m.txt || ''), ''); }); });
-      var bl = new Blob([out.join('\n')], { type: 'text/markdown;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'كل-محادثات-نواة.md'; document.body.appendChild(a); a.click(); a.remove();
-    })));
-    b.appendChild(row('مسح كل المحادثات', sbtn('مسح', function () { if (!confirm('مسح كل المحادثات المحفوظة؟')) return; convs = []; saveConvs(); $('#newchat').click(); sov.classList.remove('open'); })));
-    b.appendChild(row('إزالة ملفات المكتبة', sbtn('إزالة', function () { if (!confirm('إزالة كل الملفات المربوطة؟')) return; Object.keys(docs).forEach(function (k) { removeDoc(k); }); })));
-    var kb2 = el('div', 'keys'); [['Ctrl+K', 'محادثة جديدة'], ['/', 'الانتقال إلى الكتابة'], ['↑', 'تعديل آخر رسالة'], ['Esc', 'إغلاق']].forEach(function (k) { var d = el('div'); d.appendChild(el('kbd', '', k[0])); d.appendChild(el('span', '', k[1])); kb2.appendChild(d); });
-    b.appendChild(row('الاختصارات', kb2));
+  function b2() { var b = sd.querySelector('.sbody'); b.innerHTML = ''; return b; }
+  function showSection(i) {
+    var tabs = sd.querySelector('.stabs'); tabs.innerHTML = '';
+    SECTIONS.forEach(function (sx, k) { var t = el('button', k === i ? 'on' : '', sx[0]); t.type = 'button'; t.onclick = function () { showSection(k); }; tabs.appendChild(t); });
+    SECTIONS[i][1](b2());
   }
-  st.onclick = function () { buildSettings(); sov.classList.add('open'); drawer(false); };
+  st.onclick = function () { showSection(0); sov.classList.add('open'); drawer(false); };
   sd.querySelector('#sclose').onclick = function () { sov.classList.remove('open'); };
   sov.onclick = function (e) { if (e.target === sov) sov.classList.remove('open'); };
+  // Enter يرسل أو يسطّر بحسب الإعداد؛ والمشروع النشط يضم المحادثة الجديدة
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && SET.enter === false) { e.stopImmediatePropagation(); } }, true);
 
   // ===== تثبيت التطبيق =====
   var deferred = null, ib = $('#install');

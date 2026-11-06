@@ -172,3 +172,28 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .seg .ibtn.on{background:var(--accbg);color:var(--acc)}
 .keys{display:grid;gap:6px;font-weight:500;font-size:13px}
 .keys kbd{display:inline-block;min-width:54px;text-align:center;margin-inline-end:10px;padding:1px 8px;border:1px solid var(--btnline);border-radius:6px;background:var(--btn);font:600 12px monospace}
+
+/* الشريط الجانبي المرتّب وأقسام الإعدادات (إضافات فقط) */
+.snav{display:flex;flex-direction:column;gap:1px;margin:2px 0 4px}
+.snav button{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border:0;background:none;border-radius:9px;cursor:pointer;color:var(--ink);font:600 14.5px Cairo;text-align:start}
+.snav button:hover{background:var(--accbg)}
+.snav svg{width:18px;height:18px;stroke:var(--acc2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.stabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.stabs button{border:0;background:none;padding:10px 12px;font:600 14px Cairo;color:var(--mut);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.stabs button.on{color:var(--ink);border-bottom-color:var(--acc)}
+.sbody .srow .t{display:flex;flex-direction:column;min-width:0}
+.sbody .srow .t span{font-weight:500;font-size:12.5px;color:var(--mut)}
+.sbody .srow .val{font-weight:700;color:var(--acc2)}
+.sbody .srow kbd{padding:1px 10px;border:1px solid var(--btnline);border-radius:6px;background:var(--btn);font:600 12.5px monospace}
+.tg{width:44px;height:26px;border-radius:99px;border:1px solid var(--btnline);background:var(--btn);position:relative;cursor:pointer;padding:0;flex:none}
+.tg i{position:absolute;top:2px;inset-inline-end:2px;width:20px;height:20px;border-radius:50%;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.35);transition:inset .15s}
+.tg.on{background:var(--acc);border-color:var(--acc)}
+.tg.on i{inset-inline-end:20px}
+.prow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid var(--line)}
+.prow .t{flex:1;min-width:140px;display:flex;flex-direction:column}
+.prow .t span{font-size:12.5px;color:var(--mut)}
+.prow .aprev{flex-basis:100%;margin:4px 0 0;padding:8px 12px;background:var(--code);color:var(--codeink);border-radius:9px;font:500 13px/1.7 Cairo,monospace;direction:rtl;overflow:auto;max-height:120px}
+.sbody .none{color:var(--mut);padding:14px 0;font-size:14px}
+.sbody>.ibtn{margin-bottom:6px}
+.cb .bar{flex-wrap:wrap}
+.cb .bar button,.cb .bar a{white-space:nowrap}
