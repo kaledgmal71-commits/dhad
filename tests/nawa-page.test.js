@@ -57,5 +57,13 @@ const file=(b64,n)=>new File([Buffer.from(b64,'base64')],n);
       ok(!/st\.put\(\{ name: name, kind: r\.kind, content/.test(js),'linking never stores file content');
       ok(js.includes("st.clear()"),'old stored copies are purged');
     }
+    // نطاق البحث أونلاين/أوفلاين وشاشة الموصّلات وقائمة + للإرفاق وحده
+    {
+      const js=fs.readFileSync(path.join(__dirname,'..','dist','assets','nawa.js'),'utf8'),html=fs.readFileSync(path.join(__dirname,'..','dist','nawa','index.html'),'utf8');
+      for(const f of ['var SRC','function wikiDocs','function githubDocs','function renderConnectors','modeName','الاثنان','أونلاين','أوفلاين','function crow'])ok(js.includes(f),'ui has '+f);
+      ok(html.includes('id="cgrid"')&&!html.includes('id="drop"'),'connectors screen is a connector list, no file-picker box');
+      ok(html.includes('إرفاق ملفات')&&html.includes('إرفاق صور')&&html.includes('إرفاق مجلد')&&!html.includes('ربط مجلد ملفات'),'plus menu only attaches');
+      ok(/navigator\.onLine/.test(js),'respects real connectivity');
+    }
   console.log('pass',pass,'fail',fail);
 })();

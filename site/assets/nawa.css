@@ -197,3 +197,24 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .sbody>.ibtn{margin-bottom:6px}
 .cb .bar{flex-wrap:wrap}
 .cb .bar button,.cb .bar a{white-space:nowrap}
+
+/* نطاق البحث وشاشة الموصّلات (إضافات فقط) */
+.modepill{width:auto;padding:0 10px;display:inline-flex;align-items:center;gap:6px;font:600 13px Cairo;color:var(--mut);border:1px solid var(--line)}
+.modepill svg{width:17px;height:17px}
+.modepill:hover{color:var(--ink)}
+.pmenu{bottom:44px;min-width:210px}
+.pmenu button.on{background:var(--accbg);color:var(--acc)}
+.pmenu hr{border:0;border-top:1px solid var(--line);margin:6px 4px}
+.pmenu .src{display:flex;align-items:center;gap:10px;padding:7px 12px;font:600 14px Cairo;cursor:pointer;border-radius:8px}
+.pmenu .src:hover{background:var(--accbg)}
+.csec{margin:16px 0 4px;font-size:13px;color:var(--mut);font-weight:700}
+.csec:first-child{margin-top:0}
+.crow2{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.crow2 .t{display:flex;flex-direction:column;min-width:0}
+.crow2 .t b{font-size:15px}
+.crow2 .t span{font-size:12.5px;color:var(--mut);overflow-wrap:anywhere}
+.soon{font-size:12.5px;color:var(--mut);border:1px dashed var(--btnline);border-radius:99px;padding:2px 10px}
+.att.badc{border-style:dashed;color:var(--mut)}
+.att.badc em{font-style:normal;font-size:12px;color:var(--bad)}
+.pas a.pl{display:block;font-size:13px;font-weight:700;color:var(--acc2);margin-bottom:2px;text-decoration:none;border-bottom:1px dotted}
+.ibtn{white-space:nowrap}

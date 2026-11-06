@@ -27,7 +27,7 @@
   }
   function dbDo(mode, fn, store) { return openDB().then(function (db) { if (!db) return null; return new Promise(function (res) { var tx = db.transaction(store || 'docs', mode), st = tx.objectStore(store || 'docs'), q = fn(st); tx.oncomplete = function () { res(q && q.result); }; tx.onerror = function () { res(null); }; }); }); }
   // الربط (link): مكتبة دائمة تُحفظ في المتصفح وتُفهرس تلقائيًا؛ الإرفاق (attach): ملف عابر للمحادثة الحالية يُحلَّل كاملًا
-  var fileMode = 'attach';
+  var fileMode = 'attach', dirMode = 'link';
   function sendDoc(name, r, mode) { var base = mode === 'attach' ? 'مرفق' : 'مستند'; return call(r.kind === 'docx' ? base + '_docx' : r.kind === 'html' ? base + '_html' : base, name, r.content); }
   // الربط كموصّل: مراجع للملفات لا نسخ لمحتواها. لا يُقرأ ملف ولا يُفهرَس عند الربط؛ يُجلب عند الحاجة وحدها، كما يُجلب ملف من مستودع.
   var linked = {};
@@ -68,7 +68,7 @@
     });
   }
   function pickDir() {
-    fileMode = 'link';
+    fileMode = 'link'; dirMode = 'link';
     if (!window.showDirectoryPicker) { $('#dirIn').click(); return; }
     window.showDirectoryPicker({ mode: 'read' }).then(function (h) {
       var rec = { name: h.name, handle: h };
@@ -89,10 +89,45 @@
       rcache[p] = r; rorder.push(p); if (rorder.length > 12) delete rcache[rorder.shift()]; return r;
     }, function () { return null; });
   }
+  // نطاق البحث: ملفاتي (الربط)، ويكيبيديا العربية، مستودعات GitHub العامة. الأونلاين والأوفلاين مجموعتان منها لا زرّان منفصلان.
+  var SRC = { files: true, wiki: true, github: true }; try { var sv = JSON.parse(ls('nawa.src') || 'null'); if (sv) SRC = sv; } catch (e) {}
+  var repos = []; try { repos = JSON.parse(ls('nawa.repos') || '[]'); } catch (e) {}
+  function saveSrc() { ls('nawa.src', JSON.stringify(SRC)); ls('nawa.repos', JSON.stringify(repos)); }
+  var webUrl = {}, wcache = {}, treeCache = {};
+  function jget(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
+  function tget(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); }); }
+  async function wikiDocs(toks) {
+    var q = toks.join(' '), k = 'w:' + q; if (wcache[k]) return wcache[k];
+    var sr = await jget('https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=3&format=json&origin=*');
+    var ids = ((sr.query && sr.query.search) || []).map(function (x) { return x.pageid; }); if (!ids.length) return (wcache[k] = []);
+    var ex = await jget('https://ar.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exlimit=3&pageids=' + ids.join('|') + '&format=json&origin=*'), out = [];
+    ids.forEach(function (id) { var pg = ex.query.pages[id]; if (pg && pg.extract) { var nm = ('ويب/ويكيبيديا/' + pg.title).replace(/#/g, '＃'); webUrl[nm] = 'https://ar.wikipedia.org/?curid=' + id; out.push({ p: nm, r: { kind: 'text', content: pg.title + '\n\n' + pg.extract } }); } });
+    return (wcache[k] = out);
+  }
+  async function githubDocs(toks) {
+    var out = [];
+    for (var i = 0; i < repos.length; i++) {
+      var rp = repos[i];
+      try {
+        if (!treeCache[rp]) { var tr = await jget('https://api.github.com/repos/' + rp + '/git/trees/HEAD?recursive=1'); treeCache[rp] = (tr.tree || []).filter(function (x) { return x.type === 'blob' && supportedName(x.path) && (x.size || 0) < 400000; }).map(function (x) { return x.path; }); }
+        var sc = treeCache[rp].map(function (pth) { var np = normQ(pth), sv = 0; toks.forEach(function (t) { if (np.indexOf(t) >= 0) sv += 1; }); return { pth: pth, s: sv }; }).filter(function (x) { return x.s > 0; }).sort(function (a, b) { return b.s - a.s; }).slice(0, 3);
+        for (var j = 0; j < sc.length; j++) {
+          var txt = await tget('https://raw.githubusercontent.com/' + rp + '/HEAD/' + sc[j].pth), nm = ('github/' + rp + '/' + sc[j].pth).replace(/#/g, '＃');
+          webUrl[nm] = 'https://github.com/' + rp + '/blob/HEAD/' + sc[j].pth; out.push({ p: nm, r: { kind: 'text', content: txt.slice(0, 300000) } });
+        }
+      } catch (e) {}
+    }
+    return out;
+  }
   async function prepareLinked(q) {
-    var paths = Object.keys(linked); if (!paths.length) return;
-    var toks = qTokens(q), sel = [];
-    if (toks.length && !/^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)/.test(normQ(q).trim())) {
+    var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || (SRC.github && repos.length));
+    if (!paths.length && !online) return;
+    var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)/.test(normQ(q).trim());
+    if (online && toks.length && !social) {
+      var got = await Promise.all([SRC.wiki ? wikiDocs(toks).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
+      got.forEach(function (g) { g.forEach(function (d) { sel.push({ p: d.p, r: d.r, s: 1 }); }); });
+    }
+    if (SRC.files && paths.length && toks.length && !social) {
       var sc = paths.map(function (p) { var np = normQ(p), s = 0; toks.forEach(function (t) { if (np.indexOf(t) >= 0) s += 5; }); return { p: p, s: s }; }).sort(function (a, b) { return b.s - a.s; });
       var t0 = Date.now(), n = 0;
       for (var i = 0; i < sc.length && n < 40 && Date.now() - t0 < 6000; i++) {
@@ -101,7 +136,7 @@
         toks.forEach(function (t) { var k = low.indexOf(t); while (k >= 0 && hits < 200) { hits++; k = low.indexOf(t, k + t.length); } });
         it.s += hits; it.r = r;
       }
-      sel = sc.filter(function (x) { return x.s > 0 && x.r; }).slice(0, 5);
+      sel = sel.concat(sc.filter(function (x) { return x.s > 0 && x.r; }).slice(0, 5));
     }
     var key = sel.map(function (x) { return x.p; }).join('|');
     if (key === lastSel) return;
@@ -122,7 +157,7 @@
       }).then(function (res) { docs[k] = { name: name, mode: mode, state: 'ok', chunks: res['مقاطع'], size: file.size }; },
         function (err) {
           var m = String(err && err.message);
-          docs[k] = { name: name, mode: mode, state: 'bad', size: file.size, note: m === 'unsupported' ? 'صيغة غير مدعومة بعد' : m === 'large' ? 'الملف أكبر من الحد' : 'تعذّرت القراءة' };
+          docs[k] = { name: name, mode: mode, state: 'bad', size: file.size, note: m === 'unsupported' ? (/^image\//.test(file.type) ? 'قراءة الصور غير متاحة بعد' : 'صيغة غير مدعومة بعد') : m === 'large' ? 'الملف أكبر من الحد' : 'تعذّرت القراءة' };
         }).then(renderDocs);
     });
   }
@@ -149,6 +184,7 @@
     });
     if (more) { var mr = el('div', 'fr'), mt = el('div', 't'); mt.appendChild(el('span', '', 'و' + more + ' ملفًا مربوطًا آخر')); mr.appendChild(mt); box.appendChild(mr); }
     var a = $('#attached'); a.innerHTML = '';
+    names.forEach(function (n) { var d = docs[n]; if (d.mode === 'attach' && d.state === 'bad') { var c = el('span', 'att badc'), nm = el('b', '', d.name.length > 22 ? d.name.slice(0, 20) + '…' : d.name), x = el('i', 'x', '×'); c.title = d.note || ''; x.onclick = function (e) { e.stopPropagation(); removeDoc(n); }; c.appendChild(nm); c.appendChild(el('em', '', d.note || '')); c.appendChild(x); a.appendChild(c); } });
     var ok = names.filter(function (n) { return docs[n].state !== 'bad'; }), linked = 0, linkBusy = false;
     ok.forEach(function (n) {
       var d = docs[n];
@@ -273,7 +309,18 @@
       d.appendChild(el('p', '', dg['اقتراح'])); box.appendChild(d);
     }
     var pas = n['مستندات'];
-    if (pas && pas.length) { any = true; box.appendChild(el('h4', '', 'من ملفاتك')); pas.forEach(function (p) { var q = el('div', 'pas'); q.appendChild(el('b', '', String(p['معرف']).split('#')[0])); q.appendChild(el('span', '', p['مقتطف'] || p['عنوان'])); box.appendChild(q); }); }
+    if (pas && pas.length) {
+      any = true;
+      [['من ملفاتك', function (n) { return !/^(ويب|github)\//.test(n); }], ['من الويب والمستودعات', function (n) { return /^(ويب|github)\//.test(n); }]].forEach(function (g) {
+        var part = pas.filter(function (p) { return g[1](String(p['معرف']).split('#')[0]); }); if (!part.length) return;
+        box.appendChild(el('h4', '', g[0]));
+        part.forEach(function (p) {
+          var nm = String(p['معرف']).split('#')[0], q = el('div', 'pas'), u = webUrl[nm], t = u ? el('a', '', nm.replace(/^ويب\//, '')) : el('b', '', nm);
+          if (u) { t.href = u; t.target = '_blank'; t.rel = 'noopener'; t.className = 'pl'; }
+          q.appendChild(t); q.appendChild(el('span', '', p['مقتطف'] || p['عنوان'])); box.appendChild(q);
+        });
+      });
+    }
     var src = n['استرجاع'];
     if (src && src.length && !(syn && syn['وُجد'])) {
       var links = src.filter(function (s) { return urlFor(s['معرف']); });
@@ -411,19 +458,14 @@
   var menu = $('#menu');
   $('#plus').onclick = function (e) { e.stopPropagation(); menu.classList.toggle('open'); };
   document.addEventListener('click', function () { menu.classList.remove('open'); });
-  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; if (a === 'files') { fileMode = 'attach'; $('#fileIn').click(); } else if (a === 'folder') { pickDir(); } else openConn(); }; });
-  function openConn() { $('#ov').classList.add('open'); }
+  menu.querySelectorAll('button').forEach(function (b) { b.onclick = function () { var a = b.dataset.act; fileMode = 'attach'; dirMode = 'attach'; if (a === 'files') $('#fileIn').click(); else if (a === 'images') $('#imgIn').click(); else if (a === 'folder') $('#dirIn').click(); }; });
+  function openConn() { renderConnectors(); $('#ov').classList.add('open'); }
   $('#openConn').onclick = openConn;
   $('#closeConn').onclick = function () { $('#ov').classList.remove('open'); };
   $('#ov').onclick = function (e) { if (e.target === this) this.classList.remove('open'); };
-  $('#pickFiles').onclick = function () { fileMode = 'link'; $('#fileIn').click(); };
-  $('#pickFolder').onclick = pickDir;
+  $('#imgIn').onchange = function () { take(this.files, false, 'attach'); this.value = ''; };
   $('#fileIn').onchange = function () { take(this.files, false, fileMode); this.value = ''; };
-  $('#dirIn').onchange = function () { take(this.files, true, 'link'); this.value = ''; };
-  var drop = $('#drop');
-  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
-  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-  drop.addEventListener('drop', function (e) { take(e.dataTransfer.files, false, 'link'); });
+  $('#dirIn').onchange = function () { var fl = [].slice.call(this.files); if (dirMode === 'attach' && fl.length > 20) { fl = fl.filter(function (f) { return supportedName(f.name); }).slice(0, 20); } take(fl, true, dirMode); this.value = ''; };
   // إفلات الملفات في أي مكان من الصفحة
   window.addEventListener('dragover', function (e) { e.preventDefault(); });
   window.addEventListener('drop', function (e) { if (e.target.closest && e.target.closest('#drop')) return; e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) take(e.dataTransfer.files, false, 'attach'); });
@@ -569,6 +611,49 @@
   sov.onclick = function (e) { if (e.target === sov) sov.classList.remove('open'); };
   // Enter يرسل أو يسطّر بحسب الإعداد؛ والمشروع النشط يضم المحادثة الجديدة
   inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && SET.enter === false) { e.stopImmediatePropagation(); } }, true);
+
+  // ===== نطاق البحث (أونلاين/أوفلاين/الاثنان) في صف الكتابة =====
+  function modeName() { var on = SRC.wiki || (SRC.github && repos.length), off = SRC.files; if (navigator.onLine === false) return 'أوفلاين'; return on && off ? 'الاثنان' : on ? 'أونلاين' : off ? 'أوفلاين' : 'الموقع فقط'; }
+  var pill = el('button', 'cbtn modepill'); pill.type = 'button'; pill.setAttribute('aria-label', 'نطاق البحث');
+  function paintPill() { pill.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span></span>'; pill.lastChild.textContent = modeName(); }
+  var pm = el('div', 'menu pmenu'); pm.id = 'pmenu';
+  function buildPM() {
+    pm.innerHTML = '';
+    [['الاثنان', { files: true, wiki: true, github: true }], ['أونلاين', { files: false, wiki: true, github: true }], ['أوفلاين', { files: true, wiki: false, github: false }]].forEach(function (m) {
+      var b = el('button', modeName() === m[0] ? 'on' : '', m[0]); b.type = 'button'; b.onclick = function (e) { e.stopPropagation(); SRC = { files: m[1].files, wiki: m[1].wiki, github: m[1].github }; saveSrc(); lastSel = null; paintPill(); buildPM(); }; pm.appendChild(b);
+    });
+    pm.appendChild(el('hr'));
+    [['files', 'ملفاتي المربوطة'], ['wiki', 'ويكيبيديا العربية'], ['github', 'مستودعات GitHub']].forEach(function (s2) {
+      var r = el('label', 'src'), c = el('input'); c.type = 'checkbox'; c.checked = !!SRC[s2[0]]; c.onchange = function () { SRC[s2[0]] = c.checked; saveSrc(); lastSel = null; paintPill(); buildPM(); }; r.appendChild(c); r.appendChild(el('span', '', s2[1])); r.onclick = function (e) { e.stopPropagation(); }; pm.appendChild(r);
+    });
+  }
+  var pw = el('div'); pw.style.position = 'relative'; pw.appendChild(pill); pw.appendChild(pm);
+  $('.crow').insertBefore(pw, $('.crow .sp'));
+  pill.onclick = function (e) { e.stopPropagation(); buildPM(); pm.classList.toggle('open'); menu.classList.remove('open'); };
+  document.addEventListener('click', function () { pm.classList.remove('open'); });
+  window.addEventListener('online', paintPill); window.addEventListener('offline', paintPill); paintPill();
+
+  // ===== شاشة الموصّلات: عامة وخاصة وتطبيقات مساعدة =====
+  function crow(name, desc, node) { var r = el('div', 'crow2'), t = el('div', 't'); t.appendChild(el('b', '', name)); if (desc) t.appendChild(el('span', '', desc)); r.appendChild(t); if (node) r.appendChild(node); return r; }
+  function cbtn2(txt, fn, off) { var b = el('button', 'ibtn', txt); b.type = 'button'; if (off) b.disabled = true; else b.onclick = fn; return b; }
+  function renderConnectors() {
+    var g = $('#cgrid'); g.innerHTML = '';
+    function sec(title) { g.appendChild(el('h4', 'csec', title)); }
+    sec('عامة');
+    g.appendChild(crow('ويكيبيديا العربية', 'بحث في مقالاتها وقت السؤال دون تنزيل شيء', toggle(!!SRC.wiki, function (v) { SRC.wiki = v; saveSrc(); lastSel = null; paintPill(); })));
+    sec('خاصة');
+    g.appendChild(crow('مجلد على الجهاز', 'مرجع إلى مكانه: لا نسخ ولا فهرسة، ويُقرأ الملف عند الحاجة', cbtn2('ربط', pickDir)));
+    g.appendChild(crow('ملفات من الجهاز', 'تُربط مراجع لا نسخًا', cbtn2('ربط', function () { fileMode = 'link'; $('#fileIn').click(); })));
+    sec('تطبيقات مساعدة');
+    var gh = crow('GitHub', repos.length ? repos.join('، ') : 'مستودعات عامة: تُجلب ملفاتها وقت السؤال', cbtn2('إضافة مستودع', function () {
+      var v = prompt('اسم المستودع بصيغة المالك/المستودع'); if (!v) return; v = v.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '');
+      if (!/^[\w.-]+\/[\w.-]+$/.test(v)) { alert('الصيغة: المالك/المستودع'); return; }
+      if (repos.indexOf(v) < 0) repos.push(v); SRC.github = true; saveSrc(); lastSel = null; paintPill(); renderConnectors();
+    }));
+    g.appendChild(gh);
+    repos.forEach(function (rp) { g.appendChild(crow(rp, 'مستودع مربوط', cbtn2('إزالة', function () { repos = repos.filter(function (x) { return x !== rp; }); delete treeCache[rp]; saveSrc(); lastSel = null; paintPill(); renderConnectors(); }))); });
+    [['Vercel', 'النشر وسجلات التشغيل'], ['Zapier', 'الأتمتة بين التطبيقات'], ['Supabase', 'قواعد البيانات']].forEach(function (a) { g.appendChild(crow(a[0], a[1], el('span', 'soon', 'قريبًا'))); });
+  }
 
   // ===== تثبيت التطبيق =====
   var deferred = null, ib = $('#install');

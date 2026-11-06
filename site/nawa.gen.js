@@ -57,8 +57,9 @@ function page() {
             <button class="cbtn" id="plus" aria-label="إضافة">${PLUS}</button>
             <div class="menu" id="menu">
               <button data-act="files"><svg viewBox="0 0 24 24"><path d="M21 12.5 12.5 21a5.5 5.5 0 0 1-8-8l9-9a3.8 3.8 0 0 1 5.4 5.4l-9 9a2 2 0 0 1-2.8-2.8l8.3-8.3"/></svg>إرفاق ملفات</button>
-              <button data-act="folder"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>ربط مجلد ملفات</button>
-              <button data-act="conn"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5zM4 19a2 2 0 0 0 2 2h12"/></svg>الموصّلات</button>
+              <button data-act="images"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>إرفاق صور</button>
+              <button data-act="folder"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>إرفاق مجلد</button>
+
             </div>
           </div>
           <span class="sp"></span>
@@ -74,13 +75,11 @@ function page() {
 <div class="ov" id="ov"><div class="dlg" role="dialog" aria-modal="true">
   <header><h2>الموصّلات</h2><button class="ibtn" id="closeConn">إغلاق</button></header>
   <div class="body">
-    <div class="drop" id="drop">
-      <p>اسحب الملفات أو المجلد إلى هنا (txt، md، html، docx، epub، json، csv)</p>
-      <div class="row"><button class="ibtn" id="pickFiles">اختيار ملفات</button><button class="ibtn" id="pickFolder">اختيار مجلد</button></div>
-    </div>
+    <div id="cgrid"></div>
     <div class="files" id="files"></div>
     <input type="file" id="fileIn" multiple accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.xhtml,.docx,.epub,.pdf,.dhad,.py,.js,.ts,.css,.xml,.yaml,.yml,.log" hidden>
     <input type="file" id="dirIn" webkitdirectory multiple hidden>
+    <input type="file" id="imgIn" accept="image/*" multiple hidden>
   </div>
 </div></div>
 <script src="/assets/nawa.files.js"></script><script src="/assets/nawa.js"></script>
