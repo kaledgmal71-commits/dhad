@@ -32,7 +32,11 @@ self.onmessage = function (e) {
     boot();
     if (m.a === 'تهيئة') {
       return fetch('/nawa/base.json').then(function (r) { return r.text(); }).then(function (t) {
-        return conv(vm.callHost(['تهيئة', t, null], LIM['تهيئة']));
+        var init = conv(vm.callHost(['تهيئة', t, null], LIM['تهيئة']));
+        return fetch('/nawa/guide.json').then(function (r) { return r.ok ? r.text() : null; }).then(function (g) {
+          if (g) { try { vm.callHost(['دليل', g, null], LIM['تهيئة']); init['دليل'] = true; } catch (e) { init['دليل'] = false; } }
+          return init;
+        }, function () { return init; });
       });
     }
     return conv(vm.callHost([m.a, m.x === undefined ? null : m.x, m.y === undefined ? null : m.y], LIM[m.a] || { maxSteps: 4e9, maxMs: 600000 }));

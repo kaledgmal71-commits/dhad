@@ -224,3 +224,15 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .logo span b{font-weight:800;font-size:19px}
 .logo span small{font:700 10.5px/1 Cairo,sans-serif;letter-spacing:.14em;color:var(--mut)}
 @media(max-width:640px){header.top .logo span{display:flex}.logo span b{font-size:15px}.logo span small{font-size:9px}header.top .in{gap:6px}}
+
+/* مبدّل الطبقتين: نصفان كزرّين في رأس كل صفحة */
+.layers{display:inline-flex;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px;flex:none}
+.layers .ly{display:flex;align-items:center;gap:8px;padding:3px 12px 3px 10px;border-radius:9px;color:var(--mut);text-decoration:none;white-space:nowrap}
+.layers .ly i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--btn);color:var(--ink);font-style:normal;font-size:19px;font-weight:800;line-height:1}
+.layers .ly span{display:flex;flex-direction:column;line-height:1.1}
+.layers .ly b{font-weight:800;font-size:16px;color:inherit}
+.layers .ly small{font:700 10px/1 Cairo,sans-serif;letter-spacing:.12em;opacity:.75}
+.layers .ly:hover{background:var(--accbg)}
+.layers .ly.on{background:var(--bg);color:var(--ink);box-shadow:0 0 0 1px var(--btnline)}
+.layers .ly.on i{background:var(--acc);color:#fff}
+@media(max-width:640px){.layers .ly{padding:3px 6px}.layers .ly small{display:none}.layers .ly b{font-size:14px}.layers .ly i{width:26px;height:26px;font-size:17px}}

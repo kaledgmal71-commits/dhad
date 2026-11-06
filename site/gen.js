@@ -45,8 +45,9 @@ function codebox(code, where, opt = {}) {
   return `<div class="codebox"><div class="bar"><span>ضاد</span>${r.browser ? '' : '<button data-run>▶ شغّل</button>'}<a href="/editor/?code=${encodeURIComponent(code)}">افتح في المحرر</a></div><pre>${hl(code)}</pre>${o}</div>`;
 }
 // ---------- القالب ----------
-const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/nawa/', 'ن'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
+const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
 const FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%239a6b12'/%3E%3Ctext x='50' y='70' font-size='62' text-anchor='middle' fill='white'%3Eض%3C/text%3E%3C/svg%3E";
+const LAYERS = '<div class="layers" role="navigation" aria-label="الطبقتان"><a class="ly" href="/nawa/"><i>ن</i><span><b>نواة</b><small>NAWA</small></span></a><a class="ly on" href="/"><i>ض</i><span><b>ضاد</b><small>dhad</small></span></a></div>';
 function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
   const full = title === 'ضاد' ? 'ضاد — لغة برمجة عربية مجانية' : title + ' — ضاد';
   const nav = NAV.map(([h, t]) => `<a href="${h}"${url.startsWith(h) ? ' class="on"' : ''}>${t}</a>`).join('');
@@ -56,7 +57,7 @@ function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">${schema}</head><body ${bodyAttr}>
-<header class="top"><div class="wrap"><a class="logo" href="/"><i>ض</i>ضاد</a><nav class="main">${nav}</nav><button id="theme" class="themebtn" title="السمة" aria-label="تبديل السمة">◐</button><a class="btn" href="/editor/">افتح المحرر</a></div></header>
+<header class="top"><div class="wrap">${LAYERS}<nav class="main">${nav}</nav><button id="theme" class="themebtn" title="السمة" aria-label="تبديل السمة">◐</button><a class="btn" href="/editor/">افتح المحرر</a></div></header>
 <main><div class="wrap">${body}</div></main>
 <footer class="bot"><div class="wrap"><div class="cols"><div><h4>ضاد</h4><p>لغة برمجة عربية مجانية ومفتوحة للجميع، تكريمًا للخوارزمي. هدفها تيسير العلم وتقريب البرمجة والذكاء الاصطناعي من الجميع.</p><p class="visits" hidden>عدد الزائرين: <b id="vc"></b></p></div>
 <div><h4>تعلّم</h4><a href="/learn/">ضاد من الصفر</a><a href="/docs/">الدليل</a><a href="/dictionary/">المعجم</a><a href="/examples/">أمثلة</a></div>

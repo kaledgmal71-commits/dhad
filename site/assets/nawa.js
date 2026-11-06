@@ -275,7 +275,7 @@
   }
   function startEdit(idx, text) { editIdx = idx; inp.value = text; inp.placeholder = 'عدّل رسالتك ثم أرسلها'; grow(); inp.focus(); }
   function cancelEdit() { editIdx = null; inp.placeholder = 'اكتب طلبك هنا'; }
-  function hideHero() { if (hero) { hero.remove(); hero = null; $('#chips').style.display = 'none'; } }
+  function hideHero() { if (hero) { hero.remove(); hero = null; if ($('#chips')) $('#chips').style.display = 'none'; } }
   function urlFor(id) {
     var p = String(id).split('/');
     if (p[0] === 'lesson') return '/learn/' + p[1] + '/';
@@ -300,6 +300,13 @@
     var syn = n['توليف'];
     if (syn && syn['وُجد']) { any = true; box.appendChild(codeBlock(syn['شيفرة'], syn['مصدر'])); if (urlFor(syn['مصدر'])) { var s1 = el('div', 'srcline', 'المصدر: '), a1 = el('a', '', syn['مصدر']); a1.href = urlFor(syn['مصدر']); s1.appendChild(a1); box.appendChild(s1); } }
     else if (syn) { any = true; box.appendChild(el('p', '', 'لم أجد برنامجًا موثوقًا يطابق الوصف. صِف المطلوب بكلمات أخرى، أو افتح المحرر وجرّب.')); }
+    var dg0 = n['دليل'];
+    if (dg0) {
+      any = true; box.appendChild(el('h4', '', dg0['عنوان']));
+      String(dg0['نص']).split(/\n\n+/).forEach(function (t) { if (t.trim()) box.appendChild(el('p', '', t.trim())); });
+      if (dg0['شيفرة']) box.appendChild(codeBlock(dg0['شيفرة'], 'مثال'));
+      var s0 = el('div', 'srcline', 'المصدر: '), a0 = el('a', '', dg0['رابط']); a0.href = dg0['رابط']; s0.appendChild(a0); box.appendChild(s0);
+    }
     var ex = n['تنفيذ'];
     if (ex) { any = true; var w = el('div', 'cb'), o = el('div', 'out' + (ex['ناجح'] ? '' : ' err')); o.textContent = ex['ناجح'] ? ex['مخرجات'].join('\n') : '✗ ' + ex['خطأ']; w.appendChild(o); box.appendChild(w); }
     var dg = n['تشخيص'];
@@ -423,14 +430,14 @@
     });
   }
   function openConv(c) {
-    curConv = c; col.innerHTML = ''; hero = null; $('#chips').style.display = 'none';
+    curConv = c; col.innerHTML = ''; hero = null; if ($('#chips')) $('#chips').style.display = 'none';
     c.msgs.forEach(function (m, i) { if (m.role === 'u') msg('u', m.text, i); else msg('a', m.res ? answer(m.res) : m.text, i); });
     cancelEdit(); renderHist(); $('.side').classList.remove('open');
   }
   $('#newchat').onclick = function () {
     curConv = null; col.innerHTML = ''; clearAttached(); queue = queue.then(function () { return call('صفّر_السياق').catch(function () {}); });
     hero = el('div', 'hero'); hero.id = 'hero'; hero.innerHTML = '<div class="mark">ن</div><h1>ماذا تريد أن تبني اليوم؟</h1>'; col.appendChild(hero);
-    $('#chips').style.display = ''; renderHist(); inp.focus();
+    if ($('#chips')) $('#chips').style.display = ''; renderHist(); inp.focus();
   };
   renderHist();
 
@@ -482,7 +489,8 @@
     var a = node.querySelector('.acts');
     if (a) { var rt = ibtn(IC.retry, 'إعادة'); rt.classList.add('rt'); rt.onclick = function () { if (busyAsk) return; editIdx = uidx; inp.value = t; go(); }; a.insertBefore(rt, a.firstChild); }
     var n = r['نتائج'] || {}, qs = [], syn = n['توليف'];
-    if (syn && syn['وُجد']) { qs.push('شغّله'); qs.push('اشرح الكود'); }
+    if (n['دليل']) { qs.push('بسّطه'); qs.push('عمّقه'); }
+    else if (syn && syn['وُجد']) { qs.push('شغّله'); qs.push('اشرح الكود'); }
     else if ((n['استرجاع'] && n['استرجاع'].length) || (n['مستندات'] && n['مستندات'].length)) { qs.push('المزيد'); }
     if (r['نوع'] === 'حوار' && !qs.length) { qs = ['اكتب لي برنامج الأعداد الأولية', 'اشرح لي الإغلاقات']; }
     if (!qs.length) return;

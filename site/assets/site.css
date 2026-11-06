@@ -173,3 +173,15 @@ footer.bot{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font
 @media(max-width:560px){.win .wbar i{display:none}.win .wbar{gap:8px;padding:6px 10px}}
 .tscroll{overflow-x:auto;margin:.4em 0;-webkit-overflow-scrolling:touch}.tscroll .stable{margin:0;min-width:100%}
 .sart svg:not(.art){width:92px;height:92px}
+
+/* مبدّل الطبقتين: نصفان كزرّين في رأس كل صفحة */
+.layers{display:inline-flex;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px;flex:none}
+.layers .ly{display:flex;align-items:center;gap:8px;padding:3px 12px 3px 10px;border-radius:9px;color:var(--mut);text-decoration:none;white-space:nowrap}
+.layers .ly i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--btn);color:var(--ink);font-style:normal;font-size:19px;font-weight:800;line-height:1}
+.layers .ly span{display:flex;flex-direction:column;line-height:1.1}
+.layers .ly b{font-weight:800;font-size:16px;color:inherit}
+.layers .ly small{font:700 10px/1 Cairo,sans-serif;letter-spacing:.12em;opacity:.75}
+.layers .ly:hover{background:var(--accbg)}
+.layers .ly.on{background:var(--bg);color:var(--ink);box-shadow:0 0 0 1px var(--btnline)}
+.layers .ly.on i{background:var(--acc);color:#fff}
+@media(max-width:640px){.layers .ly{padding:3px 6px}.layers .ly small{display:none}.layers .ly b{font-size:14px}.layers .ly i{width:26px;height:26px;font-size:17px}}
