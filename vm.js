@@ -4079,13 +4079,7 @@ const STDLIB_SOURCES = {
     من_أجل (د من ٠ إلى طول(مأ) - ١) {
         متغير قأ = مأ[د] * ن * ك
         متغير قب = مب[د] * ك * م
-        من_أجل (ص من ٠ إلى ن - ١) {
-            من_أجل (ع من ٠ إلى م - ١) {
-                متغير مج = ٠
-                من_أجل (ت من ٠ إلى ك - ١) { مج = مج + بأ[قأ + ص * ك + ت] * بب[قب + ت * م + ع] }
-                أضف(خرج، مج)
-            }
-        }
+        خرج = خرج + نواة_ضرب_مصفوفي(بأ، بب، قأ، قب، ن، ك، م)
     }
     متغير ش = _نسخ_قائمة(دفعة)
     أضف(ش، ن)
@@ -8371,6 +8365,24 @@ class VM {
       if (!(typeof c === "string" || Array.isArray(c))) throw new VMRuntimeError(`الشريحة [أ:ب] تحتاج قائمة أو نصًا لكن وجدت ${typeName(c).replace(/[«»]/g, "")}`);
       for (const x of [a, b]) if (x !== null && x !== undefined && !(typeof x === "number" && Number.isInteger(x))) throw new VMRuntimeError("حدّا الشريحة [أ:ب] يجب أن يكونا عددين صحيحين");
       return c.slice(a === null ? undefined : a, b === null ? undefined : b);
+    });
+    // نواة ضرب مصفوفات أصلية (١٥-٢): تحسب [ن×ك]·[ك×م] من قائمتين مسطحتين بدءًا من إزاحتين، بنفس ترتيب الجمع على ت
+    // الذي تستعمله حلقة ضاد الأصلية فتتطابق النتائج بالبت. تتحقق من الحدود فلا تقرأ خارج القوائم.
+    g.set("نواة_ضرب_مصفوفي", (a, b, oa, ob, n, k, m) => {
+      if (!Array.isArray(a) || !Array.isArray(b)) throw new VMRuntimeError("نواة_ضرب_مصفوفي() تحتاج قائمتين");
+      for (const x of [oa, ob, n, k, m]) if (!Number.isInteger(x) || x < 0) throw new VMRuntimeError("نواة_ضرب_مصفوفي(): الإزاحات والأبعاد أعداد صحيحة غير سالبة");
+      if (n * m > 50000000) throw new VMRuntimeError("نواة_ضرب_مصفوفي(): الناتج أكبر من الحد المسموح");
+      if (oa + n * k > a.length || ob + k * m > b.length) throw new VMRuntimeError("نواة_ضرب_مصفوفي(): الأبعاد تتجاوز طول القائمة");
+      const out = new Array(n * m);
+      for (let i = 0; i < n; i++) {
+        const ra = oa + i * k;
+        for (let j = 0; j < m; j++) {
+          let s = 0;
+          for (let t = 0; t < k; t++) s = s + a[ra + t] * b[ob + t * m + j];
+          out[i * m + j] = s;
+        }
+      }
+      return out;
     });
     g.set("جذر", (x) => { num("جذر", x); if (x < 0) throw new VMRuntimeError("لا يوجد جذر حقيقي لعدد سالب"); return Math.sqrt(x); });
     g.set("قوة", (a, b) => { num("قوة", a, b); return Math.pow(a, b); });
