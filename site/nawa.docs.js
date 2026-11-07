@@ -3,7 +3,7 @@ const SITE = process.env.SITE_URL || 'https://dhad-lang-beta.vercel.app';
 const TABS = [['/nawa/', 'المحادثة'], ['/nawa/learn/', 'دروس'], ['/nawa/guide/', 'الدليل'], ['/nawa/explain/', 'الشروح']];
 const ICON = "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='#9a6b12'/><text x='256' y='372' font-family='Cairo,Tahoma,sans-serif' font-size='320' font-weight='800' text-anchor='middle' fill='white'>ن</text></svg>");
 const CONN_SVG = '<svg viewBox="0 0 24 24"><path d="M9 7V3m6 4V3M7 11h10v3a5 5 0 0 1-10 0v-3zM12 19v2"/></svg>';
-const THEME_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>';
+const { lbar } = require('./layers.js');
 
 // رأس نواة: نصفا الطبقتين + تبويباتها + الموصّلات والسمة
 function header(active, chat) {
@@ -11,7 +11,7 @@ function header(active, chat) {
   const conn = chat ? `<button class="ibtn" id="openConn" title="الموصّلات">${CONN_SVG}<span>الموصّلات</span></button>`
     : `<a class="ibtn" href="/nawa/?connectors=1" title="الموصّلات">${CONN_SVG}<span>الموصّلات</span></a>`;
   const install = chat ? '<button class="ibtn" id="install" hidden><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>تثبيت التطبيق</span></button>' : '';
-  return `<header class="top"><div class="lbar"><div class="layers" role="navigation" aria-label="الطبقتان"><a class="ly on" href="/nawa/"><i>ن</i><b>نواة</b><s>—</s><em>NAWA</em></a><a class="ly" href="/"><i>ض</i><b>ضاد</b><s>—</s><em>dhad</em></a></div><button id="theme" class="mode" title="السمة" aria-label="تبديل السمة">${THEME_SVG}</button></div>
+  return `<header class="top">${lbar('/nawa/')}
   <div class="in"><nav class="tabs">${tabs}</nav><div class="tools">${install}${conn}</div></div></header>`;
 }
 

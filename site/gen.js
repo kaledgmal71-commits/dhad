@@ -47,8 +47,8 @@ function codebox(code, where, opt = {}) {
 // ---------- القالب ----------
 const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
 const FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%239a6b12'/%3E%3Ctext x='50' y='70' font-size='62' text-anchor='middle' fill='white'%3Eض%3C/text%3E%3C/svg%3E";
-const THEME_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>';
-const LBAR = '<div class="lbar"><div class="layers" role="navigation" aria-label="الطبقتان"><a class="ly" href="/nawa/"><i>ن</i><b>نواة</b><s>—</s><em>NAWA</em></a><a class="ly on" href="/"><i>ض</i><b>ضاد</b><s>—</s><em>dhad</em></a></div><button id="theme" class="mode" title="السمة" aria-label="تبديل السمة">' + THEME_SVG + '</button></div>';
+const { lbar } = require('./layers.js');
+const LBAR = lbar('/');
 function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
   const full = title === 'ضاد' ? 'ضاد — لغة برمجة عربية مجانية' : title + ' — ضاد';
   const nav = NAV.map(([h, t]) => `<a href="${h}"${url.startsWith(h) ? ' class="on"' : ''}>${t}</a>`).join('');
