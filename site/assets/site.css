@@ -6,7 +6,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.85 Cairo,"No
 a{color:var(--acc2);text-underline-offset:3px}a:hover{color:var(--acc)}
 .wrap{max-width:var(--w);margin:0 auto;padding:0 20px}
 header.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
-header.top .wrap{display:flex;align-items:center;gap:18px;height:60px}
+header.top .wrap{display:flex;align-items:center;gap:18px;height:46px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;color:var(--ink);text-decoration:none}
 .logo i{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--acc);color:#fff;font-style:normal;font-size:22px;line-height:1}
 nav.main{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
@@ -175,13 +175,20 @@ footer.bot{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font
 .sart svg:not(.art){width:92px;height:92px}
 
 /* مبدّل الطبقتين: نصفان كزرّين في رأس كل صفحة */
-.layers{display:inline-flex;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px;flex:none}
-.layers .ly{display:flex;align-items:center;gap:8px;padding:3px 12px 3px 10px;border-radius:9px;color:var(--mut);text-decoration:none;white-space:nowrap}
-.layers .ly i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--btn);color:var(--ink);font-style:normal;font-size:19px;font-weight:800;line-height:1}
-.layers .ly span{display:flex;flex-direction:column;line-height:1.1}
-.layers .ly b{font-weight:800;font-size:16px;color:inherit}
-.layers .ly small{font:700 10px/1 Cairo,sans-serif;letter-spacing:.12em;opacity:.75}
+
+/* شريط الطبقتين: نصفان بعرض الشريط، الحرف ثم الاسم العربي ثم شرطة ثم الإنجليزي، وبجانبهما زر السمة وحده */
+.lbar{display:flex;align-items:center;gap:10px;max-width:1180px;margin:0 auto;padding:8px 16px 6px}
+.layers{flex:1;display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.layers .ly{display:flex;align-items:center;justify-content:center;gap:9px;padding:9px 8px;color:var(--mut);text-decoration:none;white-space:nowrap;transition:background .2s,color .2s}
+.layers .ly+.ly{border-inline-start:1px solid var(--line)}
+.layers .ly i{font-style:normal;font-weight:800;font-size:21px;line-height:1;color:inherit}
+.layers .ly b{font-weight:800;font-size:17px;color:inherit}
+.layers .ly s{text-decoration:none;opacity:.45}
+.layers .ly em{font:700 13px/1 Cairo,sans-serif;font-style:normal;letter-spacing:.14em;direction:ltr;opacity:.8}
 .layers .ly:hover{background:var(--accbg)}
-.layers .ly.on{background:var(--bg);color:var(--ink);box-shadow:0 0 0 1px var(--btnline)}
-.layers .ly.on i{background:var(--acc);color:#fff}
-@media(max-width:640px){.layers .ly{padding:3px 6px}.layers .ly small{display:none}.layers .ly b{font-size:14px}.layers .ly i{width:26px;height:26px;font-size:17px}}
+.layers .ly.on{background:var(--accbg);color:var(--ink)}
+.layers .ly.on i{color:var(--acc)}
+.mode{flex:none;width:34px;height:34px;border:0;border-radius:10px;background:none;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:17px;padding:0}
+.mode:hover{background:var(--accbg);color:var(--ink)}
+.mode svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+@media(max-width:640px){.lbar{padding:8px 10px 4px;gap:6px}.layers .ly{gap:6px;padding:8px 4px}.layers .ly i{font-size:19px}.layers .ly b{font-size:15px}.layers .ly em{font-size:11px;letter-spacing:.1em}}

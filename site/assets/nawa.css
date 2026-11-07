@@ -225,18 +225,6 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .logo span small{font:700 10.5px/1 Cairo,sans-serif;letter-spacing:.14em;color:var(--mut)}
 @media(max-width:640px){header.top .logo span{display:flex}.logo span b{font-size:15px}.logo span small{font-size:9px}header.top .in{gap:6px}}
 
-/* مبدّل الطبقتين: نصفان كزرّين في رأس كل صفحة */
-.layers{display:inline-flex;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px;flex:none}
-.layers .ly{display:flex;align-items:center;gap:8px;padding:3px 12px 3px 10px;border-radius:9px;color:var(--mut);text-decoration:none;white-space:nowrap}
-.layers .ly i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--btn);color:var(--ink);font-style:normal;font-size:19px;font-weight:800;line-height:1}
-.layers .ly span{display:flex;flex-direction:column;line-height:1.1}
-.layers .ly b{font-weight:800;font-size:16px;color:inherit}
-.layers .ly small{font:700 10px/1 Cairo,sans-serif;letter-spacing:.12em;opacity:.75}
-.layers .ly:hover{background:var(--accbg)}
-.layers .ly.on{background:var(--bg);color:var(--ink);box-shadow:0 0 0 1px var(--btnline)}
-.layers .ly.on i{background:var(--acc);color:#fff}
-@media(max-width:640px){.layers .ly{padding:3px 6px}.layers .ly small{display:none}.layers .ly b{font-size:14px}.layers .ly i{width:26px;height:26px;font-size:17px}}
-
 /* صفحات نواة الوثائقية: دروس ودليل وشروح (إضافات فقط) */
 main.docs{flex:none;padding:30px 16px 60px}
 .dwrap{max-width:900px;margin:0 auto}
@@ -277,4 +265,29 @@ main.docs{flex:none;padding:30px 16px 60px}
 a.ibtn{color:var(--ink);text-decoration:none}
 .fig{overflow-x:auto}
 .fig svg{min-width:640px}
-@media(max-width:640px){header.top .in{grid-template-columns:auto 1fr;height:auto;padding:8px 12px;row-gap:8px}header.top .tools{justify-self:end}nav.tabs{grid-column:1/-1;order:3;max-width:none;justify-self:stretch}}
+
+/* شريط الطبقتين: نصفان بعرض الشريط، الحرف ثم الاسم العربي ثم شرطة ثم الإنجليزي، وبجانبهما زر السمة وحده */
+.lbar{display:flex;align-items:center;gap:10px;max-width:1180px;margin:0 auto;padding:8px 16px 6px}
+.layers{flex:1;display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.layers .ly{display:flex;align-items:center;justify-content:center;gap:9px;padding:9px 8px;color:var(--mut);text-decoration:none;white-space:nowrap;transition:background .2s,color .2s}
+.layers .ly+.ly{border-inline-start:1px solid var(--line)}
+.layers .ly i{font-style:normal;font-weight:800;font-size:21px;line-height:1;color:inherit}
+.layers .ly b{font-weight:800;font-size:17px;color:inherit}
+.layers .ly s{text-decoration:none;opacity:.45}
+.layers .ly em{font:700 13px/1 Cairo,sans-serif;font-style:normal;letter-spacing:.14em;direction:ltr;opacity:.8}
+.layers .ly:hover{background:var(--accbg)}
+.layers .ly.on{background:var(--accbg);color:var(--ink)}
+.layers .ly.on i{color:var(--acc)}
+.mode{flex:none;width:34px;height:34px;border:0;border-radius:10px;background:none;color:var(--mut);cursor:pointer;display:grid;place-items:center;font-size:17px;padding:0}
+.mode:hover{background:var(--accbg);color:var(--ink)}
+.mode svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+@media(max-width:640px){.lbar{padding:8px 10px 4px;gap:6px}.layers .ly{gap:6px;padding:8px 4px}.layers .ly i{font-size:19px}.layers .ly b{font-size:15px}.layers .ly em{font-size:11px;letter-spacing:.1em}}
+
+/* الشريط الفرعي لنواة: تبويبات مسطحة بخط سفلي حانٍ */
+header.top .in{display:flex;height:42px;padding:0 16px;gap:10px;max-width:1180px;margin:0 auto}
+nav.tabs{flex:1;display:flex;gap:2px;background:none;border:0;border-radius:0;padding:0;max-width:none;justify-self:auto;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{height:42px;border-radius:0;border-bottom:2px solid transparent;color:var(--mut);padding:0 12px;font-size:15px}
+nav.tabs a:hover{background:none;color:var(--ink)}
+nav.tabs a.on{background:none;box-shadow:none;color:var(--ink);border-bottom-color:var(--acc)}
+header.top .tools .ibtn{height:32px;background:none;border-color:transparent;color:var(--mut)}
+header.top .tools .ibtn:hover{background:var(--accbg);color:var(--ink)}

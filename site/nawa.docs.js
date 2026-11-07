@@ -11,11 +11,8 @@ function header(active, chat) {
   const conn = chat ? `<button class="ibtn" id="openConn" title="الموصّلات">${CONN_SVG}<span>الموصّلات</span></button>`
     : `<a class="ibtn" href="/nawa/?connectors=1" title="الموصّلات">${CONN_SVG}<span>الموصّلات</span></a>`;
   const install = chat ? '<button class="ibtn" id="install" hidden><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span>تثبيت التطبيق</span></button>' : '';
-  return `<header class="top"><div class="in">
-  <div class="layers" role="navigation" aria-label="الطبقتان"><a class="ly on" href="/nawa/"><i>ن</i><span><b>نواة</b><small>NAWA</small></span></a><a class="ly" href="/"><i>ض</i><span><b>ضاد</b><small>dhad</small></span></a></div>
-  <nav class="tabs">${tabs}</nav>
-  <div class="tools">${install}${conn}<button class="ibtn" id="theme" aria-label="السمة">${THEME_SVG}</button></div>
-</div></header>`;
+  return `<header class="top"><div class="lbar"><div class="layers" role="navigation" aria-label="الطبقتان"><a class="ly on" href="/nawa/"><i>ن</i><b>نواة</b><s>—</s><em>NAWA</em></a><a class="ly" href="/"><i>ض</i><b>ضاد</b><s>—</s><em>dhad</em></a></div><button id="theme" class="mode" title="السمة" aria-label="تبديل السمة">${THEME_SVG}</button></div>
+  <div class="in"><nav class="tabs">${tabs}</nav><div class="tools">${install}${conn}</div></div></header>`;
 }
 
 const head = (title, desc, path) => `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
