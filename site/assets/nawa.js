@@ -492,7 +492,6 @@
     if (n['دليل']) { qs.push('بسّطه'); qs.push('عمّقه'); }
     else if (syn && syn['وُجد']) { qs.push('شغّله'); qs.push('اشرح الكود'); }
     else if ((n['استرجاع'] && n['استرجاع'].length) || (n['مستندات'] && n['مستندات'].length)) { qs.push('المزيد'); }
-    if (r['نوع'] === 'حوار' && !qs.length) { qs = ['اكتب لي برنامج الأعداد الأولية', 'اشرح لي الإغلاقات']; }
     if (!qs.length) return;
     var w = el('div', 'sugg'); qs.forEach(function (q) { var b = el('button', '', q); b.type = 'button'; b.onclick = function () { if (busyAsk) return; inp.value = q; go(); }; w.appendChild(b); });
     node.appendChild(w);
@@ -668,5 +667,12 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; ib.hidden = false; });
   window.addEventListener('appinstalled', function () { ib.hidden = true; deferred = null; });
   ib.onclick = function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; ib.hidden = true; }); };
+  // روابط من صفحات نواة الأخرى: ?q= يملأ الصندوق، ?connectors=1 يفتح الموصّلات
+  try {
+    var qp = new URLSearchParams(location.search);
+    if (qp.get('q')) { inp.value = qp.get('q'); grow(); inp.focus(); }
+    if (qp.get('connectors')) { openConn(); }
+    if (qp.get('q') || qp.get('connectors')) history.replaceState(null, '', location.pathname);
+  } catch (e) {}
   if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/nawa/sw.js', { scope: '/nawa/' }); } catch (e) {} }
 })();

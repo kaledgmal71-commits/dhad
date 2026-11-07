@@ -236,3 +236,45 @@ main.ws{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .layers .ly.on{background:var(--bg);color:var(--ink);box-shadow:0 0 0 1px var(--btnline)}
 .layers .ly.on i{background:var(--acc);color:#fff}
 @media(max-width:640px){.layers .ly{padding:3px 6px}.layers .ly small{display:none}.layers .ly b{font-size:14px}.layers .ly i{width:26px;height:26px;font-size:17px}}
+
+/* صفحات نواة الوثائقية: دروس ودليل وشروح (إضافات فقط) */
+main.docs{flex:none;padding:30px 16px 60px}
+.dwrap{max-width:900px;margin:0 auto}
+.dwrap h1{margin:0 0 6px;font-size:30px;font-weight:800}
+.dwrap .lead{margin:0 0 22px;color:var(--mut);font-size:17px}
+.dwrap h2{margin:34px 0 12px;font-size:22px;font-weight:800;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.dwrap p{margin:0 0 12px}
+.dwrap .tb{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0 14px;font-size:15px}
+.dwrap .tb td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.dwrap .tb tr:last-child td{border:0}
+.dwrap .tb td:first-child{width:150px;background:var(--panel);white-space:nowrap}
+.ls{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.ls .num{flex:none;width:40px;height:40px;border-radius:11px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px}
+.ls h2{margin:0 0 8px;border:0;padding:0;font-size:20px}
+.ls .try{display:inline-block;margin-top:4px;padding:6px 14px;border:1px solid var(--btnline);background:var(--btn);border-radius:999px;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
+.ls .try:hover{background:var(--accbg);color:var(--acc)}
+.cps{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin:12px 0}
+.cp{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.cp h3{margin:0;font-size:17px;font-weight:800}
+.cp p{margin:0;font-size:14.5px;line-height:1.8}
+.cp .io{font-size:13px;color:var(--acc2);font-weight:600}
+.cp .mod{margin-top:auto;direction:ltr;text-align:left;font:600 12px ui-monospace,monospace;color:var(--mut)}
+.fig{margin:10px 0 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:10px}
+.fig svg{width:100%;height:auto;display:block;font-family:Cairo,sans-serif}
+.fig figcaption{font-size:13.5px;color:var(--mut);padding:6px 6px 2px}
+.fig .bx rect{fill:var(--bg);stroke:var(--btnline);stroke-width:1.4}
+.fig .bx.hi rect{fill:var(--accbg);stroke:var(--acc)}
+.fig .bx.ok rect{stroke:var(--ok)}
+.fig .bx.plan rect{stroke-dasharray:5 4;stroke:var(--mut)}
+.fig .bx.warn rect{stroke:var(--bad)}
+.fig .bx.mem rect{fill:var(--accbg)}
+.fig .t{fill:var(--ink);font-size:13.5px}
+.fig .t.s{fill:var(--mut);font-size:11px;font-weight:500}
+.fig .ar{stroke:var(--mut);stroke-width:1.5;fill:none}
+.fig .ar.d{stroke-dasharray:4 3}
+.fig .ahp{fill:var(--mut)}
+@media(max-width:640px){.dwrap h1{font-size:25px}.dwrap .tb td:first-child{width:96px;white-space:normal}.ls{gap:12px}}
+a.ibtn{color:var(--ink);text-decoration:none}
+.fig{overflow-x:auto}
+.fig svg{min-width:640px}
+@media(max-width:640px){header.top .in{grid-template-columns:auto 1fr;height:auto;padding:8px 12px;row-gap:8px}header.top .tools{justify-self:end}nav.tabs{grid-column:1/-1;order:3;max-width:none;justify-self:stretch}}
