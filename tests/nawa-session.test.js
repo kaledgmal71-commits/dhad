@@ -107,7 +107,7 @@ for(const d of ask(vm,'مستندات')['مستندات'])ask(vm,'إزالة',d[
   ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');
   {const r=ask(vm,'اسأل','شغّله');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح']&&r['نتائج']['تنفيذ']['مخرجات'][0].startsWith('[٢، ٣، ٥')&&r['رد'].includes('شُغِّل البرنامج السابق'),'run last program: '+JSON.stringify(r['نتائج']['تنفيذ']));}
   {const r=ask(vm,'اسأل','جرّبه');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح'],'جرّبه also runs');}
-  {const r=ask(vm,'اسأل','اشرح الكود');ok(r['نتائج']['استرجاع']&&r['نتائج']['استرجاع'].length>0,'explain follow-up retrieves about the program topic: '+r['نوع']);}
+  {const r=ask(vm,'اسأل','اشرح الكود');ok(r['نوع']==='شرح'&&r['نتائج']['شرح']['صحيح']&&r['رد'].includes('يعرّف دالة')&&r['رد'].includes('الناتج عند التشغيل'),'explain follow-up explains the program itself from its syntax tree: '+r['نوع']);}
   // اشرحه بعد شرح مفهوم لا يخلط بالبرنامج
   ask(vm,'صفّر_السياق');
   ask(vm,'اسأل','اشرح لي الإغلاقات');
