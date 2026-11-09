@@ -291,3 +291,6 @@ nav.tabs a:hover{background:none;color:var(--ink)}
 nav.tabs a.on{background:none;box-shadow:none;color:var(--ink);border-bottom-color:var(--acc)}
 header.top .tools .ibtn{height:32px;background:none;border-color:transparent;color:var(--mut)}
 header.top .tools .ibtn:hover{background:var(--accbg);color:var(--ink)}
+
+/* رسالة المستخدم الطويلة تبقى داخل العمود (لا تُقصّ عند الحافة) */
+.msg.u .tx{max-width:calc(100% - 42px);overflow-wrap:anywhere}
