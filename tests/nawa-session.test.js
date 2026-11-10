@@ -17,9 +17,9 @@ const B=fs.readFileSync(base,'utf8');
 const vm=mk();
 const init=ask(vm,'تهيئة',B);ok(init['جاهز']===true&&init['أمثلة']>=200,'init '+JSON.stringify(init));
 // أسئلة المعرفة
-{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes','synth primes');
+{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية بضاد');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes','synth primes');
  const run=api.compile(api.parse(r['نتائج']['توليف']['شيفرة']));const out=[];new api.VM({maxSteps:1e8,onPrint:l=>out.push(l)}).run(run.mainChunkIndex,run.functionChunks);ok(out[0]&&out[0].startsWith('[٢، ٣، ٥'),'synth code really runs: '+out[0]);}
-{const r=ask(vm,'اسأل','اشرح لي الإغلاقات');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures'),'explain closures');}
+{const r=ask(vm,'اسأل','اشرح لي الإغلاقات في ضاد');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures'),'explain closures');}
 {const r=ask(vm,'اسأل','لماذا لا يعمل هذا الخطأ؟ ```\nمتغير عداد = ١\nاطبع(عدادد)\n```');ok(r['نتائج']['تشخيص']['تصنيف']==='اسم_غير_معرف'&&r['نتائج']['تشخيص']['أقرب_اسم']==='عداد'&&r['نتائج']['تشخيص']['سطر']===2,'diagnose typo');}
 {const r=ask(vm,'اسأل','مرحبا');ok(r['نوع']==='حوار'&&r['رد'].includes('أهلًا'),'greeting handled by dialogue');}
 {const r=ask(vm,'اسأل','ابنِ لي لعبة فضاء ثلاثية الأبعاد بمحرك فيزياء');ok(!r['نتائج']['توليف']||!r['نتائج']['توليف']['وُجد'],'no invented program');}
@@ -29,7 +29,7 @@ const book=('باب الصلاة: الصلاة عماد الدين وهي خمس
 {const r=ask(vm,'مستند','كتاب.txt',book);ok(r['مقاطع']>=3,'doc chunks '+r['مقاطع']);}
 {const r=ask(vm,'اسأل','ما نصاب الزكاة؟');const p=r['نتائج']['مستندات'];ok(p&&p.length&&p[0]['مقتطف'].includes('الزكاة')&&p[0]['معرف'].startsWith('كتاب.txt#'),'doc search finds zakat passage');}
 {const r=ask(vm,'اسأل','متى يصوم المسلم؟');ok(r['نتائج']['مستندات'][0]['مقتطف'].includes('رمضان'),'doc search finds siyam');}
-{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ok(!r['نتائج']['مستندات'],'code requests do not search user docs');}
+{const r=ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية بضاد');ok(!r['نتائج']['مستندات'],'code requests do not search user docs');}
 // docx / html
 const docx='<w:document><w:body><w:p><w:r><w:t>كتاب الطهارة</w:t></w:r></w:p><w:p><w:r><w:t xml:space="preserve">الماء الطهور هو الباقي على أصل خلقته &amp; يرفع الحدث</w:t></w:r></w:p></w:body></w:document>';
 {const r=ask(vm,'مستند_docx','طهارة.docx',docx);ok(r['مقاطع']===1,'docx ingest');const q=ask(vm,'اسأل','ما الماء الطهور؟');ok(q['نتائج']['مستندات']&&q['نتائج']['مستندات'][0]['مقتطف'].includes('& يرفع'),'docx entities decoded + searchable');}
@@ -103,29 +103,29 @@ for(const d of ask(vm,'مستندات')['مستندات'])ask(vm,'إزالة',d[
 // ===== السياق بين الرسائل: شغّله، اشرحه، المزيد =====
 {
   ask(vm,'صفّر_السياق');
-  {const r=ask(vm,'اسأل','شغّله');ok(r['نوع']==='متابعة'&&r['رد'].includes('لا أرى برنامجًا سابقًا'),'follow-up without context: '+r['رد']);}
-  ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');
+  {const r=ask(vm,'اسأل','شغّله');ok(r['لغة']===''&&r['نوع']!=='تشغيل'&&!r['رد'].includes('شُغِّل'),'follow-up without context stays language-neutral: '+r['رد']);}
+  ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية بضاد');
   {const r=ask(vm,'اسأل','شغّله');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح']&&r['نتائج']['تنفيذ']['مخرجات'][0].startsWith('[٢، ٣، ٥')&&r['رد'].includes('شُغِّل البرنامج السابق'),'run last program: '+JSON.stringify(r['نتائج']['تنفيذ']));}
   {const r=ask(vm,'اسأل','جرّبه');ok(r['نوع']==='متابعة'&&r['نتائج']['تنفيذ']['ناجح'],'جرّبه also runs');}
   {const r=ask(vm,'اسأل','اشرح الكود');ok(r['نوع']==='شرح'&&r['نتائج']['شرح']['صحيح']&&r['رد'].includes('يعرّف دالة')&&r['رد'].includes('الناتج عند التشغيل'),'explain follow-up explains the program itself from its syntax tree: '+r['نوع']);}
   // اشرحه بعد شرح مفهوم لا يخلط بالبرنامج
   ask(vm,'صفّر_السياق');
-  ask(vm,'اسأل','اشرح لي الإغلاقات');
+  ask(vm,'اسأل','اشرح لي الإغلاقات في ضاد');
   {const r=ask(vm,'اسأل','المزيد');ok(r['نوع']==='متابعة'&&r['نتائج']['استرجاع'].every(x=>x['معرف']!=='lesson/closures'),'more excludes already shown: '+JSON.stringify(r['نتائج']['استرجاع'].map(x=>x['معرف'])));
    const r2=ask(vm,'اسأل','المزيد');const a=r['نتائج']['استرجاع'].map(x=>x['معرف']),b=r2['نتائج']['استرجاع'].map(x=>x['معرف']);ok(b.every(x=>!a.includes(x)),'second more gives different ones: '+a+' / '+b);}
   // طلب جديد يغيّر السياق، فلا يُشغَّل برنامج قديم
-  ask(vm,'صفّر_السياق');ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية');ask(vm,'اسأل','اشرح لي القوائم');
+  ask(vm,'صفّر_السياق');ask(vm,'اسأل','اكتب لي برنامج الأعداد الأولية بضاد');ask(vm,'اسأل','اشرح لي القوائم');
   {const r=ask(vm,'اسأل','شغّله');ok(r['نتائج']['تنفيذ']&&r['نتائج']['تنفيذ']['ناجح'],'program context survives a later explanation');}
   // جملة طويلة فيها «شغّل» ليست متابعة
-  {const r=ask(vm,'اسأل','اكتب لي برنامج يشغّل عدادا ويطبع الأرقام من واحد إلى عشرة');ok(r['نوع']==='كتابة_برنامج','long request not a follow-up: '+r['نوع']);}
+  {const r=ask(vm,'اسأل','اكتب لي برنامج يشغّل عدادا ويطبع الأرقام من واحد إلى عشرة');ok(r['نوع']==='سؤال_لغة'&&r['رد'].includes('بأي لغة'),'program request without a language asks which: '+r['نوع']);}
   ask(vm,'صفّر_السياق');
 }
 
 // ===== تحية + طلب في رسالة واحدة =====
 {
   ask(vm,'صفّر_السياق');
-  {const r=ask(vm,'اسأل','السلام عليكم، اكتب لي برنامج الأعداد الأولية');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes'&&r['بادئة'].startsWith('وعليكم السلام'),'greeting does not pollute synthesis: '+r['نوع']+' '+JSON.stringify(r['بادئة']));}
-  {const r=ask(vm,'اسأل','مرحبا اشرح لي الإغلاقات');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures')&&r['بادئة']==='أهلًا بك.','greeting + explain');}
+  {const r=ask(vm,'اسأل','السلام عليكم، اكتب لي برنامج الأعداد الأولية بضاد');ok(r['نوع']==='كتابة_برنامج'&&r['نتائج']['توليف']['وُجد']&&r['نتائج']['توليف']['مصدر']==='example/primes'&&r['بادئة'].startsWith('وعليكم السلام'),'greeting does not pollute synthesis: '+r['نوع']+' '+JSON.stringify(r['بادئة']));}
+  {const r=ask(vm,'اسأل','مرحبا اشرح لي الإغلاقات في ضاد');ok(r['نوع']==='شرح_مفهوم'&&r['نتائج']['استرجاع'].some(x=>x['معرف']==='lesson/closures')&&r['بادئة']==='أهلًا بك.','greeting + explain');}
   {const r=ask(vm,'اسأل','شغّله');ok(r['نتائج']['تنفيذ']&&r['نتائج']['تنفيذ']['ناجح'],'program from greeting-prefixed request is runnable');}
   ask(vm,'صفّر_السياق');
 }

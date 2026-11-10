@@ -94,14 +94,48 @@
   var repos = []; try { repos = JSON.parse(ls('nawa.repos') || '[]'); } catch (e) {}
   function saveSrc() { ls('nawa.src', JSON.stringify(SRC)); ls('nawa.repos', JSON.stringify(repos)); }
   var webUrl = {}, wcache = {}, treeCache = {};
-  function jget(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
-  function tget(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); }); }
-  async function wikiDocs(toks) {
-    var q = toks.join(' '), k = 'w:' + q; if (wcache[k]) return wcache[k];
-    var sr = await jget('https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=3&format=json&origin=*');
+  // الجلب بمهلة: مصدر معطّل لا يعلّق المحادثة
+  function tfetch(u) { var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 7000); return fetch(u, { signal: c.signal }).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; }); }
+  function jget(u) { return tfetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
+  function tget(u) { return tfetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); }); }
+  function strip(h) { return String(h || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function webDoc(out, nm, url, content) { nm = nm.replace(/#/g, '＃'); webUrl[nm] = url; out.push({ p: nm, r: { kind: 'text', content: content } }); }
+  async function wikiDocsIn(lang, label, toks) {
+    var q = toks.join(' '), k = 'w' + lang + ':' + q; if (wcache[k]) return wcache[k];
+    var host = 'https://' + lang + '.wikipedia.org/w/api.php';
+    var sr = await jget(host + '?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=3&format=json&origin=*');
     var ids = ((sr.query && sr.query.search) || []).map(function (x) { return x.pageid; }); if (!ids.length) return (wcache[k] = []);
-    var ex = await jget('https://ar.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exlimit=3&pageids=' + ids.join('|') + '&format=json&origin=*'), out = [];
-    ids.forEach(function (id) { var pg = ex.query.pages[id]; if (pg && pg.extract) { var nm = ('ويب/ويكيبيديا/' + pg.title).replace(/#/g, '＃'); webUrl[nm] = 'https://ar.wikipedia.org/?curid=' + id; out.push({ p: nm, r: { kind: 'text', content: pg.title + '\n\n' + pg.extract } }); } });
+    var ex = await jget(host + '?action=query&prop=extracts&exintro=1&explaintext=1&exlimit=3&pageids=' + ids.join('|') + '&format=json&origin=*'), out = [];
+    ids.forEach(function (id) { var pg = ex.query.pages[id]; if (pg && pg.extract) webDoc(out, 'ويب/' + label + '/' + pg.title, 'https://' + lang + '.wikipedia.org/?curid=' + id, pg.title + '\n\n' + pg.extract); });
+    return (wcache[k] = out);
+  }
+  // ويكيبيديا العربية، وتُضاف الإنجليزية إن كان في الطلب لاتينيّ أو لم تُسعف العربية
+  async function wikiDocs(toks, raw) {
+    var latin = /[a-z]{3,}/i.test(raw || ''), ar = [];
+    try { ar = await wikiDocsIn('ar', 'ويكيبيديا', toks); } catch (e) {}
+    if (latin || !ar.length) { try { return ar.concat(await wikiDocsIn('en', 'Wikipedia', toks)); } catch (e) {} }
+    return ar;
+  }
+  // ويكي مصدر العربي (نصوص تراثية وكتب) وأرشيف الإنترنت (كتب ووثائق عامة): نتائج بحث بمقتطفاتها وروابطها
+  async function archiveDocs(toks) {
+    var q = toks.join(' '), k = 'a:' + q; if (wcache[k]) return wcache[k]; var out = [];
+    var tasks = [
+      jget('https://ar.wikisource.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=3&format=json&origin=*').then(function (r) {
+        ((r.query && r.query.search) || []).forEach(function (x) { webDoc(out, 'ويب/ويكي مصدر/' + x.title, 'https://ar.wikisource.org/?curid=' + x.pageid, x.title + '\n\n' + strip(x.snippet)); });
+      }),
+      jget('https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q) + '&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=description&rows=3&output=json').then(function (r) {
+        (((r.response || {}).docs) || []).forEach(function (x) { var d = Array.isArray(x.description) ? x.description.join(' ') : (x.description || ''); webDoc(out, 'ويب/أرشيف الإنترنت/' + strip(x.title), 'https://archive.org/details/' + x.identifier, strip(x.title) + '\n\n' + strip(d)); });
+      })
+    ];
+    await Promise.all(tasks.map(function (t) { return t.catch(function () {}); }));
+    return (wcache[k] = out);
+  }
+  // مستودعات GitHub العامة، للطلبات التي تسأل عن مكتبة أو مستودع أو كود مفتوح
+  async function repoSearchDocs(toks, raw) {
+    if (!/github|مستودع|مكتب[ةه]|مفتوح|open ?source/i.test(raw || '')) return [];
+    var q = toks.join(' '), k = 'g:' + q; if (wcache[k]) return wcache[k]; var out = [];
+    var r = await jget('https://api.github.com/search/repositories?q=' + encodeURIComponent(q) + '&per_page=3');
+    (r.items || []).forEach(function (x) { webDoc(out, 'ويب/GitHub/' + x.full_name, x.html_url, x.full_name + '\n\n' + (x.description || '') + '\n★ ' + x.stargazers_count); });
     return (wcache[k] = out);
   }
   async function githubDocs(toks) {
@@ -120,11 +154,11 @@
     return out;
   }
   async function prepareLinked(q) {
-    var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || (SRC.github && repos.length));
+    var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
     var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)/.test(normQ(q).trim());
     if (online && toks.length && !social) {
-      var got = await Promise.all([SRC.wiki ? wikiDocs(toks).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
+      var got = await Promise.all([SRC.wiki ? wikiDocs(toks, q).catch(function () { return []; }) : [], SRC.archive !== false ? archiveDocs(toks).catch(function () { return []; }) : [], SRC.archive !== false ? repoSearchDocs(toks, q).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
       got.forEach(function (g) { g.forEach(function (d) { sel.push({ p: d.p, r: d.r, s: 1 }); }); });
     }
     if (SRC.files && paths.length && toks.length && !social) {
