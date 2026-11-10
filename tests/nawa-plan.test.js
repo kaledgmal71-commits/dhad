@@ -1,0 +1,42 @@
+// الخطة المركّبة: تفكيك الطلب إلى خطوات متتابعة بحالة الجلسة، مع شرط توقف وسقف خطوات واستئناف بعد سؤال اللغة.
+const fs=require('fs'),path=require('path');
+const R=require(path.join(__dirname,'..','site','run.js')),api=R.api;
+let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log('FAIL',m)}};
+const conv=v=>Object.prototype.toString.call(v)==='[object Map]'?Object.fromEntries([...v].map(([k,x])=>[k,conv(x)])):Array.isArray(v)?v.map(conv):v;
+const mk=()=>{const c=api.compile(api.parse('استورد("ضاد/نواة_جلسة")'));const vm=new api.VM({maxSteps:1e8,onPrint:()=>{}});vm.run(c.mainChunkIndex,c.functionChunks);return vm;};
+const L={maxSteps:4e9,maxMs:300000};
+const ask=(vm,a,x,y)=>conv(vm.callHost([a,x===undefined?null:x,y===undefined?null:y],L));
+const dist=path.join(__dirname,'..','dist','nawa');
+if(!fs.existsSync(path.join(dist,'base.json'))){console.log('تخطّي: شغّل site/pages.gen.js');process.exit(0);}
+const fresh=()=>{const vm=mk();ask(vm,'تهيئة',fs.readFileSync(path.join(dist,'base.json'),'utf8'));if(fs.existsSync(path.join(dist,'guide.json')))ask(vm,'دليل',fs.readFileSync(path.join(dist,'guide.json'),'utf8'));return vm;};
+const BT='```';
+// ١) ثلاث خطوات بلغة مسمّاة: تأليف ثم تشغيل ثم شرح
+{const vm=fresh();const r=ask(vm,'اسأل','اكتب برنامجا بضاد يجمع ٤ و٦ ثم شغّله ثم اشرحه');
+ ok(r['نوع']==='خطة_مركبة','خطة مركّبة: '+r['نوع']);
+ const خ=r['نتائج']['خطوات']||[];ok(خ.length===3,'٣ خطوات: '+خ.length);
+ ok(خ[0]&&خ[0]['نوع']==='تأليف'&&خ[0]['رد'].includes('١٠'),'الخطوة الأولى تؤلّف وتتحقق');
+ ok(خ[1]&&خ[1]['لغة']==='ضاد','الخطوة الثانية ترث اللغة: '+(خ[1]&&خ[1]['نوع']));
+ ok(خ[2]&&خ[2]['نوع']==='شرح','الخطوة الثالثة تشرح البرنامج نفسه: '+(خ[2]&&خ[2]['نوع']));
+ ok(r['رد'].includes('١)')&&r['رد'].includes('٣)'),'الردّ مرقّم بالخطوات');}
+// ٢) بلا لغة: سؤال واحد ثم تُستأنف الخطة بجواب اللغة
+{const vm=fresh();const a=ask(vm,'اسأل','اكتب برنامجا يحسب مضروب ٥ ثم شغّله');
+ ok(a['نوع']==='سؤال_لغة','يُسأل عن اللغة: '+a['نوع']);
+ const b=ask(vm,'اسأل','بضاد');
+ ok(b['نوع']==='خطة_مركبة'&&b['رد'].includes('١٢٠'),'الخطة تُستأنف بجواب اللغة: '+b['نوع']);
+ ok((b['نتائج']['خطوات']||[]).length===2,'خطوتان بعد الاستئناف');}
+// ٣) بقية الخطة لا تبقى بعد سؤال آخر
+{const vm=fresh();ask(vm,'اسأل','اكتب برنامجا يحسب مضروب ٥ ثم شغّله');ask(vm,'اسأل','من هو الخوارزمي');
+ const c=ask(vm,'اسأل','بضاد');ok(c['نوع']!=='خطة_مركبة','لا تُستأنف خطة قديمة: '+c['نوع']);}
+// ٤) طلب غير مركّب أو فاصل داخل كتلة شيفرة: لا تفكيك
+{const vm=fresh();ok(ask(vm,'اسأل','من هو ابن سينا')['نوع']!=='خطة_مركبة','سؤال بسيط');
+ const r=ask(vm,'اسأل','اشرح هذا الكود\n'+BT+'\nاطبع("ثم هذا")\n'+BT);ok(r['نوع']==='شرح','فاصل داخل شيفرة لا يفكّك: '+r['نوع']);}
+// ٥) خطوة لا تتصل ببرنامج لا ترث لغة ما قبلها
+{const vm=fresh();const r=ask(vm,'اسأل','اكتب برنامجا بضاد يجمع ٢ و٣ ثم من هو ابن سينا');
+ const خ=r['نتائج']['خطوات']||[];ok(خ.length===2&&خ[1]['لغة']===''&&خ[1]['نوع']!=='دليل'&&خ[1]['نوع']!=='تعليم','الخطوة العامة لا ترث ضاد: '+(خ[1]&&(خ[1]['نوع']+' '+خ[1]['لغة'])));}
+// ٦) سقف الخطوات
+{const vm=fresh();const r=ask(vm,'اسأل','اكتب برنامجا بضاد يجمع ١ و٢ ثم شغّله ثم اشرحه ثم شغّله ثم شغّله');
+ ok(r['نوع']==='خطة_مركبة'&&(r['نتائج']['خطوات']||[]).length===4&&r['رد'].includes('لم أنفّذ ما بعد الخطوة'),'سقف ٤ خطوات معلن');}
+// ٧) المحرك عام: لا يعرف لغة
+const src=fs.readFileSync(path.join(__dirname,'..','stdlib','نواة_خطة.dhad'),'utf8').replace(/#[^\n]*/g,'');
+ok(!src.includes('ضاد/نواة_وحدة')&&!/"ضاد"/.test(src),'محرك الخطة لا يعرف لغة');
+console.log('نجح',pass,'فشل',fail);process.exit(fail?1:0);
