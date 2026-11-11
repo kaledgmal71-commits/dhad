@@ -349,6 +349,8 @@
       if (dg['نص_السطر']) { var c = el('code', '', 'السطر ' + dg['سطر'] + ': ' + dg['نص_السطر']); d.appendChild(c); }
       d.appendChild(el('p', '', dg['اقتراح'])); box.appendChild(d);
     }
+    var sm = n['خلاصة'];
+    if (sm && sm['نص']) { any = true; box.appendChild(el('p', '', sm['نص'])); }
     var pas = n['مستندات'];
     if (pas && pas.length) {
       any = true;
@@ -358,7 +360,7 @@
         part.forEach(function (p) {
           var nm = String(p['معرف']).split('#')[0], q = el('div', 'pas'), u = webUrl[nm], t = u ? el('a', '', nm.replace(/^ويب\//, '')) : el('b', '', nm);
           if (u) { t.href = u; t.target = '_blank'; t.rel = 'noopener'; t.className = 'pl'; }
-          q.appendChild(t); q.appendChild(el('span', '', p['مقتطف'] || p['عنوان'])); box.appendChild(q);
+          var sn = p['مقتطف'] || p['عنوان']; if (u) sn = String(sn).replace(/^[^\n]{1,160}\n\n/, ''); q.appendChild(t); q.appendChild(el('span', '', sn)); box.appendChild(q);
         });
       });
     }
