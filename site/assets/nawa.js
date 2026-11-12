@@ -79,7 +79,7 @@
   // جلب ما يخص المهمة من الملفات المربوطة: يُقرأ من المصدر عند الحاجة ويُسلَّم للجلسة، ثم تُفرَّغ مكتبتها عند اختلاف المهمة
   var lastSel = null, rcache = {}, rorder = [];
   function normQ(t) { return String(t).replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase(); }
-  var STOP = {}; 'ابحث اريد اكتب ملفاتي ملفي الملفات مكتبتي المكتبه هذا هذه عن على الي الذي التي ماذا كيف هل لماذا اين متى اعطني اذكر حلل لخص اشرح وضح ثم ايضا كل بعض'.split(' ').forEach(function (w) { STOP[w] = 1; });
+  var STOP = {}; 'ابحث اريد اكتب ملفاتي ملفي الملفات مكتبتي المكتبه هذا هذه عن على الي الذي التي ماذا كيف هل لماذا اين متى اعطني اذكر الويب ويب الرابط رابط هنا انت تحسن تعمل بكفاءه الان حلل لخص اشرح وضح ثم ايضا كل بعض'.split(' ').forEach(function (w) { STOP[w] = 1; });
   function qTokens(t) { return normQ(t).split(/[^ء-غف-يa-z0-9]+/).map(function (w) { return w.replace(/^(وال|بال|لل|ال)/, ''); }).filter(function (w) { return w.length >= 3 && !STOP[w]; }); }
   function readLinked(p) {
     if (rcache[p]) return Promise.resolve(rcache[p]);
@@ -156,7 +156,7 @@
   async function prepareLinked(q) {
     var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
-    var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)/.test(normQ(q).trim());
+    var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
     if (online && toks.length && !social) {
       var got = await Promise.all([SRC.wiki ? wikiDocs(toks, q).catch(function () { return []; }) : [], SRC.archive !== false ? archiveDocs(toks).catch(function () { return []; }) : [], SRC.archive !== false ? repoSearchDocs(toks, q).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
       got.forEach(function (g) { g.forEach(function (d) { sel.push({ p: d.p, r: d.r, s: 1 }); }); });
