@@ -153,11 +153,12 @@
     }
     return out;
   }
-  async function prepareLinked(q) {
+  var WEB_NIAT = { 'بحث_معرفة': 1, 'شرح_مفهوم': 1, 'تحويل_صياغة': 0 };
+  async function prepareLinked(q, nia) {
     var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
     var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
-    if (online && toks.length && !social) {
+    if (online && toks.length && !social && (!nia || WEB_NIAT[nia])) {
       var got = await Promise.all([SRC.wiki ? wikiDocs(toks, q).catch(function () { return []; }) : [], SRC.archive !== false ? archiveDocs(toks).catch(function () { return []; }) : [], SRC.archive !== false ? repoSearchDocs(toks, q).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
       got.forEach(function (g) { g.forEach(function (d) { sel.push({ p: d.p, r: d.r, s: 1 }); }); });
     }
@@ -429,7 +430,7 @@
     curConv.msgs.push({ role: 'u', text: t });
     var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length), my = ++reqId; curPending = pending;
     col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
-    ready.then(function () { return prepareLinked(t).catch(function () {}); }).then(function () { return call('اسأل', t); }).then(function (r) {
+    ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); }).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
       var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
