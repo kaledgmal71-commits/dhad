@@ -16,6 +16,7 @@
   worker.onerror = function (e) { Object.keys(pend).forEach(function (k) { pend[k].rej(new Error(e.message || 'خطأ في العامل')); delete pend[k]; }); };
   function call(a, x, y) { return new Promise(function (res, rej) { var id = ++seq; pend[id] = { res: res, rej: rej }; worker.postMessage({ id: id, a: a, x: x, y: y }); }); }
   var ready = call('تهيئة');
+  window.NawaCore = { call: call, ready: ready };
   ready.then(restoreDocs, function () {});
 
   // ===== ملفات المستخدم (تُحفظ في المتصفح فقط) =====
