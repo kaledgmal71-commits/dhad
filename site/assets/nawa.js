@@ -351,6 +351,8 @@
       if (dg['نص_السطر']) { var c = el('code', '', 'السطر ' + dg['سطر'] + ': ' + dg['نص_السطر']); d.appendChild(c); }
       d.appendChild(el('p', '', dg['اقتراح'])); box.appendChild(d);
     }
+    var ap = n['تطبيق'];
+    if (ap) { any = true; box.appendChild(appCard(ap)); }
     var sm = n['خلاصة'];
     if (sm && sm['نص']) { any = true; box.appendChild(el('p', '', sm['نص'])); }
     var pas = n['مستندات'];
@@ -374,6 +376,22 @@
     if (!any) { if (r['بادئة'] && box.firstChild && box.firstChild.tagName === 'P') box.removeChild(box.firstChild); box.appendChild(rich(r['رد'])); }
     box.appendChild(actions(r, box));
     return box;
+  }
+  // تطبيقات المحيط: بطاقة في الحوار، وفتحها في إطار معزول فوق الصفحة
+  var tplCache = null;
+  function loadApp() { return window.NawaApp ? Promise.resolve() : new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = '/assets/nawa.app.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+  function loadTpl() { return tplCache ? Promise.resolve(tplCache) : fetch('/assets/nawa.templates.json').then(function (r) { return r.json(); }).then(function (j) { return (tplCache = j); }); }
+  function openApp(ap) {
+    var ov = el('div', 'ov open'), dlg = el('div', 'dlg appdlg'), hd = el('header'), h = el('h2', '', ap['عنوان']), cl = el('button', 'ibtn', 'إغلاق'), body = el('div', 'appbody'), handle = null;
+    hd.appendChild(h); hd.appendChild(cl); dlg.appendChild(hd); dlg.appendChild(body); ov.appendChild(dlg); document.body.appendChild(ov);
+    function close() { if (handle) handle.destroy(); ov.remove(); }
+    cl.onclick = close; ov.onclick = function (e) { if (e.target === ov) close(); };
+    Promise.all([loadApp(), loadTpl(), window.NawaCore.ready]).then(function (x) { return window.NawaApp.run(window.NawaCore, x[1][ap['اسم']], body); }).then(function (hnd) { handle = hnd; }, function () { body.textContent = 'تعذّر فتح التطبيق'; });
+  }
+  function appCard(ap) {
+    var c = el('div', 'appcard'), t = el('b', '', ap['عنوان']), d = el('span', '', ap['وصف']), b = el('button', 'abtn', 'فتح');
+    b.onclick = function () { openApp(ap); };
+    c.appendChild(t); c.appendChild(d); c.appendChild(b); return c;
   }
   // إجراءات الإجابة: نسخ، تقييم، حفظ، والمسار الذي مرّت به المحركات
   // نص الإجابة بفواصل الأسطر الصحيحة (بدل innerText لعقدة غير معروضة)
