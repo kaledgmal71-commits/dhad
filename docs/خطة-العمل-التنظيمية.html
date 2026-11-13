@@ -1,0 +1,412 @@
+<title>خطة العمل التنظيمية</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap">
+<style>
+/* التركيب: عمود قراءة واحد؛ الخريطة العريضة تتحرك أفقيًا داخل إطارها، واللوحة التفصيلية بجانبها وتنزل تحتها في الهاتف */
+:root{
+  --bg:#f2f4f8;--surface:#ffffff;--ink:#141925;--mute:#58627a;--line:#d8dde8;--accent:#9a6b12;--accent-ink:#ffffff;--soft:#e9edf4;
+  --c-stage:#2f6fd6;--c-router:#b7791a;--c-loop:#7c4dcc;--c-gate:#d1344f;--c-test:#1f8f63;--c-metric:#0f8aa0;--c-store:#6b7589;
+  --e-f:#7b859b;--e-b:#d1344f;--e-s:#0f8aa0;
+  --font:"Cairo","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1118;--surface:#161a24;--ink:#e8ebf3;--mute:#9aa3b8;--line:#2a3044;--accent:#e0a63a;--accent-ink:#161a24;--soft:#1d2230;
+  --c-stage:#6aa6ff;--c-router:#f0b34a;--c-loop:#b394f5;--c-gate:#ff7a90;--c-test:#4cd0a0;--c-metric:#4fd0e6;--c-store:#a3adc2;
+  --e-f:#8893aa;--e-b:#ff7a90;--e-s:#4fd0e6;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1118;--surface:#161a24;--ink:#e8ebf3;--mute:#9aa3b8;--line:#2a3044;--accent:#e0a63a;--accent-ink:#161a24;--soft:#1d2230;
+  --c-stage:#6aa6ff;--c-router:#f0b34a;--c-loop:#b394f5;--c-gate:#ff7a90;--c-test:#4cd0a0;--c-metric:#4fd0e6;--c-store:#a3adc2;
+  --e-f:#8893aa;--e-b:#ff7a90;--e-s:#4fd0e6;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.85 var(--font);padding-block:0 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1280px;margin:0 auto}
+h1,h2,h3{font-weight:800;line-height:1.4;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,4.4vw,40px)}
+h2{font-size:clamp(20px,2.6vw,26px);margin-bottom:10px}
+h3{font-size:16px}
+p{margin:0}
+.mu{color:var(--mute)}
+header.top{padding-block:40px 20px;display:grid;gap:10px;max-width:880px}
+header.top p{color:var(--mute);font-size:16px}
+section{padding-block:30px 6px}
+.sub{color:var(--mute);margin-bottom:16px;max-width:760px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--pc,var(--accent));display:inline-block}
+.chip:focus-visible,.btn:focus-visible,.nd:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px 12px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.start{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+@media(max-width:860px){.start{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;counter-increment:s}
+.steps li::before{content:counter(s,arabic-indic);width:30px;height:30px;border-radius:8px;background:var(--soft);color:var(--accent);font-weight:800;display:grid;place-items:center;font-size:15px}
+.steps b{display:block}
+pre.cardtxt{margin:0;white-space:pre-wrap;font:500 13.5px/1.9 var(--font);background:var(--soft);border-radius:10px;padding:14px 16px;direction:rtl;overflow-x:auto}
+.maprow{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+@media(max-width:1060px){.maprow{grid-template-columns:minmax(0,1fr)}}
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.maptool{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.maptool .sp{flex:1}
+.scroll{overflow:auto;max-height:78vh;overscroll-behavior:contain}
+svg text{font-family:var(--font)}
+.band{fill:var(--soft);stroke:none}
+.bandt{fill:var(--mute);font-size:15px;font-weight:700}
+.nd{cursor:pointer;--t:var(--c-stage)}
+.nd rect.bx{fill:color-mix(in srgb,var(--t) 13%,var(--surface));stroke:var(--t);stroke-width:1.6}
+.nd.sel rect.bx{stroke-width:3.4;fill:color-mix(in srgb,var(--t) 24%,var(--surface))}
+.nd .tt{fill:var(--ink);font-size:15px;font-weight:700}
+.nd .en{fill:var(--mute);font-size:11px}
+.nd .ty{fill:var(--t);font-size:11.5px;font-weight:700}
+.t-stage{--t:var(--c-stage)}.t-router{--t:var(--c-router)}.t-loop{--t:var(--c-loop)}.t-gate{--t:var(--c-gate)}.t-test{--t:var(--c-test)}.t-metric{--t:var(--c-metric)}.t-store{--t:var(--c-store)}
+.eg path{fill:none;stroke-width:1.7;stroke-linejoin:round}
+.eg.f path{stroke:var(--e-f)}.eg.b path{stroke:var(--e-b);stroke-dasharray:6 5}.eg.s path{stroke:var(--e-s);stroke-dasharray:2 5;stroke-width:2}
+.eg.dim{opacity:.28}.eg.hot path{stroke-width:3}
+.el{font-size:12px;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+.mk-f{fill:var(--e-f)}.mk-b{fill:var(--e-b)}.mk-s{fill:var(--e-s)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:22px;height:0;border-top:2px solid var(--e-f);display:inline-block}
+.sw.b{border-top:2px dashed var(--e-b)}.sw.s{border-top:2px dotted var(--e-s)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+@media(max-width:1060px){.panel{position:static;max-height:none}}
+.pill{display:inline-block;padding:0 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--t,var(--line));color:var(--t,var(--mute))}
+.pillrow{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.facts{display:grid;gap:12px;margin-top:14px}
+.fact b{display:block;font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.02em}
+.fact div{font-size:14.5px}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.diagram{background:var(--soft);border-radius:12px;padding:10px;margin-top:12px;display:flex;justify-content:center}
+.diagram svg{width:100%;max-width:420px;height:auto}
+.ib{fill:var(--surface);stroke:var(--t,var(--c-stage));stroke-width:1.5}
+.ib.p{fill:none;stroke:var(--mute);stroke-dasharray:4 4}
+.ib.d{fill:color-mix(in srgb,var(--c-gate) 12%,var(--surface));stroke:var(--c-gate)}
+.ib.x{fill:color-mix(in srgb,var(--c-gate) 10%,var(--surface));stroke:var(--c-gate);stroke-dasharray:5 4}
+.ib.fan{fill:color-mix(in srgb,var(--c-router) 12%,var(--surface));stroke:var(--c-router)}
+.it{fill:var(--ink);font-size:12.5px}.it.m{fill:var(--mute);font-size:11px}
+.ia{stroke:var(--e-f);stroke-width:1.5;fill:none}.ia.r{stroke:var(--e-b);stroke-dasharray:5 4}
+.il{font-size:11.5px;fill:var(--ink);font-weight:700}
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.types .card{display:grid;gap:8px;align-content:start}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:right;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--mute);font-weight:600}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.tw table{min-width:640px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.grid2 .card h3{margin-bottom:6px}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+footer{padding-top:26px;color:var(--mute);font-size:13px;max-width:760px}
+@media(prefers-reduced-motion:no-preference){.nd rect.bx,.eg{transition:all .15s}}
+</style>
+<div class="wrap" dir="rtl">
+<header class="top">
+  <h1>خطة العمل التنظيمية</h1>
+  <p>خط إنتاج واحد من الطلب إلى الدروس المستخلصة، بمحطات وبوابات وحلقات وقياسات. تُثبَّت في بداية كل عمل، ويُتابَع تنفيذها محطة بعد محطة.</p>
+</header>
+
+<section id="start">
+  <h2>بطاقة بدء العمل</h2>
+  <p class="sub">تُملأ قبل أي بناء، وتبقى مفتوحة حتى الدروس المستخلصة.</p>
+  <div class="start">
+    <div class="card"><ol class="steps">
+      <li><div><b>الفرز</b>صغير معروف، أو منتج وميزة جديدة، أو عالي الخطورة. يُكتب سبب التصنيف.</div></li>
+      <li><div><b>المسار والحزم</b>المسار الأساسي، وما يلزمه من حزم: ويب، جوال، بحث ومكتبة، وكيل، نموذج لغوي، متجر، تجربة بحثية.</div></li>
+      <li><div><b>معايير القبول</b>تُكتب قبل البناء، وكل واحد منها يصير اختبارًا آليًا.</div></li>
+      <li><div><b>العتبات المسجَّلة</b>تُختم بتاريخها قبل أي تشغيل، ولا تُعدَّل بعد رؤية النتائج.</div></li>
+      <li><div><b>المراقبة</b>عند كل بوابة: المحطة الحالية، ونتيجة آخر بوابة بدليلها، وما أخفق وسببه، والمحطة التالية.</div></li>
+    </ol></div>
+    <div class="card" style="display:grid;gap:10px;align-content:start">
+      <pre class="cardtxt" id="cardtxt">بطاقة بدء العمل
+الطلب: …
+صاحبه / التاريخ: …
+١ الفرز: صغير | جديد | عالي الخطورة — السبب: …
+٢ المسار والحزم: …
+٣ معايير القبول (تُكتب قبل البناء):
+   - …
+٤ العتبات المسجَّلة قبل التشغيل:
+   - …
+٥ المراقبة
+   المحطة الحالية: …
+   آخر بوابة: … — الدليل: …
+   أُخفق: … — السبب الجذري: …
+   التالي: …</pre>
+      <div><button class="btn pri" id="copycard">نسخ البطاقة</button> <span class="mu" id="copied" aria-live="polite"></span></div>
+    </div>
+  </div>
+</section>
+
+<section id="map">
+  <h2>الخريطة العامة</h2>
+  <p class="sub" id="mapsub"></p>
+  <div class="chips" id="packs" role="group" aria-label="الحزم"></div>
+  <div style="height:14px"></div>
+  <div class="maprow">
+    <div class="mapbox">
+      <div class="maptool"><button class="btn" id="zo">تصغير</button><button class="btn" id="zf">ملاءمة العرض</button><button class="btn" id="zi">تكبير</button><span class="sp"></span><span class="mu" id="stat"></span></div>
+      <div class="scroll" id="scroll"><div id="mapsvg"></div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="types">
+  <h2>عناصر الخطة</h2>
+  <p class="sub">سبعة أنواع من العناصر، لكل نوع شكله الداخلي وطريقة اختباره.</p>
+  <div class="types" id="typecards"></div>
+</section>
+
+<section id="stores">
+  <h2>مخازن الخطة</h2>
+  <p class="sub">المخطط الأصلي لا يضع مخازن في خطه الأساسي. هذه ثلاثة مخازن تُضاف إلى كل عمل.</p>
+  <div class="grid2">
+    <div class="card" style="--t:var(--c-store)"><h3>سجل القرارات</h3><p class="mu">القرار المعماري وبدائله وأسبابه وتاريخه. تكتبه محطة «التحليل والمقارنة»، وتقرؤه محطة «التصميم».</p></div>
+    <div class="card" style="--t:var(--c-store)"><h3>سجل النواقص والتجارب</h3><p class="mu">الفرضيات والعتبات المسجَّلة قبل التشغيل ونتائجها كما هي، سلبية كانت أو إيجابية، وقائمة النواقص الكبيرة والصغيرة.</p></div>
+    <div class="card" style="--t:var(--c-store)"><h3>الذاكرة ودفتر التطوير</h3><p class="mu">القواعد الثابتة وما جرى في كل جلسة بتاريخه، يقرؤها كل عمل جديد عند بطاقة البدء.</p></div>
+  </div>
+</section>
+
+<section id="life">
+  <h2>الربط بدورة الحياة المعتمدة</h2>
+  <p class="sub">كل مرحلة من دورة الحياة ذات الإحدى عشرة مرحلة تقابل محطات في الخريطة، وبوابتها هي بوابة المرحلة.</p>
+  <div class="tw"><table id="lifetbl"></table></div>
+  <p class="note">دورة الحياة تضع «سير العمل وخط الإنتاج» قبل «المعمارية»، والمخطط يضع المعمارية قبل التخطيط لأن الخطة تحتاج المكوّنات. يُعتمد ترتيب المخطط، وتبقى مخرجات المرحلتين كما هي.</p>
+</section>
+
+<section id="read">
+  <h2>قراءة المخطط</h2>
+  <div class="grid2" id="readgrid"></div>
+</section>
+
+<section id="rules">
+  <h2>قواعد التنفيذ والمراقبة</h2>
+  <div class="grid2">
+    <div class="card"><h3>لا عبور بلا دليل</h3><p class="mu">كل بوابة تنتهي بقبول أو رفض مكتوب مع دليله: اختبار، لقطة، سجل، أو نتيجة مقيسة.</p></div>
+    <div class="card"><h3>لوحة المهام مرآة الخريطة</h3><p class="mu">تُنشأ مهمة لكل محطة تعمل في الدورة، وتُحدَّث عند كل بوابة، ومهمتها الأخيرة فحص العمل نفسه.</p></div>
+    <div class="card"><h3>الإخفاق يدخل حلقة الإصلاح</h3><p class="mu">يُسجَّل بسببه الجذري ويُعاد الخط من أوله. الشكوى عيّنة من فئة، فتُبنى لها مجموعة متنوعة وتُقاس.</p></div>
+    <div class="card"><h3>العتبات قبل التشغيل</h3><p class="mu">تُسجَّل ثم تُشغَّل التجربة. إن فاتت العتبة بعنصر واحد يُعلَن ذلك.</p></div>
+    <div class="card"><h3>ما لم يُتحقق منه لا يُدَّعى</h3><p class="mu">السلوك الحي الذي لم يُفحص، وأرقام المصادر التي لم تُعاد، تُوسَم بما هي عليه.</p></div>
+    <div class="card"><h3>نهاية كل جلسة</h3><p class="mu">دروس بإجراءات، وقائمة النواقص كاملة بما فيها الكبيرة، مع ترتيب البناء وسببه.</p></div>
+  </div>
+</section>
+<footer>مبني على مخطط رحلة المشروع المرفق: ٢٤ محطة و٣٨ ممرًّا و٦ حزم. نسب إعادة العمل في خانة المحطة افتراضات محاكاة المخطط وليست قياسات. حزمة «تجربة بحثية» والمخازن وبطاقة البدء وحقول «المدخلات والمخرجات ومعيار القبول والمقياس والتطبيق» إضافات على الأصل.</footer>
+</div>
+<script>
+document.documentElement.setAttribute('dir','rtl');document.documentElement.setAttribute('lang','ar');
+const SRC={"HN":["التهيئة والتصميم","البناء والتكامل","الجودة والاختبار (خط CI)","التسليم والتشغيل","الملحقات"],"TN":{"stage":"مرحلة","router":"روتر","loop":"حلقة","gate":"بوابة","test":"اختبار","metric":"قياس","store":"مخزن"},"TT":{"stage":"يُتحقق من اكتمال المخرجات مقابل عقد المدخلات","router":"تُختبر كل الفروع مع فرع افتراضي","loop":"سقف للتكرار ومعيار توقف صريح","gate":"قيم حدّية وحالات قبول ورفض","test":"قابلية إعادة التشغيل وثبات النتيجة","metric":"خط أساس ومعايرة دورية","store":"سلامة البيانات وقابلية الاستعادة"},"B":[["in","استقبال الطلب","Intake","stage",0,0,0,"تسجيل الطلب أو الفكرة بصاحبه وهدفه في مكان واحد قابل للتتبع","تسجيل الطلب وصاحبه|توضيح الهدف والمنفعة المتوقعة|فتح بطاقة متابعة برقم ومسؤول","طلبات تضيع بين القنوات فلا يُعرف حالها",0,""],["r1","فرز الطلب","Triage","router",0,1,0,"يقرر مسار الطلب بحسب حجمه وجدّته وخطورته، فلا يُعامل التعديل الصغير كمشروع جديد","تصنيف الطلب بالحجم والجدّة والخطورة|اختيار نموذج التعامل|تعيين المسار والمسؤول","تصنيف خاطئ: مشروع كبير يمرّ كتعديل صغير",0,"نماذج التغيير: قياسي وعادي وطارئ (ITIL 4)"],["rv","مراجعة المخاطر","Risk Review","stage",0,1,1,"فحص إضافي للطلبات الحساسة أمنيًا أو قانونيًا قبل بدء العمل","تقييم المخاطر الأمنية والقانونية|تحديد ضوابط التخفيف|موافقة الجهة المسؤولة","موافقة شكلية لا تفحص المخاطر فعلًا",0,""],["rq","بلورة المتطلبات","Requirements","stage",0,2,0,"تحويل الفكرة إلى متطلبات مكتوبة قابلة للقياس والقبول","استخراج احتياجات أصحاب المصلحة|كتابة قصص المستخدم ومعايير القبول|تحديد المتطلبات غير الوظيفية والقيود|مراجعتها مع العميل","متطلبات غامضة لا يمكن اختبارها",[3,"اعتمدها العميل؟",1],"المتطلبات غير الوظيفية: نموذج الجودة ISO/IEC 25010"],["rs","البحث والاستقصاء","Research","stage",0,3,0,"دراسة الحلول القائمة قبل البناء لتجنّب إعادة اختراع ما حُلّ","حصر حلول مشابهة قديمة ومتوسطة وحديثة|تفكيك أبرز الحلول بالهندسة العكسية لبنيتها وسلوكها|استشراف اتجاهات السوق والتقنية|توثيق الفجوات والفرص","الاكتفاء بحلول مشهورة دون فحص ملاءمتها",0,""],["an","التحليل والمقارنة","Analysis","stage",0,4,0,"مقارنة الخيارات بمعايير معلنة وتوليف الحل الأنسب","مقارنة الخيارات بمعايير موزونة|تحليل المفاضلات (Trade-offs)|توليف الحل المقترح|تسجيل القرار وأسبابه","قرار بلا توثيق يُعاد الجدل فيه لاحقًا",0,"سجل قرارات المعمارية (ADR)"],["ds","التصميم والمعمارية","Architecture","stage",0,5,0,"رسم بنية النظام ومكوّناته وواجهاته قبل كتابة أي شيفرة","تحديد المكوّنات وحدودها|تصميم الواجهات والبيانات|فحص التصميم مقابل المتطلبات غير الوظيفية|إصدار وثيقة العمل والمعمارية","تصميم لا يحقق متطلبًا غير وظيفي فيُكتشف متأخرًا",[2,"يحقق المتطلبات؟",0],""],["pl","التخطيط","Planning","stage",0,6,0,"ترتيب العمل في خطوات وجدول ومخاطر وخط إنتاج؛ ومنه ينفرع مساران متوازيان: الخلفية والواجهة","تفكيك العمل إلى هيكل مهام (WBS)|تقدير الجهد وبناء الجدول|سجل المخاطر وخطط معالجتها|تحديد المعالم وخط الإنتاج","تقدير متفائل يتجاوزه الواقع",0,""],["be","تطوير الخلفية","Backend","stage",1,6,0,"منطق الخادم والبيانات والواجهات البرمجية","نمذجة البيانات|كتابة منطق الأعمال|مراجعة الشيفرة (Code Review)|الدمج بعد اجتياز المراجعة","دمج بلا مراجعة يُدخل أخطاء للفرع الرئيسي",[2,"اجتازت المراجعة؟",1],""],["fe","تطوير الواجهة","Frontend","stage",1,6,1,"واجهة المستخدم وتجربتها وحالاتها","تصميم الواجهة وحالاتها (تحميل وخطأ وفراغ)|بناء المكوّنات|مراجعة الشيفرة وإمكانية الوصول|الدمج","واجهة تعمل في الحالة السعيدة فقط",[2,"اجتازت المراجعة؟",1],""],["ig","التكامل والبناء","Integration & Build","stage",1,5,0,"يلتقي هنا المساران في بناء واحد، ولا يمضي العمل حتى يصل الاثنان؛ ثم يُطلق خط الاختبارات تلقائيًا","سحب الفروع المدمجة|بناء الحزمة القابلة للتشغيل|إطلاق خط الاختبارات تلقائيًا","فروع طويلة العمر تصطدم عند الدمج",0,"التكامل المستمر (CI)"],["tu","اختبار الوحدات","Unit Tests","test",2,5,0,"فحص أصغر الأجزاء منفردة؛ أسرع الاختبارات وأكثرها عددًا","تشغيل الحالات معزولة|قياس التغطية|إيقاف الخط عند أول فشل","اختبارات تتحقق من التنفيذ لا من السلوك",0,"قاعدة هرم الاختبارات (Test Pyramid)"],["ti","اختبار التكامل","Integration Tests","test",2,4,0,"فحص تعاون الأجزاء: قاعدة البيانات والواجهات والخدمات","تهيئة بيئة اختبار|تشغيل سيناريوهات التفاعل|مقارنة العقود بين المكوّنات","بيئة اختبار لا تشبه الإنتاج",0,""],["te","اختبار شامل","End-to-End Tests","test",2,3,0,"تجربة المسارات الحرجة كما يسلكها المستخدم؛ أبطأها وأقلها عددًا","تحديد المسارات الحرجة|تشغيلها على الواجهة الفعلية|توثيق الفشل بصور وسجلات","اختبارات هشّة تفشل دون عيب حقيقي",0,""],["ts","فحص الأمان","Security Scan","test",2,2,0,"كشف الثغرات قبل الإصدار آليًا","فحص التبعيات المعروفة الثغرات|تحليل ساكن للشيفرة (SAST)|فحص الأسرار المسرّبة في المستودع","ثغرة تظهر في الإنتاج لأن الفحص لم يغطها",0,"الثغرات الشائعة: قائمة OWASP Top 10"],["pf","اختبار الأداء","Performance Test","test",2,1,0,"التحقق من الاستجابة تحت الحمل المتوقع","تحديد حمل الذروة المتوقع|تشغيل اختبار الحمل|مقارنة النتائج بالأهداف","قياس على بيئة أضعف من الإنتاج",0,""],["vf","بوابة الجودة","Quality Gate","gate",2,0,0,"لا يخرج الإصدار إلا إذا استوفى عتبات متفقًا عليها سلفًا","تجميع نتائج الاختبارات والتغطية|مقارنتها بالعتبات المتفق عليها|قرار القبول أو الرفض","عتبات متساهلة تُمرّر عيوبًا",0,"بوابات الجودة في أنظمة CI"],["db","حلقة الإصلاح","Fix Loop","loop",2,3,1,"أي فشل في الخط يصل إلى هنا: تشخيص السبب وإصلاحه ثم إعادة الخط من أوله","إعادة إنتاج الفشل|عزل السبب الجذري|إصلاح مع اختبار انحدار|إعادة التشغيل محليًا","إصلاح العَرَض دون السبب فيتكرر الفشل",[3,"نجح الاختبار؟",0],""],["ua","قبول العميل","Acceptance","gate",3,0,0,"عرض النسخة على العميل والتحقق من تحقيقها لمعايير القبول المكتوبة","عرض النسخة في بيئة تجريبية|تنفيذ سيناريوهات القبول|قرار القبول أو الرفض","معايير قبول لم تُكتب فيصير الرفض ذوقيًا",0,"اختبار قبول المستخدم (UAT)"],["dp","النشر","Deployment","stage",3,1,0,"نقل الإصدار إلى بيئة التشغيل بأقل مخاطرة وقابلية للتراجع","تجهيز البيئة والإعدادات|نشر تدريجي لنسبة صغيرة من المستخدمين|فحص الصحة بعد النشر|تراجع (Rollback) عند الإخفاق","نشر دفعة واحدة بلا خطة تراجع",[2,"الصحة سليمة؟",1],"النشر التدريجي: Canary وBlue-Green"],["mo","المراقبة","Monitoring","metric",3,2,0,"مراقبة الإصدار في الإنتاج لاكتشاف المشكلات قبل المستخدمين","جمع السجلات والمقاييس|ضبط تنبيهات على أهداف الخدمة (SLO)|تحليل الاتجاهات","تنبيهات كثيرة تُهمَل أو قليلة تفوّت العطل",0,""],["mt","الصيانة","Maintenance","stage",3,2,1,"معالجة البلاغات والحوادث وإصدار التحديثات","فرز البلاغات حسب الأثر|إصلاح أو تحسين|إصدار تحديث عبر الخط نفسه|نسخ احتياطي واختبار الاستعادة","إصلاحات عاجلة تتجاوز الخط فتعيد الأعطال",0,""],["qa","قياس الجودة والمخرجات","Metrics","metric",3,3,0,"مؤشرات تبيّن صحة عملية التسليم وجودة المنتج","تجميع بيانات الخط والإنتاج|حساب مؤشرات التسليم وجودة الشيفرة|نشر لوحة المؤشرات","مؤشرات تُقاس لأنها سهلة لا لأنها مهمة",0,"مؤشرات DORA الأربعة: تكرار النشر، زمن التسليم، معدل فشل التغيير، زمن الاستعادة"],["rt","المراجعة واستخلاص الدروس","Retrospective","stage",3,4,0,"مراجعة ما جرى لتحسين العمل القادم وتحديث القوالب","مراجعة ما نجح وما أخفق|استخراج إجراءات تحسين محددة|تحديث قوالب العمل والتوثيق","دروس تُكتب ولا تُنفَّذ",0,"المراجعة الدورية (Retrospective) في أطر Agile"]],"E0":[["in","r1"],["r1","rq","منتج أو ميزة جديدة"],["r1","pl","تعديل صغير معروف"],["r1","rv","عالي الخطورة"],["rv","rq"],["rq","rs"],["rs","an"],["an","ds"],["ds","pl"],["pl","be"],["pl","fe"],["be","ig"],["fe","ig"],["ig","tu"],["tu","ti"],["ti","te"],["te","ts"],["ts","pf"],["pf","vf"],["vf","ua","مستوفٍ"],["vf","qa","نتائج الاختبارات","s"],["vf","db","غير مستوفٍ","b"],["tu","db","فشل","b"],["ti","db","فشل","b"],["te","db","فشل","b"],["ts","db","ثغرة","b"],["pf","db","أداء دون الهدف","b"],["db","ig","بعد الإصلاح","b"],["ua","dp","مقبول"],["ua","pl","ملاحظات: تعديل الخطة","b"],["dp","mo"],["dp","db","تراجع عن النشر","b"],["mo","mt","بلاغ أو حادثة","",0.3],["mo","qa","","",0.7],["qa","rt"],["mt","ig","إصلاح عاجل","b",0.6],["mt","in","تغيير أكبر: طلب جديد","b",0.4],["rt","in","دروس وتحسينات","s"]],"PK":[{"id":"web","n":"ويب / SaaS","c":"#4aa3ff","cut":[["be","ig"]],"N":[["au","الهوية والصلاحيات","Auth","gate","تحديد من يدخل وماذا يملك","تسجيل الدخول|الأدوار والصلاحيات|الجلسات","تجاوز الصلاحيات"],["ap","واجهة البرمجة","API","stage","عقد التخاطب بين الواجهة والخادم","تعريف المسارات|التحقق من المدخلات|التوثيق","كسر التوافق"]],"E":[["be","au"],["au","ap"],["ap","ig"]]},{"id":"mob","n":"تطبيق جوال","c":"#36d399","cut":[["ua","dp"],["fe","ig"]],"N":[["sy","المزامنة دون اتصال","Offline Sync","store","حفظ محلي ثم مزامنة عند عودة الاتصال","طابور محلي|حل التعارض|إعادة المحاولة","تعارض النسخ"],["sr","مراجعة المتاجر","Store Review","gate","استيفاء اشتراطات المتاجر قبل الإصدار","فحص السياسات|بناء الإصدار|التقديم","رفض المراجعة"]],"E":[["fe","sy"],["sy","ig"],["ua","sr","مقبول"],["sr","dp","معتمد"],["sr","fe","رفض المراجعة","b"]]},{"id":"rag","n":"بحث ومكتبة رقمية","c":"#ffb020","cut":[["be","ig"]],"N":[["oc","استخراج النص OCR","OCR","stage","تحويل صور الصفحات إلى نص مع موضعه","تهيئة الصورة|التعرف|ربط النص بالموضع","أخطاء التعرف"],["ix","الفهرسة","Indexing","store","فهرس لفظي وصرفي ودلالي","تقطيع|تضمين|بناء الفهرس","فهرس قديم"],["rr","الاسترجاع وإعادة الترتيب","Retrieval","router","اختيار المقاطع الأوفى صلة بالسؤال","بحث هجين|إعادة الترتيب|حكم الكفاية","مقطع غير ذي صلة"],["ct","التوثيق والاستشهاد","Citation","gate","لا تخرج إجابة بلا مصدر قابل للتحقق","ربط الادعاء بالمقطع|تحقق الإحالة|رفض غير الموثق","استشهاد وهمي"]],"E":[["be","oc"],["oc","ix"],["ix","rr"],["rr","ct","نتائج كافية"],["rr","ix","ناقصة: وسّع الفهرس أو الاستعلام","b"],["ct","ig"],["ct","rr","استشهاد غير موثّق","b"]]},{"id":"agt","n":"وكيل ذكي","c":"#c77dff","cut":[["be","ig"]],"N":[["lp","حلقة الوكيل","Agent Loop","loop","ملاحظة ثم تخطيط ثم فعل حتى الإنجاز","ملاحظة|إعادة تخطيط|فعل","حلقة لا تنتهي"],["tr","موجّه الأدوات","Tool Router","router","يختار الأداة أو الاستدلال الداخلي","قراءة الحاجة|مطابقة الأداة|فحص الصلاحية","أداة خاطئة"],["ap2","بوابة الموافقة","Approval","gate","موافقة بشرية قبل الإجراءات الحساسة","عرض الإجراء|قرار الإنسان|تسجيل القرار","موافقة آلية بلا نظر"],["sb","بيئة معزولة","Sandbox","stage","تشغيل الأدوات في حيّز لا يمسّ النظام","عزل|حدود الموارد|سجل تدقيق","هروب من العزل"]],"E":[["be","lp"],["lp","tr"],["tr","ap2","يحتاج أداة","",0.5],["tr","ig","إجابة مباشرة","",0.5],["ap2","sb","موافق"],["ap2","lp","مرفوض: أعد التخطيط","b"],["sb","lp","نتيجة الأداة: ملاحظة","b"]]},{"id":"llm","n":"نموذج لغوي","c":"#ff5d73","cut":[["be","ig"]],"N":[["tk","التوكنة","Tokenization","stage","تحويل النص إلى وحدات عددية","بناء المفردات|ترميز النص|حجز الرموز الخاصة","تجزئة سيئة للغة"],["tn","التدريب","Training","loop","تحسين الأوزان دورة بعد دورة","تمرير أمامي|حساب الخسارة|تحديث الأوزان","فرط التخصيص"],["ev","تقييم النموذج","Model Eval","gate","قياس النموذج على بيانات لم يرها","مجموعة ذهبية|مقاييس|مقارنة بالسابق","تسرب بيانات الاختبار"]],"E":[["be","tk"],["tk","tn"],["tn","ev"],["ev","ig","مقبول"],["ev","tn","دون العتبة: ضبط وإعادة تدريب","b"]]},{"id":"shop","n":"متجر إلكتروني","c":"#22d3ee","N":[["iv","المخزون","Inventory","store","تتبع الكميات وحجزها","حجز الكمية|خصم عند التأكيد|تنبيه النفاد","تضارب الحجز"],["py","الدفع","Payments","gate","إتمام الدفع بأمان وتأكيده","إنشاء الطلب|تفويض الدفع|تأكيد وإيصال","دفع مزدوج"],["sh","الشحن","Fulfilment","stage","تجهيز الطلب وتسليمه وتتبعه","تجهيز|تسليم للناقل|تتبع الحالة","طلب ضائع"]],"E":[["be","iv"],["iv","py"],["py","sh"],["sh","ig"],["py","iv","فشل الدفع: حرّر الحجز","b"]],"cut":[["be","ig"]]},{"id":"exp","n":"تجربة بحثية (إضافة)","c":"#e0a63a","own":1,"cut":[["be","ig"]],"N":[["hy","الفرضية","Hypothesis","stage","صياغة سؤال قابل للدحض بمقياس واحد معلن","تحديد المقياس والمجموعة|تحديد خط الأساس|كتابة ما يُعدّ نجاحًا وما يُعدّ إخفاقًا","فرضية غامضة لا تُدحض"],["pr","تسجيل العتبات","Pre-registration","gate","تثبيت العتبات في السجل قبل أي تشغيل","كتابة العتبات والمجموعة|العتبات مختومة بالتاريخ؟|منع تعديلها بعد رؤية النتائج","ضبط العتبة بعد رؤية النتيجة"],["rn","تشغيل التجربة","Run","test","تشغيل آلي قابل للإعادة على ما سُجِّل","تثبيت البذرة والبيانات|التشغيل|حفظ المخرجات الخام","نتيجة لا تُعاد"],["dc","القرار والتسجيل","Decision","gate","تسجيل النتيجة إيجابية أو سلبية بصدق ثم القرار","مقارنة بالعتبة المسجَّلة|هل تحققت العتبة؟|تسجيل النتيجة كما هي وقرار المتابعة","إخفاء نتيجة سلبية"]],"E":[["be","hy"],["hy","pr"],["pr","rn"],["rn","dc"],["dc","ig","نتيجة مسجَّلة"],["dc","hy","سلبية أو ناقصة: فرضية جديدة","b"]]}],"PF":{"tu":0.08,"ti":0.1,"te":0.12,"ts":0.08,"pf":0.08,"vf":0.12,"ua":0.15,"dp":0.05,"ev":0.25,"rr":0.25,"ap2":0.2,"py":0.08,"sr":0.15,"ct":0.1}};
+const X={"in":{"i":"رسالة أو فكرة أو تقرير فشل أو لقطة شاشة","o":"بطاقة متابعة: رقم، صاحب، هدف، تاريخ","g":"لا طلب بلا بطاقة، ولا بطاقة بلا هدف مكتوب","m":"نسبة الطلبات ذات البطاقة المكتملة","u":"كل رسالة تصير بندًا مؤرَّخًا في دفتر التطوير؛ وكل شكوى بالصور تُسجَّل عيّنةً من فئة لا حالةً منفردة"},"r1":{"i":"البطاقة","o":"مسار (صغير / جديد / عالي الخطورة) ومسؤول","g":"التصنيف مكتوب مع سببه","m":"نسبة إعادة التصنيف بعد البدء","u":"الفرز الأول: هل هو حالة أم عيّنة من فئة؟ الشكوى من ردٍّ خاطئ تُعامل «جديدًا» فتُبنى لها مجموعة اختبار، لا ترقيعًا"},"rv":{"i":"بطاقة عالية الخطورة","o":"سجل مخاطر وضوابط تخفيف وموافقة مكتوبة","g":"لكل خطر ضابط ومالك","m":"مخاطر مفتوحة بلا ضابط = صفر","u":"تلامس: النشر على الموقع الحي، وحقن التعليمات عبر محتوى الويب، والمحتوى المحمَّل من المستخدم، وحدود الإطار المعزول"},"rq":{"i":"البطاقة المعتمدة المسار","o":"متطلبات وقصص مستخدم ومعايير قبول قابلة للقياس","g":"كل متطلب له اختبار يمكن تنفيذه","m":"نسبة المتطلبات التي لها معيار قياس","u":"كل مواصفة تُذكر تصير اختبارًا آليًا في اليوم نفسه؛ والواجهات تُرى بلقطة قبل النشر"},"rs":{"i":"المتطلبات","o":"جدول مقارنة للحلول القديمة والوسيطة والحديثة، وفجوات وفرص","g":"كل ادعاء له مصدر، وكل فئة زمنية ممثَّلة","m":"نسبة الادعاءات الموثَّقة بمصدر","u":"تُقرأ المصادر الحية قبل الحكم، وما لم يُتحقق منه يُوسَم «ادعاء المصدر» (كما في أرقام النماذج العربية)"},"an":{"i":"جدول البحث","o":"قرار معماري مسجَّل: الخيار والبدائل والأسباب","g":"المعايير الموزونة معلنة قبل المقارنة لا بعدها","m":"قرارات لها سجل / مجموع القرارات","u":"يُسجَّل القرار في دفتر التطوير أو سجل النواقص بتاريخه حتى لا يُعاد الجدل فيه"},"ds":{"i":"القرار والمتطلبات","o":"وثيقة معمارية: مكوّنات وحدودها وواجهاتها وبياناتها وأمانها","g":"كل متطلب غير وظيفي له جواب معماري","m":"متطلبات بلا جواب معماري = صفر","u":"فصل ن عن ض، عقد الخدمات، الإطار المعزول بلا وصول للصفحة الأم، لا اقتباس من خارج"},"pl":{"i":"الوثيقة المعمارية","o":"هيكل مهام ومعالم وسجل مخاطر وخط إنتاج","g":"لكل مهمة مخرج يمكن تفتيشه ومعيار قبول","m":"نسبة المهام ذات المخرج المفحوص","u":"قائمة المهام تُنشأ هنا وتُحدَّث عند كل بوابة؛ فيرى من عاد ما أُنجز وما بقي"},"be":{"i":"الخطة","o":"وحدات خلفية مدمجة بعد المراجعة","g":"اجتياز المراجعة قبل الدمج","m":"نسبة الدمج بعد مراجعة","u":"مكتبة ضاد القياسية والمحركات: بعد كل تعديل تُضمَّن الوحدات ويُعاد بناء البايتكود إلى نقطة ثابتة"},"fe":{"i":"الخطة وتصميم الواجهة","o":"مكوّنات واجهة بحالات التحميل والخطأ والفراغ","g":"اجتياز المراجعة وإمكانية الوصول","m":"حالات الواجهة المغطاة / المطلوبة","u":"لا نص شرحي في الواجهة (الشرح للدليل)، وأي صفحة جديدة تُرى لقطتها قبل النشر"},"ig":{"i":"الفرعان المدمجان","o":"بناء واحد قابل للتشغيل","g":"لا يمضي حتى يصل الفرعان معًا","m":"زمن البناء ونسبة نجاحه","u":"بناء الموقع وتوليد الصفحات، وبناء البايتكود إلى نقطة ثابتة، ثم إطلاق الاختبارات"},"tu":{"i":"البناء","o":"تقرير وحدات وتغطية","g":"صفر إخفاق، والتغطية فوق العتبة المسجَّلة","m":"تغطية الوحدات ونسبة النجاح","u":"اختبارات المكتبة والمحركات (ملفات tests الأحادية)"},"ti":{"i":"البناء ونتيجة الوحدات","o":"تقرير تكامل وعقود مطابقة","g":"كل عقد بين مكوّنين مختبَر","m":"نسبة العقود المختبرة","u":"المنسّق مع الجلسة مع الخدمات مع المشروع: من الطلب إلى النتيجة عبر الأجزاء كلها"},"te":{"i":"بناء كامل في بيئة تشبه الإنتاج","o":"نتائج المسارات الحرجة بصور وسجلات","g":"كل مسار حرج ينجح بلا تدخل","m":"نسبة نجاح المسارات الحرجة","u":"متصفح حقيقي: بطاقة التطبيق تُفتح في الإطار المعزول، مع لقطات تُرى"},"ts":{"i":"البناء والتبعيات","o":"تقرير ثغرات وأسرار","g":"لا ثغرة عالية الأثر مفتوحة","m":"ثغرات مفتوحة حسب الخطورة","u":"حقن التعليمات عبر محتوى الويب، وحدود الإطار المعزول، وعدم تسريب أسرار إلى المستودع"},"pf":{"i":"البناء وحمل الذروة المتوقع","o":"قياسات استجابة مقابل الأهداف","g":"الاستجابة ضمن الهدف المسجَّل","m":"زمن الاستجابة عند الذروة","u":"سرعة المحرك والتدريب وتحميل الأوزان (مقيسة في جهاز مماثل لا أضعف)"},"vf":{"i":"نتائج كل الاختبارات","o":"قرار قبول أو رفض مع الأسباب","g":"العتبات مسجَّلة قبل التشغيل، والإخفاق يُعلَن","m":"نسبة الإصدارات المقبولة من أول مرور","u":"قاعدة التسجيل المسبق: إن فاتت العتبة بعنصر واحد يُعلَن ذلك كما حصل في تجربة المصنّف"},"db":{"i":"أي فشل في الخط","o":"إصلاح بسببه الجذري واختبار انحدار","g":"الفشل يُعاد إنتاجه ثم يختفي، ويبقى اختبار يمنع رجوعه","m":"زمن الإصلاح ومعدل تكرار نفس الفشل","u":"عند أي شكوى: تُبنى مجموعة متنوعة تمثّل الفئة وتُقاس، ثم يُعالج السبب الجذري"},"ua":{"i":"نسخة معاينة ومعايير القبول المكتوبة","o":"قرار قبول موقَّع","g":"تحقُّق كل معيار مكتوب في المتطلبات","m":"نسبة القبول من أول عرض","u":"يُعرض الرابط المعاين ويُقبل أو تُسجَّل ملاحظاته؛ ويجوز تأجيلها إلى لحظة الاستقرار"},"dp":{"i":"إصدار مقبول","o":"إصدار حي مفحوص الصحة مع نقطة رجوع","g":"الصحة سليمة بعد النشر، ونقطة الرجوع محفوظة","m":"معدل فشل التغيير وزمن الاستعادة","u":"بروتوكول النشر الآمن: معاينة ثم فحص ثم ربط الاسم، ويُحفظ آخر نشر سليم"},"mo":{"i":"الإصدار الحي","o":"سجلات ومقاييس وتنبيهات على الأهداف","g":"تنبيهات قليلة ودقيقة تُعالَج","m":"زمن اكتشاف العطل","u":"أخطاء التشغيل وفحص keepalive؛ ولا يُدّعى سلوك حي لم يُتحقق منه"},"mt":{"i":"بلاغ أو حادثة","o":"تحديث يمر بالخط نفسه ونسخة احتياطية مختبرة الاستعادة","g":"لا إصلاح عاجل يتجاوز الخط","m":"زمن المعالجة ومعدل الإصلاحات العاجلة","u":"الإصلاح العاجل يدخل من الاستقبال أو الإصلاح لا من باب جانبي"},"qa":{"i":"بيانات الخط والإنتاج","o":"لوحة مؤشرات","g":"كل مؤشر مرتبط بقرار يتغير بسببه","m":"مؤشرات DORA الأربعة وجودة الشيفرة","u":"تحسب من سجل git وسجل النشر؛ وعدد الملفات أو الإصدارات ليس مؤشرًا"},"rt":{"i":"ما جرى في الدورة","o":"إجراءات تحسين محددة وقوالب محدَّثة","g":"لكل درس إجراء له مالك وتاريخ","m":"نسبة الدروس المنفَّذة","u":"دفتر التطوير والذاكرة وقائمة النواقص في آخر كل جلسة بما فيها البنود الكبيرة"},"au":{"i":"طلب دخول","o":"هوية وجلسة وصلاحيات","g":"لا مسار يتخطى فحص الصلاحية"},"ap":{"i":"طلب من الواجهة","o":"استجابة بعقد موثَّق","g":"كل مسار له عقد واختبار"},"sy":{"i":"تغيير محلي","o":"حالة موحَّدة بعد المزامنة","g":"لا فقدان ولا تكرار بعد التعارض"},"sr":{"i":"بناء الإصدار","o":"إصدار معتمد في المتجر","g":"مطابقة اشتراطات المتجر"},"oc":{"i":"صور صفحات","o":"نص مع مواضعه","g":"نسبة خطأ التعرف تحت العتبة"},"ix":{"i":"نصوص مقطَّعة","o":"فهرس لفظي وصرفي ودلالي","g":"الفهرس محدَّث بالنسبة للمصدر"},"rr":{"i":"سؤال","o":"مقاطع مرتبة بالصلة وحكم كفاية","g":"مقاطع كافية أو إعادة استرجاع"},"ct":{"i":"ادعاءات ومقاطع","o":"إجابة موثَّقة الإحالات","g":"كل ادعاء مسنَد بمقطع موجود"},"tr":{"i":"حاجة","o":"أداة مختارة أو استدلال داخلي","g":"الأداة مسموحة للمهمة"},"sb":{"i":"استدعاء أداة","o":"نتيجة معزولة وسجل تدقيق","g":"لا وصول خارج الحيّز"},"ap2":{"i":"إجراء حساس","o":"قرار بشري مسجَّل","g":"لا تنفيذ بلا قرار"},"lp":{"i":"هدف","o":"إنجاز أو توقف بسبب","g":"سقف للتكرار ومعيار توقف"},"tk":{"i":"نص","o":"وحدات عددية","g":"جودة التجزئة على لغتنا مقيسة"},"tn":{"i":"بيانات وأوزان","o":"أوزان محسَّنة","g":"الخسارة تنخفض على بيانات التحقق"},"ev":{"i":"نموذج مدرَّب","o":"مقاييس على بيانات لم يرها","g":"العتبة المسجَّلة محققة"},"py":{"i":"طلب شراء","o":"إيصال مؤكَّد","g":"لا دفع مزدوج"},"iv":{"i":"كمية","o":"حجز وخصم","g":"لا تضارب حجز"},"sh":{"i":"طلب مؤكَّد","o":"تسليم وتتبع","g":"كل طلب له حالة"},"hy":{"i":"سؤال بحثي","o":"فرضية بمقياس واحد وخط أساس","g":"يمكن دحضها"},"pr":{"i":"فرضية","o":"عتبات مختومة بالتاريخ","g":"العتبات قبل التشغيل لا بعده"},"rn":{"i":"عتبات مسجَّلة","o":"نتائج خام قابلة للإعادة","g":"تُعاد النتيجة بالبذرة نفسها"},"dc":{"i":"نتائج خام","o":"سجل نتيجة صادق وقرار","g":"النتيجة السلبية تُسجَّل كالإيجابية"}};
+const AR='٠١٢٣٤٥٦٧٨٩',ad=n=>String(n).replace(/[0-9]/g,d=>AR[d]);
+const GL={stage:'▭',router:'⇄',gate:'▣',loop:'↺',store:'▤',test:'✓',metric:'◔'};
+const TLAB={stage:'محطة',router:'محوّل',loop:'حلقة',gate:'بوابة',test:'اختبار',metric:'قياس',store:'مخزن'};
+const TDESC={
+ stage:'وحدة عمل بمدخلات وعقد مخرجات. لا تُغلق حتى تُفحص المخرجات مقابل العقد.',
+ router:'يقرر الفرع التالي بمعيار معلن، ولا يخلو من فرع افتراضي، ويُسجَّل سبب كل اختيار.',
+ gate:'شرط قبول بعتبات مسجَّلة سلفًا. نتيجتها قبول أو رفض، بلا منطقة وسطى.',
+ loop:'تكرار بسقف ومعيار توقف صريحين. بلا سقف يصير دورانًا بلا نهاية.',
+ test:'فحص آلي يُعاد تشغيله بالنتيجة نفسها، ويوقف الخط عند الإخفاق.',
+ metric:'قياس مرتبط بقرار. له خط أساس ويُعاير دوريًّا.',
+ store:'حفظ لبيانات الخط. يُفحص بسلامته وإمكان استعادته.'};
+const LC=['الاستكشاف','ذكاء المنتج','الهندسة العكسية','التحليل والتوليف','وثيقة المتطلبات','سير العمل وخط الإنتاج','المعمارية والبنية','التنفيذ المرحلي','حلقة الاختبار','القبول والتسليم','الصيانة والتطور'];
+const LCMAP={in:[0],r1:[0],rv:[0],rq:[4],rs:[1,2],an:[3],ds:[6],pl:[5],be:[7],fe:[7],ig:[7],tu:[8],ti:[8],te:[8],ts:[8],pf:[8],vf:[8],db:[8],ua:[9],dp:[9],mo:[10],mt:[10],qa:[10],rt:[10]};
+const RW=190,RH=96,CW=230,ROW=150,HG=80;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function wrap(s,max){const w=s.split(' '),o=[];let l='';w.forEach(x=>{if((l+' '+x).trim().length>max&&l){o.push(l);l=x}else l=(l+' '+x).trim()});if(l)o.push(l);return o}
+
+/* ---------- النموذج ---------- */
+function model(act){
+  const N={};let E=SRC.E0.map(e=>e.slice());
+  SRC.B.forEach(b=>N[b[0]]={id:b[0],ar:b[1],en:b[2],t:b[3],h:b[4],c:b[5],r:b[6],d:b[7],s:b[8].split('|'),f:b[9],k:b[10],ref:b[11]});
+  let rk=0;const packOf={};
+  SRC.PK.forEach(p=>{if(!act.has(p.id))return;(p.cut||[]).forEach(c=>{E=E.filter(e=>!(e[0]==c[0]&&e[1]==c[1]))});
+    p.N.forEach((a,j)=>{N[a[0]]={id:a[0],ar:a[1],en:a[2],t:a[3],h:4,c:j,r:rk,d:a[4],s:a[5].split('|'),f:a[6],k:0,ref:'',pk:p};packOf[a[0]]=p});
+    p.E.forEach(e=>E.push(e.slice()));rk++});
+  const rows=[2,2,2,2,Math.max(rk,1)],tops=[];let y=60;
+  for(let h=0;h<5;h++){tops[h]=y;y+=(rows[h]-1)*ROW+RH+16+HG+36}
+  const HL=[0,1,2,3,4].filter(h=>h<4||rk).map(h=>({h,nm:SRC.HN[h],y0:tops[h]-36,y1:tops[h]+(rows[h]-1)*ROW+RH+16}));
+  Object.values(N).forEach(n=>{n.wx=-n.c*CW;n.wy=tops[n.h]+n.r*ROW+RH/2});
+  route(N,E);
+  return{N,E,HL,rk};
+}
+function route(N,E){let fl=0,bl=0;const L=-6*CW-RW/2-46,R=RW/2+46;
+ const blocked=(a,b)=>Object.values(N).some(n=>n!==a&&n!==b&&Math.abs(n.wx-a.wx)<5&&n.wy>Math.min(a.wy,b.wy)+5&&n.wy<Math.max(a.wy,b.wy)-5);
+ E.forEach((e,i)=>{const a=N[e[0]],b=N[e[1]],o=((i*7)%9-4)*3,bk=e[3]=='b',d=b.wy>a.wy?1:-1;let p;
+  if(Math.abs(a.wy-b.wy)<5){
+   if(Math.abs(a.wx-b.wx)<=CW*1.01){const h=b.wx<a.wx?-1:1,v=bk?18:0;p=[[a.wx+h*RW/2,a.wy+v],[b.wx-h*RW/2,b.wy+v]]}
+   else{const ya=a.wy+ROW/2+o;p=[[a.wx,a.wy+RH/2],[a.wx,ya],[b.wx,ya],[b.wx,b.wy+RH/2]]}}
+  else{const ya=a.wy+d*ROW/2+o,yb=b.wy-d*ROW/2+o,s=[a.wx,a.wy+d*RH/2],t=[b.wx,b.wy-d*RH/2];
+   if(Math.abs(a.wx-b.wx)<5&&!blocked(a,b))p=[s,t];
+   else if(Math.abs(a.wy-b.wy)<=ROW*1.01)p=[s,[a.wx,ya],[b.wx,ya],t];
+   else{const lx=bk?R+14*bl++:L-14*fl++;p=[s,[a.wx,ya],[lx,ya],[lx,yb],[b.wx,yb],t]}}
+  e.p=p})}
+
+/* ---------- رسم الخريطة ---------- */
+let ACT=new Set(),M=null,SEL='in',SCALE=.8,VB=null;
+function drawMap(){
+  M=model(ACT);const{N,E,HL}=M;
+  let x0=1e9,x1=-1e9,y1=0;
+  Object.values(N).forEach(n=>{x0=Math.min(x0,n.wx-RW/2);x1=Math.max(x1,n.wx+RW/2);y1=Math.max(y1,n.wy+RH/2)});
+  E.forEach(e=>e.p.forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0])}));
+  x0-=40;x1+=40;const H=HL[HL.length-1].y1+30;VB={x:x0,w:x1-x0,h:H};
+  let s=`<svg id="msvg" viewBox="${x0} 0 ${x1-x0} ${H}" width="${(x1-x0)*SCALE}" height="${H*SCALE}" role="img" aria-label="الخريطة العامة لخط الإنتاج"><defs>
+  <marker id="mf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="mk-f" d="M0 0L10 5L0 10z"/></marker>
+  <marker id="mb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="mk-b" d="M0 0L10 5L0 10z"/></marker>
+  <marker id="ms" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="mk-s" d="M0 0L10 5L0 10z"/></marker></defs>`;
+  HL.forEach(b=>{s+=`<rect class="band" x="${x0+8}" y="${b.y0}" width="${x1-x0-16}" height="${b.y1-b.y0+10}" rx="14"/><text class="bandt" x="${x1-24}" y="${b.y0+22}" text-anchor="start" direction="rtl">${esc(b.nm)}</text>`});
+  E.forEach((e,i)=>{const cl=e[3]=='b'?'b':e[3]=='s'?'s':'f',mk=cl=='b'?'mb':cl=='s'?'ms':'mf';
+    s+=`<g class="eg ${cl}" data-a="${e[0]}" data-b="${e[1]}"><path d="M${e.p.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' L')}" marker-end="url(#${mk})"/></g>`});
+  const placed=[];
+  E.forEach(e=>{if(!e[2])return;let bi=0,bl=0;for(let k=1;k<e.p.length;k++){const l=Math.hypot(e.p[k][0]-e.p[k-1][0],e.p[k][1]-e.p[k-1][1]);if(l>bl){bl=l;bi=k}}
+    const a=e.p[bi-1],b=e.p[bi];const lx=(a[0]+b[0])/2,hw=e[2].length*3.6+6;let ly=(a[1]+b[1])/2-5,tries=0;
+    while(tries++<14&&placed.some(r=>Math.abs(r[0]-lx)<r[2]+hw&&Math.abs(r[1]-ly)<15))ly+=16;
+    placed.push([lx,ly,hw]);
+    s+=`<text class="el" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" direction="rtl">${esc(e[2])}</text>`});
+  Object.values(N).forEach(n=>{const ln=wrap(n.ar,19),y=n.wy;const pc=n.pk?`<circle cx="${n.wx-RW/2+14}" cy="${y-RH/2+14}" r="5" fill="${n.pk.c}"/>`:'';
+    s+=`<g class="nd t-${n.t}${n.id==SEL?' sel':''}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(n.ar)}">
+    <rect class="bx" x="${n.wx-RW/2}" y="${y-RH/2}" width="${RW}" height="${RH}" rx="11"/>${pc}
+    <text class="ty" x="${n.wx+RW/2-12}" y="${y-RH/2+18}" text-anchor="start" direction="rtl">${GL[n.t]} ${TLAB[n.t]}</text>
+    ${ln.map((t,i)=>`<text class="tt" x="${n.wx}" y="${y+(ln.length==1?6:-2)+i*19}" text-anchor="middle" direction="rtl">${esc(t)}</text>`).join('')}
+    <text class="en" x="${n.wx}" y="${y+RH/2-10}" text-anchor="middle" direction="ltr">${esc(n.en)}</text></g>`});
+  s+='</svg>';$('#mapsvg').innerHTML=s;
+  const cnt={};Object.values(N).forEach(n=>cnt[n.t]=(cnt[n.t]||0)+1);
+  $('#stat').textContent=ad(Object.keys(N).length)+' محطة · '+ad(E.length)+' ممرًّا';
+  highlight(SEL);
+}
+function highlight(id){
+  document.querySelectorAll('.nd').forEach(g=>g.classList.toggle('sel',g.dataset.id==id));
+  document.querySelectorAll('.eg').forEach(g=>{const on=g.dataset.a==id||g.dataset.b==id;g.classList.toggle('hot',on);g.classList.toggle('dim',!on)});
+}
+function select(id,scrollTo){
+  if(!M.N[id])return;SEL=id;highlight(id);panel(id);
+  if(scrollTo){const n=M.N[id],sc=$('#scroll');sc.scrollTo({left:Math.max(0,(n.wx-VB.x)*SCALE-sc.clientWidth/2),top:Math.max(0,n.wy*SCALE-sc.clientHeight/2),behavior:'smooth'})}
+}
+
+/* ---------- المخطط الداخلي لكل محطة ---------- */
+function inner(n,Mo){
+  const{N,E}=Mo;const W=420,cx=215,bw=250,bh=46,gp=30,dh=76,dw=272;
+  const out=E.filter(e=>e[0]==n.id),inn=E.filter(e=>e[1]==n.id);
+  const fw=out.filter(e=>!e[3]),bk=out.filter(e=>e[3]=='b'),sd=out.filter(e=>e[3]=='s'),pre=inn.filter(e=>!e[3]);
+  const nm=(l,i)=>[...new Set(l.map(e=>N[e[i]]?N[e[i]].ar:''))].filter(Boolean).join(' / ');
+  const toL=fw.length?nm(fw,1):nm(bk,1);
+  const it=[];it.push({k:'p',t:'من: '+(nm(pre,0)||'بداية الخط')});
+  let fan=null,kd=null;
+  if(n.t=='router'){n.s.forEach((s,i)=>it.push({k:i==2?'d':'b',t:s}));fan=fw}
+  else if(n.t=='gate'){n.s.forEach((s,i)=>it.push({k:i==1?'d':'b',t:s}));it.push({k:'p',t:'إلى: '+toL})}
+  else{kd=n.k||(n.t=='loop'?[n.s.length-1,'شرط التوقف',0]:null);
+    n.s.forEach((s,i)=>{it.push({k:'b',t:s,si:i});if(kd&&kd[0]==i)it.push({k:'d',t:kd[1],ret:kd[2]})});it.push({k:'p',t:'إلى: '+toL})}
+  let y=18;const pos=[];
+  it.forEach(q=>{const h=q.k=='d'?dh:q.k=='p'?34:bh;q.y=y+h/2;q.h=h;y+=h+gp});
+  let fanY=[];if(fan){fan.forEach(e=>{fanY.push(y);y+=54+14});y+=6}
+  const failTxt=(!gateLike(n)&&bk.length&&fw.length)?'عند الفشل ← '+nm(bk,1):null;
+  const gateRej=n.t=='gate'?('رفض'+(bk.length?' ← '+nm(bk,1):'')):null;
+  let xy=null;if(failTxt||gateRej){xy=y;y+=bh+6}
+  let sdY=null;if(sd.length){sdY=y;y+=34}
+  const H=y+8;let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="المخطط الداخلي لمحطة ${esc(n.ar)}" style="--t:var(--c-${n.t})"><defs>
+  <marker id="ia${n.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--e-f)"/></marker>
+  <marker id="ir${n.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--e-b)"/></marker></defs>`;
+  const ar=(pts,red)=>`<path class="ia${red?' r':''}" d="M${pts.map(p=>p.join(' ')).join(' L')}" marker-end="url(#${red?'ir':'ia'}${n.id})"/>`;
+  const txt=(t,x,yy,max,cls)=>{const ls=wrap(t,max);const y0=yy-(ls.length-1)*8;return ls.map((l,i)=>`<text class="${cls||'it'}" x="${x}" y="${y0+i*16+4}" text-anchor="middle" direction="rtl">${esc(l)}</text>`).join('')};
+  it.forEach((q,i)=>{
+    if(i>0){const a=it[i-1];const yA=a.y+a.h/2,yB=q.y-q.h/2;s+=ar([[cx,yA],[cx,yB]]);if(a.k=='d')s+=`<text class="il" x="${cx+26}" y="${(yA+yB)/2+4}" text-anchor="middle" direction="rtl">نعم</text>`}
+    if(q.k=='d')s+=`<polygon class="ib d" points="${cx},${q.y-dh/2} ${cx+dw/2},${q.y} ${cx},${q.y+dh/2} ${cx-dw/2},${q.y}"/>`+txt(q.t,cx,q.y,22);
+    else if(q.k=='p')s+=`<rect class="ib p" x="${cx-bw/2+30}" y="${q.y-17}" width="${bw-60}" height="34" rx="17"/>`+txt(q.t,cx,q.y,30,'it m');
+    else s+=`<rect class="ib" x="${cx-bw/2}" y="${q.y-bh/2}" width="${bw}" height="${bh}" rx="9"/>`+txt(q.t,cx,q.y,32);
+  });
+  const last=it[it.length-1];
+  if(fan){const d=it[it.length-1];const yD=d.y,xs=34;
+    s+=`<path class="ia" d="M${cx-dw/2} ${yD} L${xs} ${yD} L${xs} ${fanY[fanY.length-1]+27}"/>`;
+    fan.forEach((e,i)=>{const yy=fanY[i]+27;s+=`<path class="ia" d="M${xs} ${yy} L${cx-bw/2} ${yy}" marker-end="url(#ia${n.id})"/><rect class="ib fan" x="${cx-bw/2}" y="${fanY[i]}" width="${bw}" height="54" rx="9"/>
+      <text class="it m" x="${cx}" y="${fanY[i]+20}" text-anchor="middle" direction="rtl">${esc(e[2]||'الحالة الافتراضية')}</text><text class="it" x="${cx}" y="${fanY[i]+40}" text-anchor="middle" direction="rtl" font-weight="700">${esc(N[e[1]].ar)}</text>`});
+    s+=`<text class="il" x="${xs+18}" y="${yD-8}" text-anchor="middle" direction="rtl">الفرع</text>`}
+  if(kd){const di=it.findIndex(q=>q.k=='d'),ti=it.findIndex(q=>q.si==kd[2]);
+    if(di>=0&&ti>=0){const d=it[di],t=it[ti],xr=398;s+=ar([[cx+dw/2,d.y],[xr,d.y],[xr,t.y],[cx+bw/2,t.y]],true)+`<text class="il" x="${cx+dw/2+14}" y="${d.y-8}" text-anchor="middle" direction="rtl" fill="var(--e-b)">لا</text>`}}
+  if(n.t=='gate'){const d=it.find(q=>q.k=='d');if(d&&xy!=null){const xl=34,yb=xy+bh/2;
+    s+=ar([[cx-dw/2,d.y],[xl,d.y],[xl,yb],[cx-bw/2,yb]],true)+`<text class="il" x="${cx-dw/2-14}" y="${d.y-8}" text-anchor="middle" direction="rtl" fill="var(--e-b)">لا</text>`;
+    s+=`<rect class="ib x" x="${cx-bw/2}" y="${xy}" width="${bw}" height="${bh}" rx="9"/>`+txt(gateRej,cx,xy+bh/2,32)}}
+  else if(failTxt){const st=it.filter(q=>q.k=='b'),ls=st[st.length-1],xl=34,yb=xy+bh/2;
+    s+=ar([[cx-bw/2,ls.y],[xl,ls.y],[xl,yb],[cx-bw/2,yb]],true);
+    s+=`<rect class="ib x" x="${cx-bw/2}" y="${xy}" width="${bw}" height="${bh}" rx="9"/>`+txt(failTxt,cx,xy+bh/2,32)}
+  if(sdY!=null)s+=`<rect class="ib p" x="${cx-bw/2+10}" y="${sdY}" width="${bw-20}" height="28" rx="14" style="stroke:var(--e-s)"/>`+txt('يغذّي: '+nm(sd,1),cx,sdY+14,34,'it m');
+  return s+'</svg>';
+}
+function gateLike(n){return n.t=='gate'}
+
+/* ---------- لوحة التفاصيل ---------- */
+function panel(id){
+  const n=M.N[id],x=X[id]||{},E=M.E;
+  const out=E.filter(e=>e[0]==id),inn=E.filter(e=>e[1]==id);
+  const chip=(sid)=>M.N[sid]?`<button class="chip" data-go="${sid}" style="--pc:var(--c-${M.N[sid].t})"><i></i>${esc(M.N[sid].ar)}</button>`:'';
+  const nxt=[...new Set(out.filter(e=>!e[3]).map(e=>e[1]))],bkw=[...new Set(out.filter(e=>e[3]=='b').map(e=>e[1]))],prv=[...new Set(inn.filter(e=>!e[3]).map(e=>e[0]))];
+  const lc=(LCMAP[id]||[]).map(i=>ad(i+1)+' '+LC[i]).join('، ');
+  const pf=SRC.PF[id];
+  const row=(l,v)=>v?`<div class="fact"><b>${l}</b><div>${v}</div></div>`:'';
+  $('#panel').innerHTML=`<div style="--t:var(--c-${n.t})"><div class="pillrow"><span class="pill">${GL[n.t]} ${TLAB[n.t]}</span>${n.pk?`<span class="pill" style="--t:${n.pk.c}">${esc(n.pk.n)}</span>`:`<span class="pill" style="--t:var(--mute)">${esc(SRC.HN[n.h])}</span>`}${lc?`<span class="pill" style="--t:var(--mute)">دورة الحياة: ${lc}</span>`:''}</div>
+  <h3 style="font-size:20px">${esc(n.ar)}</h3><div class="mu" style="direction:ltr;text-align:right;font-size:13px">${esc(n.en)}</div>
+  <p style="margin-top:8px">${esc(n.d)}</p>
+  <div class="diagram">${inner(n,M)}</div>
+  <div class="facts">
+   ${row('المدخلات',x.i)}${row('المخرجات',x.o)}
+   ${row('الخطوات',n.s.map((t,i)=>ad(i+1)+'. '+esc(t)).join('<br>'))}
+   ${row('معيار القبول',x.g)}${row('المقياس',x.m)}
+   ${row('أبرز ما يُفسدها',esc(n.f))}
+   ${row('كيف تُختبر',esc(SRC.TT[n.t]))}
+   ${pf!=null?row('إعادة العمل المفترضة في محاكاة المخطط',ad(Math.round(pf*100))+'٪'):''}
+   ${row('المرجع المهني',esc(n.ref||''))}
+   ${row('في عملنا',x.u)}
+   ${row('تأتي من',prv.map(chip).join(''))}${row('تمضي إلى',nxt.map(chip).join(''))}${row('تعود إلى عند الفشل',bkw.map(chip).join(''))}
+  </div></div>`;
+  $('#panel').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>select(b.dataset.go,true));
+}
+
+/* ---------- الواجهة ---------- */
+function drawPacks(){
+  $('#packs').innerHTML=SRC.PK.map(p=>`<button class="chip" style="--pc:${p.c}" data-p="${p.id}" aria-pressed="${ACT.has(p.id)}"><i></i>${esc(p.n)}</button>`).join('');
+  $('#packs').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const id=b.dataset.p;ACT.has(id)?ACT.delete(id):ACT.add(id);
+    // حزمة واحدة فقط من المقطوعات المتعارضة لا يلزم؛ نعيد الرسم
+    if(!M.N[SEL]){SEL='in'}drawMap();panel(SEL);drawPacks()});
+}
+function legend(){
+  const t=['stage','router','gate','loop','test','metric','store'];
+  $('#legend').innerHTML=t.map(k=>`<span style="--t:var(--c-${k})"><b style="color:var(--t)">${GL[k]}</b> ${TLAB[k]}</span>`).join('')+'<span><i class="sw"></i> مسار أمامي</span><span><i class="sw b"></i> عودة عند الفشل</span><span><i class="sw s"></i> تغذية قياس</span>';
+}
+function typeCards(){
+  const all=new Set(SRC.PK.map(p=>p.id)),Mo=model(all);
+  const rep={stage:'rq',router:'r1',gate:'vf',loop:'db',test:'tu',metric:'mo',store:'sy'};
+  $('#typecards').innerHTML=['stage','router','gate','loop','test','metric','store'].map(k=>{const n=Mo.N[rep[k]];
+    return `<div class="card" style="--t:var(--c-${k})"><div class="pillrow"><span class="pill">${GL[k]} ${TLAB[k]}</span></div><p>${TDESC[k]}</p>
+    <div class="fact"><b>كيف يُختبر</b><div>${esc(SRC.TT[k])}</div></div><div class="diagram">${inner(n,Mo)}</div><div class="mu" style="font-size:13px">مثال: ${esc(n.ar)}</div></div>`}).join('');
+}
+function life(){
+  const rows=LC.map((l,i)=>{const ids=Object.keys(LCMAP).filter(k=>LCMAP[k].includes(i));
+    const gates=ids.filter(k=>{const b=SRC.B.find(q=>q[0]==k);return b&&(b[3]=='gate'||b[10])}).map(k=>SRC.B.find(q=>q[0]==k)[1]);
+    return `<tr><td><b>${ad(i+1)}</b></td><td>${esc(l)}</td><td>${ids.map(k=>`<a href="#map" data-go="${k}" style="color:var(--accent);text-decoration:none">${esc(SRC.B.find(q=>q[0]==k)[1])}</a>`).join('، ')}</td><td>${esc(gates.length?gates.join('، '):'مراجعة المخرجات مقابل العقد')}</td></tr>`}).join('');
+  $('#lifetbl').innerHTML='<thead><tr><th></th><th>مرحلة دورة الحياة</th><th>المحطات المقابلة</th><th>بوابتها</th></tr></thead><tbody>'+rows+'</tbody>';
+  $('#lifetbl').querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{select(a.dataset.go,true)});
+}
+function readGrid(){
+  const cnt={};SRC.B.forEach(b=>cnt[b[3]]=(cnt[b[3]]||0)+1);
+  const hc=[0,1,2,3].map(h=>SRC.B.filter(b=>b[4]==h).length);
+  const pn=SRC.PK.filter(p=>!p.own).reduce((a,p)=>a+p.N.length,0);
+  const cards=[
+   ['البنية',`${ad(SRC.B.length)} محطة أساسية في أربعة آفاق: ${SRC.HN.slice(0,4).map((h,i)=>h+' ('+ad(hc[i])+')').join('، ')}. ${ad(SRC.E0.length)} ممرًّا أساسيًّا. ست حزم اختيارية تضيف ${ad(pn)} محطة وتقطع ممرات وتبدّلها.`],
+   ['الأنواع',['stage','test','metric','gate','router','loop'].filter(k=>cnt[k]).map(k=>TLAB[k]+' '+ad(cnt[k])).join('، ')+'. المخازن لا تظهر إلا داخل الحزم.'],
+   ['ما يحسنه',`لكل محطة نمط فشل معلن ومعيار اختبار بحسب نوعها. التفرع بالحجم والخطورة. الدمج ينتظر الفرعين. كل إخفاق في الاختبار يعود إلى حلقة الإصلاح ثم يُعاد الخط من أوله.`],
+   ['حدوده',`نسب إعادة العمل ومدد المحطات في محاكاة المخطط افتراضات صاحبه، فتُعرض كما هي ولا تُستعمل مقياسًا حتى تتجمع بياناتنا. والمخطط مبني على منتج برمجي، لا على بحث.`],
+   ['ما أُضيف',`حزمة «تجربة بحثية»: فرضية، تسجيل العتبات قبل التشغيل، تشغيل قابل للإعادة، قرار يسجّل النتيجة السلبية كالإيجابية. ومخازن الخطة الثلاثة، وبطاقة البدء، وحقول المدخلات والمخرجات ومعيار القبول والمقياس لكل محطة.`],
+   ['ربطه بعملنا',`كل مرحلة من دورة الحياة ذات الإحدى عشرة تقابل محطات، وبوابات الاختبار هي بوابات الحلقة. وقاعدة «الشكوى عيّنة من فئة» تعمل في الفرز وحلقة الإصلاح.`]];
+  $('#readgrid').innerHTML=cards.map(c=>`<div class="card"><h3>${c[0]}</h3><p class="mu">${c[1]}</p></div>`).join('');
+}
+$('#zi').onclick=()=>{SCALE=Math.min(1.6,SCALE+.15);drawMap()};
+$('#zo').onclick=()=>{SCALE=Math.max(.35,SCALE-.15);drawMap()};
+$('#zf').onclick=()=>{SCALE=Math.max(.3,Math.min(1.2,($('#scroll').clientWidth-4)/VB.w));drawMap()};
+$('#mapsvg').addEventListener('click',e=>{const g=e.target.closest('.nd');if(g)select(g.dataset.id)});
+$('#mapsvg').addEventListener('keydown',e=>{if(e.key=='Enter'||e.key==' '){const g=e.target.closest('.nd');if(g){e.preventDefault();select(g.dataset.id)}}});
+$('#copycard').onclick=()=>{const t=$('#cardtxt').textContent,ok=()=>{$('#copied').textContent='نُسخت';setTimeout(()=>$('#copied').textContent='',1800)};
+  const fb=()=>{const r=document.createRange();r.selectNodeContents($('#cardtxt'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('#copied').textContent='حُدِّد النص للنسخ'};
+  try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}};
+$('#mapsub').textContent='اضغط أي محطة لترى مخططها الداخلي وتفاصيلها. الحزم تضيف محطاتها وتبدّل الممرات.';
+legend();drawPacks();SCALE=.8;drawMap();panel('in');typeCards();life();readGrid();
+</script>
