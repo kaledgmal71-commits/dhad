@@ -327,21 +327,19 @@ function formR(rng,spec){
 function resultPhrase(rng,spec){
  switch(spec.عائلة){case 'قائمة':case 'مدى':return pipeR(rng,spec);case 'محمول':return predR(rng,spec);case 'أرقام':return digitR(rng,spec);case 'نص':return strR(rng,spec);default:return formR(rng,spec)}
 }
-function describe(rng,spec){
- const R=resultPhrase(rng,spec);const sig=sigOf(spec);
+function describe(rng,spec){ // يعيد {كامل: الوصف كما يكتبه مستخدم، متن: بعد نزع التوقيع (ما يراه المصنِّف)}
+ const R=resultPhrase(rng,spec);const SIG='§';
  const verb=P(rng,['تعيد','ترجع','تُعيد','تُرجع','تحسب وتعيد']);
  const fmts=[
-  `اكتب دالة ${sig} ${verb} ${R}`,
-  `اكتب دالة ${sig} ${verb} ${R}`,
-  `أريد دالة ${sig} ${verb} ${R}`,
-  `المطلوب دالة ${sig} ${verb} ${R}`,
-  `عرّف دالة ${sig} ${verb} ${R}`,
-  `أنشئ دالة ${sig} ${verb} ${R}`,
-  `ابنِ دالة ${sig} ناتجها ${R}`,
-  `دالة ${sig} ${verb} ${R}`,
-  `${sig}: دالة ${verb} ${R}`,
-  `اكتب دالة اسمها ${spec.اسم} تأخذ (${spec.معاملات.join('، ')}) وتعيد ${R}`
+  `اكتب دالة ${SIG} ${verb} ${R}`,`اكتب دالة ${SIG} ${verb} ${R}`,`اكتب دالة ${SIG} ${verb} ${R}`,
+  `أريد دالة ${SIG} ${verb} ${R}`,`المطلوب دالة ${SIG} ${verb} ${R}`,`عرّف دالة ${SIG} ${verb} ${R}`,
+  `أنشئ دالة ${SIG} ${verb} ${R}`,`ابنِ دالة ${SIG} ناتجها ${R}`,`دالة ${SIG} ${verb} ${R}`,`${SIG}: دالة ${verb} ${R}`,
+  `اكتب دالة اسمها ${spec.اسم} تأخذ (${spec.معاملات.join('، ')}) وتعيد ${R}`,
+  `أصلح الدالة: يجب أن ${P(rng,['تعيد','ترجع'])} ${R}`,`أصلح الدالة التالية، المطلوب منها أن ${P(rng,['تعيد','ترجع'])} ${R}`,`الدالة لا تعمل كما ينبغي: يجب أن ${verb} ${R}`
  ];
- return P(rng,fmts);
+ const f=P(rng,fmts);const sig=sigOf(spec);
+ const full=f.replace(SIG,sig);
+ const body=f.replace(SIG,'').replace(/اسمها \S+ تأخذ \([^)]*\) /,'');
+ return {كامل:full,متن:body.replace(/\s+/g,' ').trim(),توقيع:f.includes(SIG)||f.includes('اسمها')};
 }
 module.exports={mkRng,sample,oracle,inputs,describe,FILTERS,MAPS,REDUCES,PRED,DIGITS,STRS,FORMS,AR,shuffle,P};
