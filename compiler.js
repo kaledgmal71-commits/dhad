@@ -598,8 +598,10 @@ class Compiler {
   expr_ChainBase() { /* القيمة موجودة على المكدّس أصلًا */ }
 
   expr_Call(node) {
+    const ln = FunctionChunk.curLine; // وسائط متعددة الأسطر (دالة داخل الاستدعاء) تغيّر السطر الحالي؛ يُنسب الاستدعاء إلى سطر بدايته
     this.compileExpr(node.callee);
     node.args.forEach((a) => this.compileExpr(a));
+    FunctionChunk.curLine = ln;
     this.chunk.emit("CALL", node.args.length);
   }
 }

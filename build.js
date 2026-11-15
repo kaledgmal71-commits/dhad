@@ -5,6 +5,7 @@ function build(shellFile, replacements, outFile) {
   let content = fs.readFileSync(shellFile, "utf8");
   for (const [key, file] of Object.entries(replacements)) {
     const piece = fs.readFileSync(file, "utf8");
+    if (/<\/script/i.test(piece)) throw new Error(file + ": يحوي </script حرفيًّا فيكسر الصفحة التي تضمّنه — اكتبه <\\/script داخل النص");
     content = content.split(key).join(piece);
   }
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
@@ -26,6 +27,7 @@ build(
     __CLOUD__: "cloud.js",
     __TEMPLATES__: "templates.js",
     __UI__: "editor_ui.js",
+    __LAB__: "lab_mode.js",
   },
   "dist/index.html"
 );

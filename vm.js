@@ -9357,7 +9357,7 @@ const STDLIB_SOURCES = {
         إذا (يحوي(م["ملفات"]، مرجع)) {
             متغير محتوى = م["ملفات"][مرجع]
             إذا (ن.ينتهي_ب(مرجع، ".js")) {
-                صفحة = استبدل(صفحة، "<script src=" + حرف(٣٤) + مرجع + حرف(٣٤) + "></script>"، "<script>" + محتوى + "</script>")
+                صفحة = استبدل(صفحة، "<script src=" + حرف(٣٤) + مرجع + حرف(٣٤) + "><\/script>"، "<script>" + محتوى + "<\/script>")
             }
             إذا (ن.ينتهي_ب(مرجع، ".css")) {
                 صفحة = استبدل(صفحة، "<link rel=" + حرف(٣٤) + "stylesheet" + حرف(٣٤) + " href=" + حرف(٣٤) + مرجع + حرف(٣٤) + ">"، "<style>" + محتوى + "</style>")
@@ -11498,6 +11498,61 @@ const STDLIB_SOURCES = {
         "يتعرف": يتعرف، "حاول": حاول، "لازم": لازم، "بعد": بعد، "صغ": صغ، "ملف": ملف
     })
 }
+`,
+  "ضاد/واجهة": `# ضاد/واجهة — بناة واجهة مقروءة فوق عناصر الصفحة الحية. كل عنصر يُنشأ هنا يحمل سطر استدعائه في شيفرتك،
+# فيربط المحرر بين ما يظهر في الواجهة وما كُتب في الشيفرة.
+
+دالة _نمط(ع، خريطة) {
+    من_أجل (ز في أزواج(خريطة)) { عيّن_نمط(ع، ز[٠]، ز[١]) }
+    ارجع ع
+}
+
+دالة _عنصر(وسم، نمط، نص_) {
+    متغير ع = عنصر_جديد(وسم)
+    _نمط(ع، نمط)
+    إذا (نص_ != لاشيء) { عيّن_نص(ع، نص_) }
+    ارجع ع
+}
+
+# صفحة: حاوية رئيسية بعنوان، تُلحق بجذر الصفحة
+صدّر دالة صفحة(عنوان_) {
+    متغير حاوية = _عنصر("section"، {"padding": "18px"، "font-family": "system-ui, sans-serif"، "direction": "rtl"، "max-width": "460px"})
+    أضف_ابن(حاوية، _عنصر("h2"، {"margin": "0 0 14px"، "font-size": "22px"}، عنوان_))
+    أضف_ابن(الجذر()، حاوية)
+    ارجع حاوية
+}
+
+# فقرة نصية
+صدّر دالة نص(أب، محتوى) {
+    متغير ع = _عنصر("p"، {"margin": "0 0 12px"، "color": "#555"}، محتوى)
+    أضف_ابن(أب، ع)
+    ارجع ع
+}
+
+# حقل إدخال بتسمية وتلميح؛ يعيد عنصر الإدخال نفسه
+صدّر دالة حقل(أب، تسمية، تلميح) {
+    متغير ملف = _عنصر("label"، {"display": "block"، "margin-bottom": "12px"، "font-size": "14px"}، لاشيء)
+    أضف_ابن(ملف، _عنصر("span"، {"display": "block"، "margin-bottom": "5px"}، تسمية))
+    متغير مدخل = _عنصر("input"، {"width": "100%"، "box-sizing": "border-box"، "padding": "9px 10px"، "border": "1px solid #c9c9c9"، "border-radius": "8px"، "font-size": "14px"}، لاشيء)
+    عيّن_سمة(مدخل، "placeholder"، تلميح)
+    أضف_ابن(ملف، مدخل)
+    أضف_ابن(أب، ملف)
+    ارجع مدخل
+}
+
+# زر؛ يشغّل الدالة المعطاة عند النقر
+صدّر دالة زر(أب، نص_الزر، عند_النقر) {
+    متغير ع = _عنصر("button"، {"background": "#256b55"، "color": "#fff"، "border": "0"، "border-radius": "8px"، "padding": "10px 16px"، "font-size": "15px"، "cursor": "pointer"، "width": "100%"}، نص_الزر)
+    إذا (عند_النقر != لاشيء) { عند_نقر(ع، عند_النقر) }
+    أضف_ابن(أب، ع)
+    ارجع ع
+}
+
+# تغيير خاصية نمط عنصر (يُستعمل لتجربة القيم حيًّا)
+صدّر دالة نمّط(ع، خاصية، قيمة_) {
+    عيّن_نمط(ع، خاصية، قيمة_)
+    ارجع ع
+}
 `
 };
 // </STDLIB>
@@ -11735,6 +11790,18 @@ class VM {
     if (p.state === "pending") throw new VMRuntimeError("البرنامج ينتظر وعدًا لن يُنجَز أبدًا (انتظار متبادل بين مهمتين، أو وعد لا يُحسم)");
     const orphan = this.rejected.find((q) => !q.handled);
     if (orphan) throw orphan.error || this._asError(orphan.value);
+  }
+
+  // سطر الاستدعاء في شيفرة المستخدم (أول إطار ليس من مكتبة ضاد/…) — لربط عناصر الواجهة بسطرها في المحرر
+  _userLine() {
+    for (let i = this.frames.length - 1; i >= 0; i--) {
+      const f = this.frames[i];
+      const file = f && f.chunk && f.chunk.file;
+      if (typeof file === "string" && file.startsWith("ضاد/")) continue;
+      const ins = f && f.chunk && f.chunk.code && f.chunk.code[f.ip - 1];
+      return ins && ins.line ? ins.line : 0;
+    }
+    return 0;
   }
 
   _loop() {
@@ -12667,7 +12734,7 @@ class VM {
       if (!this.domRoot) throw new VMRuntimeError(`${fnName}() تحتاج بيئة واجهة حية`);
       return this.domRoot;
     };
-    g.set("عنصر_جديد", (tag) => { requireDom("عنصر_جديد"); if (typeof tag !== "string") throw new VMRuntimeError("عنصر_جديد() تحتاج اسم وسم نصي"); if (/^(script|iframe|frame|frameset|object|embed|link|meta|base|applet)$/i.test(tag.trim())) throw new VMRuntimeError("الوسم «" + tag + "» غير مسموح به لأسباب أمنية"); return document.createElement(tag); });
+    g.set("عنصر_جديد", (tag) => { requireDom("عنصر_جديد"); if (typeof tag !== "string") throw new VMRuntimeError("عنصر_جديد() تحتاج اسم وسم نصي"); if (/^(script|iframe|frame|frameset|object|embed|link|meta|base|applet)$/i.test(tag.trim())) throw new VMRuntimeError("الوسم «" + tag + "» غير مسموح به لأسباب أمنية"); { const el = document.createElement(tag); const ln = this._userLine(); if (ln) el.setAttribute("data-dhad-line", String(ln)); return el; } });
     g.set("عيّن_نص", (el, v) => { requireDom("عيّن_نص"); if (!(el instanceof Element)) throw new VMRuntimeError("عيّن_نص() تحتاج عنصر واجهة صالحًا"); el.textContent = toDisplay(v); return el; });
     g.set("عيّن_نمط", (el, k, v) => { requireDom("عيّن_نمط"); if (!(el instanceof Element)) throw new VMRuntimeError("عيّن_نمط() تحتاج عنصر واجهة صالحًا"); el.style.setProperty(String(k), String(v)); return el; });
     g.set("أضف_فئة", (el, c) => { requireDom("أضف_فئة"); if (!(el instanceof Element)) throw new VMRuntimeError("أضف_فئة() تحتاج عنصر واجهة صالحًا"); el.classList.add(String(c)); return el; });

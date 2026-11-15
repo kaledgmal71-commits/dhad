@@ -5,7 +5,7 @@ const parts = [];
 for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.dhad')).sort()) {
   const src = fs.readFileSync(path.join(dir, f), 'utf8');
   if (/[`\\]|\$\{/.test(src)) throw new Error(f + ': يمنع الحرف ` أو \\ أو ${ في ملفات المكتبة');
-  parts.push('  ' + JSON.stringify('ضاد/' + f.replace(/\.dhad$/, '')) + ': `' + src + '`');
+  parts.push('  ' + JSON.stringify('ضاد/' + f.replace(/\.dhad$/, '')) + ': `' + src.replace(/<\/(script)/gi, '<\\/$1') + '`');
 }
 const vmPath = path.join(__dirname, '..', 'vm.js');
 let vm = fs.readFileSync(vmPath, 'utf8');

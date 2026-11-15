@@ -19,17 +19,19 @@
 
   const panelTabs = document.querySelectorAll(".panel-tab[data-panel]");
   const panelViews = {
+    lab: document.getElementById("view-lab"),
     problems: document.getElementById("view-problems"),
     output: document.getElementById("view-output"),
     preview: document.getElementById("view-preview"),
     live: document.getElementById("view-live"),
     ai: document.getElementById("view-ai"),
   };
-  function showPanel(name) {
+  function showPanel(name, direct) {
+    if (window.__labOn && !direct) name = "lab";
     panelTabs.forEach((b) => b.classList.toggle("active", b.dataset.panel === name));
     Object.entries(panelViews).forEach(([k, el]) => el.classList.toggle("active", k === name));
   }
-  panelTabs.forEach((b) => b.addEventListener("click", () => showPanel(b.dataset.panel)));
+  panelTabs.forEach((b) => b.addEventListener("click", () => showPanel(b.dataset.panel, true)));
 
   const sidebarEl = document.getElementById("sidebar");
   const sidebarOverlay = document.getElementById("sidebar-overlay");
@@ -466,7 +468,7 @@
       statusPos.textContent = `السطر ${toArabicIndicDigits(String(e.position.lineNumber))}، العمود ${toArabicIndicDigits(String(e.position.column))}`;
     });
     return {
-      kind: "monaco",
+      kind: "monaco", raw: editor,
       open: (id) => { editor.setModel(getOrCreateModel(id)); editor.focus(); },
       getValue: () => editor.getValue(),
       setError: (line, msg) => {
@@ -520,7 +522,8 @@
       statusEngine.textContent = "المحرر المدمج · آلة افتراضية Bytecode";
       appendLine("تعذّر تحميل Monaco (" + (e && e.message ? e.message : "الشبكة") + ") — تم التحويل تلقائيًا إلى المحرر المدمج.", "line-meta");
     }
-    window.__dhad = { get editorKind() { return ed.kind; } };
+    window.__dhad = { get editorKind() { return ed.kind; }, get ed() { return ed; }, get monaco() { return monaco; }, runCode, showPanel, liveRoot };
+    document.dispatchEvent(new CustomEvent("dhad-editor-ready"));
     openFile(defaultId, { preview: false });
     runCode();
     initCloud();
