@@ -28,7 +28,7 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.goto(base+'/editor/',{waitUntil:'load'});
   await p.waitForFunction(()=>window.__dhad&&window.__dhad.editorKind,{timeout:30000});
   await p.waitForTimeout(600);
-  await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('إضافة كتاب'));el.click();});
+  await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('نموذج تسجيل'));el.click();});
   await p.waitForTimeout(500);
   await p.evaluate(SHIM);
   await p.waitForTimeout(1200);
@@ -41,15 +41,15 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.click('#lab-ui-body input');await p.waitForTimeout(200);
   ck(tag+' click input → relation card mentions السطر',await p.evaluate(()=>document.querySelector('#lab-relbody').textContent.includes('السطر')));
   ck(tag+' try controls present',await p.evaluate(()=>document.querySelectorAll('#lab-ctls input').length>0));
-  await p.fill('#lab-ctls input[type=text]','عنوان جديد');await p.waitForTimeout(900);
-  ck(tag+' editing control changes UI label',await p.evaluate(()=>document.querySelector('#lab-ui-body').textContent.includes('عنوان جديد')));
+  await p.fill('#lab-ctls input[type=text]','اسم جديد');await p.waitForTimeout(900);
+  ck(tag+' editing control changes UI label',await p.evaluate(()=>document.querySelector('#lab-ui-body').textContent.includes('اسم جديد')));
   ck(tag+' terms exist',await p.evaluate(()=>document.querySelectorAll('#lab-termlist details').length>0));
   // assistant
-  await p.click('.lab-switch');ck(tag+' chat window shown',await p.isVisible('#lab-aireq'));await p.fill('#lab-aireq','أضف حقل رقم الصفحات');await p.click('#lab-aigo');await p.waitForTimeout(6500);
-  ck(tag+' assistant wrote line + UI shows new field',await p.evaluate(()=>document.querySelector('#monaco-editor textarea').value.includes('رقم الصفحات')&&document.querySelector('#lab-ui-body').textContent.includes('رقم الصفحات')));
+  await p.click('.lab-switch');ck(tag+' chat window shown',await p.isVisible('#lab-aireq'));await p.fill('#lab-aireq','أضف حقل رقم الهاتف');await p.click('#lab-aigo');await p.waitForTimeout(6500);
+  ck(tag+' assistant wrote line + UI shows new field',await p.evaluate(()=>document.querySelector('#monaco-editor textarea').value.includes('رقم الهاتف')&&document.querySelector('#lab-ui-body').textContent.includes('رقم الهاتف')));
   if(S)await p.screenshot({path:S+'lab-ed-'+tag+'.png'});
   await p.click('#lab-aiundo');await p.waitForTimeout(700);
-  ck(tag+' undo removes it',await p.evaluate(()=>!document.querySelector('#monaco-editor textarea').value.includes('رقم الصفحات')));
+  ck(tag+' undo removes it',await p.evaluate(()=>!document.querySelector('#monaco-editor textarea').value.includes('رقم الهاتف')));
   await p.evaluate(()=>{document.querySelector('#monaco-editor textarea').value='اطبع("س")';window.__shim.cbs.content.forEach(f=>f());});await p.waitForTimeout(700);
   ck(tag+' non-UI program restores classic editor',await p.evaluate(()=>!document.querySelector('.editor-area').classList.contains('lab-on')&&document.getElementById('live-app-root').parentNode.id!=='lab-ui-body'));
   console.log(tag,'errs',errs);if(errs.length)fails++;

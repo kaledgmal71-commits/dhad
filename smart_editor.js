@@ -229,7 +229,7 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   $("#lab-aiform").addEventListener("submit", function (e) { e.preventDefault(); });
   $("#lab-aigo").addEventListener("click", function () {
     var r = $("#lab-aireq").value; if (!r.trim() || typing) return; lastReq = r; say("u", r.trim());
-    var g = genFor(r); if (!g) { note("أستطيع الآن إضافة حقل أو زر، مثل: «أضف حقل رقم الصفحات»."); return; }
+    var g = genFor(r); if (!g) { note("أستطيع الآن إضافة حقل أو زر، مثل: «أضف حقل رقم الهاتف»."); return; }
     note("أكتب أمامك…"); $("#lab-aireq").value = ""; startTyping(g);
   });
   $("#lab-aistop").onclick = function () { paused = true; clearTimeout(typeT); setCtl(); note("أوقفتُ الكتابة. يمكنك التعديل بنفسك ثم المتابعة."); };
