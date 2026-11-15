@@ -33,16 +33,16 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
 
   var H = null, raw = null, monaco = null, labOn = false;
   var selLine = 0, hoverLine = 0, decIds = [], runT = 0, typing = false, paused = false, history = [], lastReq = "", typeT = 0;
-  var area = document.querySelector(".editor-area"), toggle = $("#lab-toggle"), pvBody = $("#lab-ui-body");
+  var area = document.querySelector(".editor-area"), pvBody = $("#lab-ui-body");
   var liveRoot = document.getElementById("live-app-root"), liveHome = liveRoot.parentNode, liveNext = liveRoot.nextSibling;
 
   document.addEventListener("dhad-editor-ready", function () {
     H = window.__dhad; raw = H.ed && H.ed.raw; monaco = H.monaco;
     if (!raw) return;
-    toggle.hidden = false;
+    autoMode();
     raw.onDidChangeCursorPosition(function (e) { if (!labOn || typing) return; if (e.position.lineNumber !== selLine) selectLine(e.position.lineNumber); });
-    raw.onDidChangeModelContent(function () { if (labOn) schedRun(); });
-    raw.onDidChangeModel(function () { if (labOn) { selLine = 0; hoverLine = 0; paint(); showRelation(0); schedRun(); } });
+    raw.onDidChangeModelContent(function () { autoMode(); if (labOn) schedRun(); });
+    raw.onDidChangeModel(function () { autoMode(); if (labOn) { selLine = 0; hoverLine = 0; paint(); showRelation(0); schedRun(); } });
   });
 
   function model() { return raw && raw.getModel(); }
@@ -54,7 +54,6 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
     labOn = on; window.__labOn = on;
     area.classList.toggle("lab-on", on);
     $("#lab-bar").hidden = !on; $("#lab-tab").hidden = !on;
-    toggle.setAttribute("aria-pressed", on); toggle.classList.toggle("on", on);
     document.getElementById("panel").classList.toggle("lab-panel", on);
     if (on) { pvBody.appendChild(liveRoot); liveRoot.classList.add("lab-live"); H.showPanel("lab"); H.runCode(); showRelation(0); afterRun(); }
     else {
@@ -63,7 +62,8 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
     }
     if (raw) setTimeout(function () { raw.layout(); }, 30);
   }
-  toggle.addEventListener("click", function () { if (H && raw) setLab(!labOn); });
+  /* المحيط يظهر تلقائيًّا لبرامج الواجهات (الجذر / عنصر_جديد / ضاد/واجهة)، وبقية البرامج تبقى في المحرر المعتاد */
+  function autoMode() { if (!raw || !model()) return; var want = /الجذر\(|عنصر_جديد|ضاد\/واجهة/.test(model().getValue()); if (want !== labOn) setLab(want); }
 
   function updateStatus() {
     var st = $("#lab-ui-status"), pl = document.getElementById("problems-list");
@@ -187,7 +187,9 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   }
 
   /* ---- المساعد: يكتب رمزًا برمز داخل Monaco ---- */
-  var msg = $("#lab-msg"); function note(t) { msg.textContent = t || ""; }
+  var msg = $("#lab-msg"), logEl = $("#lab-log");
+  function say(cls, t) { var d = document.createElement("div"); d.className = cls; d.textContent = t; logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight; }
+  function note(t) { msg.textContent = t || ""; if (t) say("a", t); }
   function setCtl() {
     $("#lab-aistop").disabled = !(typing && !paused); $("#lab-airesume").disabled = !(typing && paused);
     $("#lab-aiundo").disabled = typing || !history.length; $("#lab-airedo").disabled = typing || !history.length;
@@ -226,7 +228,7 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   }
   $("#lab-aiform").addEventListener("submit", function (e) { e.preventDefault(); });
   $("#lab-aigo").addEventListener("click", function () {
-    var r = $("#lab-aireq").value; if (!r.trim() || typing) return; lastReq = r;
+    var r = $("#lab-aireq").value; if (!r.trim() || typing) return; lastReq = r; say("u", r.trim());
     var g = genFor(r); if (!g) { note("أستطيع الآن إضافة حقل أو زر، مثل: «أضف حقل رقم الصفحات»."); return; }
     note("أكتب أمامك…"); $("#lab-aireq").value = ""; startTyping(g);
   });
@@ -243,10 +245,9 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
     var n = $("#lab-note").value.trim(); if (!n || !history.length) return; var h = history[history.length - 1];
     raw.executeEdits("dhad-lab", [{ range: new monaco.Range(h.at + 1, 1, h.at + 1, 1), text: "# ملاحظتك: " + n + "\n" }]); $("#lab-note").value = ""; note("سجّلتُ ملاحظتك فوق السطر.");
   });
-  function setMode(ai) {
-    $("#lab-m-hand").setAttribute("aria-pressed", !ai); $("#lab-m-ai").setAttribute("aria-pressed", ai); $("#lab-aiform").hidden = !ai;
-    if (!ai) { note(""); }
-  }
-  $("#lab-m-hand").onclick = function () { setMode(false); };
-  $("#lab-m-ai").onclick = function () { setMode(true); };
+  $("#lab-ai-on").addEventListener("change", function () {
+    var on = this.checked; $("#lab-chat").hidden = !on;
+    if (on) { H.showPanel("lab", true); if (!logEl.children.length) say("a", "أنا معك. اطلب ما تريد وسأكتبه رمزًا رمزًا ويظهر أثره في الواجهة، ولك أن توقفني أو تعدّل بنفسك في أي لحظة."); }
+    else { if (typing) { paused = true; clearTimeout(typeT); typing = false; } setCtl(); note(""); }
+  });
 })();

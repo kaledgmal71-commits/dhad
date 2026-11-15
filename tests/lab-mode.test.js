@@ -31,8 +31,7 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('مختبر: إضافة كتاب'));el.click();});
   await p.waitForTimeout(500);
   await p.evaluate(SHIM);
-  ck(tag+' toggle visible',await p.isVisible('#lab-toggle'));
-  await p.click('#lab-toggle');await p.waitForTimeout(900);
+  await p.waitForTimeout(1200);
   ck(tag+' split layout on',await p.evaluate(()=>document.querySelector('.editor-area').classList.contains('lab-on')));
   const lines=await p.evaluate(()=>[...document.querySelectorAll('#lab-ui-body [data-dhad-line]')].map(e=>e.tagName+':'+e.getAttribute('data-dhad-line')).join(','));
   console.log(tag,lines);
@@ -46,13 +45,13 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   ck(tag+' editing control changes UI label',await p.evaluate(()=>document.querySelector('#lab-ui-body').textContent.includes('عنوان جديد')));
   ck(tag+' terms exist',await p.evaluate(()=>document.querySelectorAll('#lab-termlist details').length>0));
   // assistant
-  await p.click('#lab-m-ai');await p.fill('#lab-aireq','أضف حقل رقم الصفحات');await p.click('#lab-aigo');await p.waitForTimeout(6500);
+  await p.click('.lab-switch');ck(tag+' chat window shown',await p.isVisible('#lab-aireq'));await p.fill('#lab-aireq','أضف حقل رقم الصفحات');await p.click('#lab-aigo');await p.waitForTimeout(6500);
   ck(tag+' assistant wrote line + UI shows new field',await p.evaluate(()=>document.querySelector('#monaco-editor textarea').value.includes('رقم الصفحات')&&document.querySelector('#lab-ui-body').textContent.includes('رقم الصفحات')));
   if(S)await p.screenshot({path:S+'lab-ed-'+tag+'.png'});
   await p.click('#lab-aiundo');await p.waitForTimeout(700);
   ck(tag+' undo removes it',await p.evaluate(()=>!document.querySelector('#monaco-editor textarea').value.includes('رقم الصفحات')));
-  await p.click('#lab-toggle');await p.waitForTimeout(500);
-  ck(tag+' toggle off restores',await p.evaluate(()=>!document.querySelector('.editor-area').classList.contains('lab-on')&&document.getElementById('live-app-root').parentNode.id!=='lab-ui-body'));
+  await p.evaluate(()=>{document.querySelector('#monaco-editor textarea').value='اطبع("س")';window.__shim.cbs.content.forEach(f=>f());});await p.waitForTimeout(700);
+  ck(tag+' non-UI program restores classic editor',await p.evaluate(()=>!document.querySelector('.editor-area').classList.contains('lab-on')&&document.getElementById('live-app-root').parentNode.id!=='lab-ui-body'));
   console.log(tag,'errs',errs);if(errs.length)fails++;
   await p.close();
  }

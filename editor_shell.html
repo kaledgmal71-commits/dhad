@@ -89,31 +89,19 @@ __CSS__
     <div class="editor-area">
       <div class="tabbar" id="tabbar"></div>
       <div class="lab-bar" id="lab-bar" hidden>
-        <div class="lab-seg" role="group" aria-label="طريقة كتابة الكتلة الحالية">
-          <button id="lab-m-hand" aria-pressed="true">أكتب بنفسي</button>
-          <button id="lab-m-ai" aria-pressed="false">بالمساعد الذكي</button>
-        </div>
-        <form id="lab-aiform" class="lab-aiform" hidden>
-          <input type="text" id="lab-aireq" placeholder="اطلب ما تريد إضافته، مثل: أضف حقل رقم الصفحات" autocomplete="off">
-          <button class="lab-btn lab-pri" id="lab-aigo">اكتب</button>
-          <button type="button" class="lab-btn" id="lab-aistop" disabled>إيقاف</button>
-          <button type="button" class="lab-btn" id="lab-airesume" disabled>متابعة</button>
-          <button type="button" class="lab-btn" id="lab-aiundo" disabled>تراجع</button>
-          <button type="button" class="lab-btn" id="lab-airedo" disabled>أعد الكتابة</button>
-          <input type="text" id="lab-note" placeholder="ملاحظة على آخر ما كُتب" autocomplete="off">
-          <button class="lab-btn" id="lab-notego" disabled>أضف الملاحظة</button>
-        </form>
+        <label class="lab-switch" title="عند التفعيل يكتب المساعد الكود أمامك، وعند الإيقاف تكتب بنفسك">
+          <input type="checkbox" id="lab-ai-on" role="switch"><span class="lab-knob"></span><span>المساعد الذكي</span>
+        </label>
         <span class="lab-msg" id="lab-msg"></span>
       </div>
       <div class="lab-ui" id="lab-ui">
-        <div class="lab-ui-head">واجهة التطبيق <small>مرّر المؤشر أو انقر أي جزء لتراه في الكود</small></div>
+        <div class="lab-ui-head">واجهة التطبيق</div>
         <div class="lab-ui-body" id="lab-ui-body"></div>
         <div class="lab-ui-status" id="lab-ui-status" hidden></div>
       </div>
       <div class="editor-host-wrap">
         <div class="editor-host" id="monaco-editor"></div>
         <div class="editor-empty" id="editor-empty" hidden>لا يوجد ملف مفتوح — اختر ملفًا من المستكشف أو أنشئ ملفًا جديدًا (ملف ◂ ملف جديد).</div>
-        <button id="lab-toggle" class="lab-toggle" title="وضع المختبر: الواجهة والكود جنبًا إلى جنب مع الشرح" aria-pressed="false" hidden>مختبر</button>
         <button id="run-btn" class="run-fab" title="تشغيل (Ctrl+Enter)" aria-label="تشغيل">
           <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor"/></svg>
         </button>
@@ -156,6 +144,20 @@ __CSS__
         <div class="lab-grid">
           <section class="lab-card" id="lab-rel"><h3>العلاقة والتفسير</h3><div id="lab-relbody"></div>
             <div class="lab-try" id="lab-try" hidden><h4>جرّب تغيير قيمة</h4><div id="lab-ctls"></div></div></section>
+          <section class="lab-card lab-chat" id="lab-chat" hidden><h3>المساعد الذكي</h3>
+            <div class="lab-log" id="lab-log" aria-live="polite"></div>
+            <form id="lab-aiform" class="lab-aiform">
+              <textarea id="lab-aireq" rows="2" placeholder="اكتب ما تريد إضافته أو تغييره…" autocomplete="off"></textarea>
+              <div class="lab-actions">
+                <button class="lab-btn lab-pri" id="lab-aigo">إرسال</button>
+                <button type="button" class="lab-btn" id="lab-aistop" disabled>إيقاف</button>
+                <button type="button" class="lab-btn" id="lab-airesume" disabled>متابعة</button>
+                <button type="button" class="lab-btn" id="lab-aiundo" disabled>تراجع</button>
+                <button type="button" class="lab-btn" id="lab-airedo" disabled>إعادة</button>
+              </div>
+              <div class="lab-notebox"><input type="text" id="lab-note" placeholder="ملاحظة على آخر ما كُتب" autocomplete="off"><button class="lab-btn" id="lab-notego" disabled>تسجيل</button></div>
+            </form>
+          </section>
           <section class="lab-card lab-terms"><h3>المصطلحات</h3><div id="lab-termlist"></div></section>
         </div>
       </div>
