@@ -28,7 +28,7 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.goto(base+'/editor/',{waitUntil:'load'});
   await p.waitForFunction(()=>window.__dhad&&window.__dhad.editorKind,{timeout:30000});
   await p.waitForTimeout(600);
-  await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('مختبر: إضافة كتاب'));el.click();});
+  await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('إضافة كتاب'));el.click();});
   await p.waitForTimeout(500);
   await p.evaluate(SHIM);
   await p.waitForTimeout(1200);

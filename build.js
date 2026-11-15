@@ -27,7 +27,7 @@ build(
     __CLOUD__: "cloud.js",
     __TEMPLATES__: "templates.js",
     __UI__: "editor_ui.js",
-    __LAB__: "lab_mode.js",
+    __LAB__: "smart_editor.js",
   },
   "dist/index.html"
 );
