@@ -14,7 +14,8 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.evaluate(()=>{const el=[...document.querySelectorAll('.tree-file')].find(e=>e.textContent.includes('نموذج تسجيل'));el.click();});
   await p.waitForTimeout(500);
   await p.waitForTimeout(1200);
-  ck(tag+' split layout on',await p.evaluate(()=>document.querySelector('.editor-area').classList.contains('lab-on')));
+  ck(tag+' split layout on',await p.evaluate(()=>document.querySelector('.editor-area').classList.contains('sm')));
+  ck(tag+' ui card is right of code (desktop) / below (phone)',await p.evaluate((w)=>{const c=document.querySelector('#lab-ui').getBoundingClientRect(),e=document.querySelector('.editor-host-wrap').getBoundingClientRect();return w>760?(c.left>=e.right-2&&c.top<=e.top+2&&Math.abs(c.width-e.width)<40):(c.top>=e.bottom-2);},w));
   const lines=await p.evaluate(()=>[...document.querySelectorAll('#lab-ui-body [data-dhad-line]')].map(e=>e.tagName+':'+e.getAttribute('data-dhad-line')).join(','));
   console.log(tag,lines);
   ck(tag+' ui has input line 3 and button',/INPUT:3/.test(lines)&&/BUTTON:\d/.test(lines));
@@ -32,8 +33,16 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   if(S)await p.screenshot({path:S+'lab-ed-'+tag+'.png'});
   await p.click('#lab-aiundo');await p.waitForTimeout(700);
   ck(tag+' undo removes it',await p.evaluate(()=>!document.querySelector('#monaco-editor textarea').value.includes('رقم الهاتف')));
+  await p.click('#lab-collapse');await p.waitForTimeout(300);
+  ck(tag+' collapse hides card and code takes the width',await p.evaluate((w)=>{const c=document.querySelector('#lab-ui'),e=document.querySelector('.editor-host-wrap').getBoundingClientRect();return getComputedStyle(c).display==='none'&&e.width>(w>760?w*0.6:w*0.8);},w)&&await p.isVisible('#lab-show'));
+  await p.click('#lab-show');await p.waitForTimeout(300);
+  ck(tag+' show restores card',await p.isVisible('#lab-ui'));
+  await p.click('#lab-expand');await p.waitForTimeout(300);
+  ck(tag+' expand covers the editor page',await p.evaluate(([w,h])=>{const r=document.querySelector('#lab-ui').getBoundingClientRect();return r.width>=w-2&&r.height>h*0.7;},[w,h]));
+  await p.keyboard.press('Escape');await p.waitForTimeout(300);
+  ck(tag+' escape leaves expanded view',await p.evaluate(()=>!document.querySelector('#lab-ui').classList.contains('expanded')));
   await p.evaluate(()=>{document.querySelector('#monaco-editor textarea').value='اطبع("س")';document.querySelector('#monaco-editor textarea').dispatchEvent(new Event('input',{bubbles:true}));});await p.waitForTimeout(700);
-  ck(tag+' non-UI program restores classic editor',await p.evaluate(()=>!document.querySelector('.editor-area').classList.contains('lab-on')&&document.getElementById('live-app-root').parentNode.id!=='lab-ui-body'));
+  ck(tag+' non-UI program drops explain tab',await p.evaluate(()=>document.getElementById('lab-tab').hidden&&!document.getElementById('panel').classList.contains('lab-panel')));
   console.log(tag,'errs',errs);if(errs.length)fails++;
   await p.close();
  }

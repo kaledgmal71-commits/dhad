@@ -39,6 +39,7 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   function onReady() {
     H = window.__dhad; raw = H.ed && H.ed.raw; monaco = H.monaco;
     if (!raw) return;
+    area.classList.add("sm"); $("#lab-bar").hidden = false; pvBody.appendChild(liveRoot); liveRoot.classList.add("lab-live"); applyCard();
     autoMode();
     raw.onDidChangeCursorPosition(function (e) { if (!labOn || typing) return; if (e.position.lineNumber !== selLine) selectLine(e.position.lineNumber); });
     raw.onDidChangeModelContent(function () { autoMode(); if (labOn) schedRun(); });
@@ -51,20 +52,36 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   function schedRun() { clearTimeout(runT); runT = setTimeout(function () { if (!labOn) return; H.runCode(); afterRun(); }, 380); }
   function afterRun() { paintSel(); buildTerms(); updateStatus(); }
 
-  function setLab(on) {
-    labOn = on; window.__labOn = on;
-    area.classList.toggle("lab-on", on);
-    $("#lab-bar").hidden = !on; $("#lab-tab").hidden = !on;
-    document.getElementById("panel").classList.toggle("lab-panel", on);
-    if (on) { pvBody.appendChild(liveRoot); liveRoot.classList.add("lab-live"); H.showPanel("lab"); H.runCode(); showRelation(0); afterRun(); }
-    else {
-      liveRoot.classList.remove("lab-live"); liveHome.insertBefore(liveRoot, liveNext);
-      raw.deltaDecorations(decIds, []); decIds = []; $("#lab-ui-status").hidden = true; H.showPanel("problems", true); H.runCode();
-    }
-    if (raw) setTimeout(function () { raw.layout(); }, 30);
+  /* حالة بطاقة الواجهة: مفتوحة | مطويّة | موسَّعة (تُحفظ). المحرر نفسه لا يتغير؛ البطاقة نصفه الثاني الثابت */
+  var card = $("#lab-ui"), cardState = "open", hasUI = false;
+  try { var sv = localStorage.getItem("dhad-card"); if (sv === "collapsed") cardState = "collapsed"; } catch (e) {}
+  function applyCard() {
+    area.classList.toggle("card-collapsed", cardState === "collapsed");
+    card.classList.toggle("expanded", cardState === "expanded");
+    var tb = document.querySelector(".workbench").getBoundingClientRect(), sb = document.querySelector(".statusbar");
+    card.style.setProperty("--lab-top", Math.round(tb.top) + "px");
+    card.style.setProperty("--lab-bottom", (sb ? Math.round(sb.getBoundingClientRect().height) : 22) + "px");
+    $("#lab-show").hidden = cardState !== "collapsed";
+    var ex = $("#lab-expand"); ex.textContent = cardState === "expanded" ? "تصغير" : "توسيع"; ex.setAttribute("aria-pressed", cardState === "expanded");
+    $("#lab-collapse").hidden = cardState === "expanded";
+    try { localStorage.setItem("dhad-card", cardState === "collapsed" ? "collapsed" : "open"); } catch (e) {}
+    setTimeout(function () { if (raw) raw.layout(); }, 30);
   }
-  /* المحيط يظهر تلقائيًّا لبرامج الواجهات (الجذر / عنصر_جديد / ضاد/واجهة)، وبقية البرامج تبقى في المحرر المعتاد */
-  function autoMode() { if (!raw || !model()) return; var want = /الجذر\(|عنصر_جديد|ضاد\/واجهة/.test(model().getValue()); if (want !== labOn) setLab(want); }
+  $("#lab-collapse").onclick = function () { cardState = "collapsed"; applyCard(); };
+  $("#lab-show").onclick = function () { cardState = "open"; applyCard(); };
+  $("#lab-expand").onclick = function () { cardState = cardState === "expanded" ? "open" : "expanded"; applyCard(); };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && cardState === "expanded") { cardState = "open"; applyCard(); } });
+  window.addEventListener("resize", function () { if (cardState === "expanded") applyCard(); });
+
+  function setUI(on) {
+    hasUI = labOn = on; window.__labOn = on;
+    $("#lab-tab").hidden = !on;
+    document.getElementById("panel").classList.toggle("lab-panel", on);
+    if (on) { H.showPanel("lab"); H.runCode(); showRelation(0); afterRun(); }
+    else { raw.deltaDecorations(decIds, []); decIds = []; $("#lab-ui-status").hidden = true; H.showPanel("problems", true); H.runCode(); }
+  }
+  /* برامج الواجهات (الجذر / عنصر_جديد / ضاد/واجهة) تُشغَّل حيّةً وتُشرَح؛ بقية البرامج تبقى على مخرجاتها المعتادة */
+  function autoMode() { if (!raw || !model()) return; var want = /الجذر\(|عنصر_جديد|ضاد\/واجهة/.test(model().getValue()); if (want !== hasUI) setUI(want); }
 
   function updateStatus() {
     var st = $("#lab-ui-status"), pl = document.getElementById("problems-list");

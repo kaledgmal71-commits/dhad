@@ -313,12 +313,19 @@ body { background: var(--editor-bg); color: #d4d4d4; font-family: var(--font-ui)
 
 /* ===== المحرر الذكي: الواجهة | الكود، والشرح في اللوحة السفلية ===== */
 .lab-bar, .lab-ui { display: none; }
-.editor-area.lab-on { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr); }
-.editor-area.lab-on .tabbar { grid-column: 1 / -1; grid-row: 1; }
-.editor-area.lab-on .lab-bar { display: flex; grid-column: 1 / -1; grid-row: 2; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 12px; background: #252526; border-bottom: 1px solid var(--panel-border); }
-.editor-area.lab-on .lab-bar[hidden] { display: none; }
-.editor-area.lab-on .lab-ui { display: flex; flex-direction: column; grid-column: 1; grid-row: 3; min-width: 0; min-height: 0; border-inline-end: 1px solid var(--panel-border); }
-.editor-area.lab-on .editor-host-wrap { grid-column: 2; grid-row: 3; }
+/* الشاشة العلوية نصفان ثابتان: المحرر كما هو يسارًا، وبطاقة الواجهة الحيّة رأسيةً يمينًا (تُطوى أو تُوسَّع) */
+.editor-area.sm { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr); }
+.editor-area.sm.card-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
+.editor-area.sm .tabbar { grid-column: 1; grid-row: 1; }
+.editor-area.sm .lab-bar { display: flex; grid-column: 1; grid-row: 2; align-items: center; flex-wrap: wrap; gap: 8px; padding: 5px 12px; background: #252526; border-bottom: 1px solid var(--panel-border); }
+.editor-area.sm .lab-bar[hidden] { display: none; }
+.editor-area.sm .editor-host-wrap { grid-column: 1; grid-row: 3; }
+.editor-area.sm .lab-ui { display: flex; flex-direction: column; grid-column: 2; grid-row: 1 / -1; min-width: 0; min-height: 0; border-inline-start: 1px solid var(--panel-border); background: #1e1e1e; }
+.editor-area.sm.card-collapsed .lab-ui { display: none; }
+.lab-show { margin-inline-start: auto; }
+.lab-ui.expanded { position: fixed; z-index: 40; inset: var(--lab-top, 58px) 0 var(--lab-bottom, 22px) 0; grid-column: auto; border: 0; }
+.lab-ui-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lab-ui-acts { display: inline-flex; gap: 6px; }
 .lab-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: #cccccc; }
 .lab-switch input { position: absolute; opacity: 0; }
 .lab-knob { width: 34px; height: 18px; border-radius: 9px; background: #555; position: relative; transition: background .15s; }
@@ -339,7 +346,7 @@ body { background: var(--editor-bg); color: #d4d4d4; font-family: var(--font-ui)
 .lab-btn.lab-pri { background: #9a6b12; border-color: #9a6b12; color: #fff; }
 .lab-btn:disabled { opacity: .4; cursor: default; }
 .lab-msg { color: #a39d8f; font-size: 12.5px; }
-.lab-ui-head { flex-shrink: 0; padding: 6px 12px; background: #252526; color: #cccccc; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--panel-border); }
+.lab-ui-head { flex-shrink: 0; height: 35px; box-sizing: border-box; padding: 0 12px; background: #252526; color: #cccccc; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--panel-border); }
 .lab-ui-head small { color: #8a8a8a; font-weight: 400; margin-inline-start: 8px; }
 .lab-ui-body { flex: 1; min-height: 0; overflow: auto; background: #fbf7ee; color: #1f1b13; }
 .lab-ui-body .lab-live { display: block; position: static; padding: 14px; }
@@ -372,9 +379,10 @@ body { background: var(--editor-bg); color: #d4d4d4; font-family: var(--font-ui)
 .lab-tb dd { margin: 2px 0 0; }
 .lab-all > div { padding: 0 8px 6px; }
 @media (max-width: 760px) {
-  .editor-area.lab-on { grid-template-columns: minmax(0, 1fr); grid-template-rows: 35px auto minmax(120px, 36%) minmax(0, 1fr); }
-  .editor-area.lab-on .lab-ui { grid-column: 1; grid-row: 3; border-inline-end: 0; border-bottom: 1px solid var(--panel-border); }
-  .editor-area.lab-on .editor-host-wrap { grid-column: 1; grid-row: 4; }
+  .editor-area.sm { grid-template-columns: minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr) minmax(120px, 38%); }
+  .editor-area.sm.card-collapsed { grid-template-columns: minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr) 0; }
+  .editor-area.sm .lab-ui { grid-column: 1; grid-row: 4; border-inline-start: 0; border-top: 1px solid var(--panel-border); }
+}
   .panel.lab-panel { height: 250px; }
 }
 
