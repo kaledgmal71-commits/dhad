@@ -444,7 +444,7 @@
       if (liveRoot.children.length > 0) { liveEmpty.hidden = true; showPanel("live"); }
       else showPanel("output");
       const ms = toArabicIndicDigits((performance.now() - startedAt).toFixed(1));
-      statusEngine.textContent = `${ed.kind === "monaco" ? "Monaco" : "المحرر المدمج"} · ${ms}ms · ${toArabicIndicDigits(String(vm.steps))} تعليمة`;
+      statusEngine.textContent = `${ed.kind === "monaco" ? "Monaco" : "محرر ضاد"} · ${ms}ms · ${toArabicIndicDigits(String(vm.steps))} تعليمة`;
       if (outputEl.textContent === "") appendLine("(لا مخرجات — البرنامج لم يستدعِ اطبع())", "line-meta");
     } catch (e) {
       appendLine("خطأ أثناء التنفيذ: " + e.message, "line-error");
@@ -496,7 +496,7 @@
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); runCode(); }
     });
     return {
-      kind: "fallback",
+      kind: "fallback", raw: fb.raw,
       open: (id) => { current = id; fb.setValue(contents.get(id) || ""); fb.focus(); },
       getValue: () => fb.getValue(),
       setError: (line) => fb.setErrorLine(line),
@@ -512,6 +512,7 @@
     buildTree();
     const defaultId = fileEntries.find((f) => !f.user && f.name.indexOf("عدّاد") !== -1) ? fileEntries.find((f) => f.name.indexOf("عدّاد") !== -1).id : fileEntries[0].id;
     try {
+      if (!/[?&]monaco=1\b/.test(location.search)) throw new Error("own");
       monaco = await loadMonaco();
       registerDhadLanguage(monaco);
       ed = makeMonacoEd();
@@ -519,10 +520,10 @@
     } catch (e) {
       monaco = null;
       ed = makeFallbackEd();
-      statusEngine.textContent = "المحرر المدمج · آلة افتراضية Bytecode";
-      appendLine("تعذّر تحميل Monaco (" + (e && e.message ? e.message : "الشبكة") + ") — تم التحويل تلقائيًا إلى المحرر المدمج.", "line-meta");
+      statusEngine.textContent = "محرر ضاد · آلة افتراضية Bytecode";
+      if (e && e.message !== "own") appendLine("تعذّر تحميل Monaco (" + (e.message || "الشبكة") + ") — تم التحويل تلقائيًا إلى محرر ضاد.", "line-meta");
     }
-    window.__dhad = { get editorKind() { return ed.kind; }, get ed() { return ed; }, get monaco() { return monaco; }, runCode, showPanel, liveRoot };
+    window.__dhad = { get editorKind() { return ed.kind; }, get ed() { return ed; }, get monaco() { return monaco || window.DhadEditorCompat; }, runCode, showPanel, liveRoot };
     document.dispatchEvent(new CustomEvent("dhad-editor-ready"));
     openFile(defaultId, { preview: false });
     runCode();

@@ -377,3 +377,8 @@ body { background: var(--editor-bg); color: #d4d4d4; font-family: var(--font-ui)
   .editor-area.lab-on .editor-host-wrap { grid-column: 1; grid-row: 4; }
   .panel.lab-panel { height: 250px; }
 }
+
+/* محرر ضاد (الأصلي): سطر المؤشر والتظليل */
+.fb-cur, .fb-deco { position: absolute; left: 0; right: 0; height: 22px; pointer-events: none; }
+.fb-cur { background: rgba(255, 255, 255, .045); }
+.fb-ln.hl { color: #e0b36a; box-shadow: inset -3px 0 #e0b36a; }

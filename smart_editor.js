@@ -36,14 +36,15 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
   var area = document.querySelector(".editor-area"), pvBody = $("#lab-ui-body");
   var liveRoot = document.getElementById("live-app-root"), liveHome = liveRoot.parentNode, liveNext = liveRoot.nextSibling;
 
-  document.addEventListener("dhad-editor-ready", function () {
+  function onReady() {
     H = window.__dhad; raw = H.ed && H.ed.raw; monaco = H.monaco;
     if (!raw) return;
     autoMode();
     raw.onDidChangeCursorPosition(function (e) { if (!labOn || typing) return; if (e.position.lineNumber !== selLine) selectLine(e.position.lineNumber); });
     raw.onDidChangeModelContent(function () { autoMode(); if (labOn) schedRun(); });
     raw.onDidChangeModel(function () { autoMode(); if (labOn) { selLine = 0; hoverLine = 0; paint(); showRelation(0); schedRun(); } });
-  });
+  }
+  document.addEventListener("dhad-editor-ready", onReady);;
 
   function model() { return raw && raw.getModel(); }
   function lines() { var m = model(); return m ? m.getValue().split("\n") : []; }
@@ -250,4 +251,5 @@ var TAGWORD={'input':'حقل إدخال','button':'زر','section':'قسم','h2'
     if (on) { H.showPanel("lab", true); if (!logEl.children.length) say("a", "أنا معك. اطلب ما تريد وسأكتبه رمزًا رمزًا ويظهر أثره في الواجهة، ولك أن توقفني أو تعدّل بنفسك في أي لحظة."); }
     else { if (typing) { paused = true; clearTimeout(typeT); typing = false; } setCtl(); note(""); }
   });
+  if (window.__dhad && window.__dhad.ed) onReady();
 })();
