@@ -18,6 +18,9 @@ specs.forEach((s,i)=>{const L=labels(s);const nTr=isTrain(s,i)?2:0;
   if(nTr){for(let t=0;t<nTr;t++)trainSets[h].push([S.describe(rng,s).متن,L[h]])}
   else evalSets[h].push([S.describe(rng,s).متن,L[h]]);
  }});
+// سلبيات «خارج الفضاء»: تعلّم رأس العائلة الرفض بدل التخمين
+{const nr=S.mkRng(777);const nn=Math.round(N*0.18);for(let i=0;i<nn;i++){const d=S.negative(nr).متن;
+ if(!FINAL&&i%5===0)evalSets['عائلة'].push([d,'خارج']);else for(let t=0;t<2;t++)trainSets['عائلة'].push([S.negative(nr).متن,'خارج']);}}
 const lit=a=>'['+a.map(([q,k])=>'["'+q.replace(/["\\]/g,'')+'"،"'+k+'"]').join('،')+']';
 const run=src=>{const r=R.run(src,{maxMs:3000000,maxSteps:9e10});if(!r.ok){console.error(r.error);process.exit(1)}return r.out};
 const models={};
