@@ -2,7 +2,9 @@
 const A=require('../tools/atomic_ar.js');let ok=0,bad=0;
 const t=(c,m)=>{if(c)ok++;else{bad++;console.log('فشل:',m)}};
 t(A.size===A.BASES.length*A.MARK_SETS.length,'حجم الجدول = حروف × تركيبات');
-t(A.size===518,'٣٧ حرفًا × ١٤ تركيبة = ٥١٨');
+t(A.size===481,'٣٧ حرفًا × ١٣ تركيبة = ٤٨١');
+t(![...A.TABLE.keys()].some(k=>k.endsWith('\u0651')&&k.length===2),'لا شدّة وحدها في الجدول');
+t(A.decode(A.encode('بّ'))==='بّ'&&A.count(A.encode('بّ'))===2,'الشدّة الوحيدة تبقى حرفًا وعلامة بلا فقد');
 t(new Set(A.TABLE.values()).size===A.size,'نقاط PUA فريدة');
 t([...A.TABLE.values()].every(c=>{const p=c.codePointAt(0);return p>=0xE000&&p<=0xF8FF}),'كل النقاط داخل PUA');
 for(const [k,v] of A.TABLE){t(A.decode(v)===k,'عكس '+k);t([...A.encode(k)].length===1,'نقطة واحدة '+k)}

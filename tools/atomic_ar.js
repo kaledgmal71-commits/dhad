@@ -11,9 +11,9 @@ const BASES = [...'ابتثجحخدذرزسشصضطظعغفقكلمنهوي', ..
 const FATHA = 'َ', DAMMA = 'ُ', KASRA = 'ِ', SHADDA = 'ّ', SUKUN = 'ْ';
 const TFATH = 'ً', TDAMM = 'ٌ', TKASR = 'ٍ';
 const CCC = { [TFATH]: 27, [TDAMM]: 28, [TKASR]: 29, [FATHA]: 30, [DAMMA]: 31, [KASRA]: 32, [SHADDA]: 33, [SUKUN]: 34 };
-// تركيبات العلامات التي يقبلها الحرف (٣ حركات + سكون + شدّة وحدها + شدّة مع حركة + ٣ تنوين + شدّة مع تنوين = ١٤)
+// تركيبات العلامات التي يقبلها الحرف (٣ حركات + سكون + شدّة مع حركة + ٣ تنوين + شدّة مع تنوين = ١٣). لا شدّة وحدها: الشدّة في العربية لا تقع بلا حركة أو تنوين؛ وما كُتب بشدّة وحدها (تشكيل جزئي) يبقى حرفًا + علامة بلا فقد.
 const MARK_SETS = [
-  FATHA, DAMMA, KASRA, SUKUN, SHADDA,
+  FATHA, DAMMA, KASRA, SUKUN,
   FATHA + SHADDA, DAMMA + SHADDA, KASRA + SHADDA,
   TFATH, TDAMM, TKASR,
   TFATH + SHADDA, TDAMM + SHADDA, TKASR + SHADDA,
