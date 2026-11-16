@@ -15,7 +15,7 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await p.waitForTimeout(500);
   await p.waitForTimeout(1200);
   ck(tag+' split layout on',await p.evaluate(()=>document.querySelector('.editor-area').classList.contains('sm')));
-  ck(tag+' ui card is right of code (desktop) / below (phone)',await p.evaluate((w)=>{const c=document.querySelector('#lab-ui').getBoundingClientRect(),e=document.querySelector('.editor-host-wrap').getBoundingClientRect();return w>760?(c.left>=e.right-2&&c.top<=e.top+2&&Math.abs(c.width-e.width)<40):(c.top>=e.bottom-2);},w));
+  ck(tag+' ui card is a vertical half right of code (desktop and phone)',await p.evaluate((w)=>{const c=document.querySelector('#lab-ui').getBoundingClientRect(),e=document.querySelector('.editor-host-wrap').getBoundingClientRect();return c.left>=e.right-2&&c.top<=e.top+2&&c.height>e.height*0.8&&c.width>w*0.25;},w));
   const lines=await p.evaluate(()=>[...document.querySelectorAll('#lab-ui-body [data-dhad-line]')].map(e=>e.tagName+':'+e.getAttribute('data-dhad-line')).join(','));
   console.log(tag,lines);
   ck(tag+' ui has input line 3 and button',/INPUT:3/.test(lines)&&/BUTTON:\d/.test(lines));

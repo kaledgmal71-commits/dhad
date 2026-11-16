@@ -379,10 +379,8 @@ body { background: var(--editor-bg); color: #d4d4d4; font-family: var(--font-ui)
 .lab-tb dd { margin: 2px 0 0; }
 .lab-all > div { padding: 0 8px 6px; }
 @media (max-width: 760px) {
-  .editor-area.sm { grid-template-columns: minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr) minmax(120px, 38%); }
-  .editor-area.sm.card-collapsed { grid-template-columns: minmax(0, 1fr); grid-template-rows: 35px auto minmax(0, 1fr) 0; }
-  .editor-area.sm .lab-ui { grid-column: 1; grid-row: 4; border-inline-start: 0; border-top: 1px solid var(--panel-border); }
-}
+  .editor-area.sm { grid-template-columns: minmax(0, 1fr) minmax(0, 42%); }
+  .editor-area.sm.card-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
   .panel.lab-panel { height: 250px; }
 }
 
