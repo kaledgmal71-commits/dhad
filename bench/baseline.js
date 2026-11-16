@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path');const R=require('../site/run.js');const B=require('./run.js');
 const rows=fs.readFileSync(path.join(__dirname,'..','dist','ai','dhad-corpus.jsonl'),'utf8').trim().split('\n').map(l=>JSON.parse(l)).filter(r=>r.status==='ok'&&r.code&&r.output&&['example','lesson','explain','dictionary'].includes(r.source));
 const ex=rows.map(r=>({معرف:r.id,عنوان:r.title||r.id,وصف:r.instruction||'',شيفرة:r.code,ناتج:r.output}));
-const TASKS=process.argv.includes('--held')?require('./held.js'):B.tasks;
+const TASKS=process.argv.includes('--held2')?require('./held2.js'):process.argv.includes('--held')?require('./held.js'):B.tasks;
 const W=TASKS.filter(t=>t.kind==='كتابة');
 const pre='متغير ت = استورد("ضاد/نواة_توليف")\nمتغير ق = ت.ابنِ_قاعدة('+JSON.stringify(ex)+')\n';
 let sum=0,found=0;

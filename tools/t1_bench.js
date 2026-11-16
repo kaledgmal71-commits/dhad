@@ -3,7 +3,7 @@
 // «إيجابية كاذبة» = حالة ناجح (مرّ بالتحقق الداخلي) لكن المعيار رسب. لا يطبع وصفًا ولا شيفرة مهمة محتجَزة إلا مع --verbose.
 const R=require('../site/run.js');const B=require('../bench/run.js');
 const held=process.argv.includes('--held'),verbose=process.argv.includes('--verbose');
-const tasks=held?require('../bench/held.js'):B.tasks;
+const tasks=process.argv.includes('--held2')?require('../bench/held2.js'):held?require('../bench/held.js'):B.tasks;
 const items=tasks.map(t=>({id:t.id,kind:t.kind,desc:t.desc,broken:t.broken||''}));
 const q=s=>JSON.stringify(s).replace(/\\u([0-9a-f]{4})/g,(_,h)=>String.fromCharCode(parseInt(h,16)));
 const src='متغير م = استورد("ضاد/نواة_مولد_فهم")\nمتغير ق = '+q(items)+'\nمن_أجل (ت في ق) {\n متغير ن = لاشيء\n إذا (ت["kind"] == "كتابة") { ن = م.ولّد(ت["desc"]، لاشيء) } وإلا { ن = م.أصلح(ت["desc"]، ت["broken"]) }\n اطبع(ن["حالة"])\n اطبع(ن["سبب"])\n اطبع(ن["شيفرة"])\n اطبع("@@@")\n}';
