@@ -1,4 +1,4 @@
-// يدرّب مصنّف النوايا بضاد (نواة_نوايا.درّب) ويكتب الأوزان إلى stdlib/نواة_نوايا_أوزان.dhad، بعد اختيار عتبة الامتناع على تقسيم تحقق.
+// يدرّب مصنّف النوايا بضاد (نواة_مصنف.درّب) ويكتب الأوزان إلى stdlib/نواة_مصنف_أوزان.dhad، بعد اختيار عتبة الامتناع على تقسيم تحقق.
 const fs=require('fs'),path=require('path');const R=require('../site/run.js');
 const T=require('../tests/data/intents-train.js');
 // تصنيف الحوار إلى أنواع فرعية بقواعد وسم بسيطة (لا تدخل الاستدلال؛ تُستعمل لوسم بيانات التدريب فقط)
@@ -17,7 +17,7 @@ const va=all.filter((_,i)=>i%5===0),tr=all.filter((_,i)=>i%5!==0);
 const run=(src)=>{const r=R.run(src,{maxMs:3000000,maxSteps:5e10});if(!r.ok){console.error(r.error);process.exit(1)}return r.out};
 const t0=Date.now();
 // ١) نموذج على ٨٠٪ لاختيار العتبة
-let out=run('متغير ن = استورد("ضاد/نواة_نوايا")\nمتغير م = ن.درّب('+lit(tr)+'، {})\nمتغير ت = '+lit(va)+'\nمن_أجل (د في ت) { متغير ق = ن.صنّف(م، د[٠])\nاطبع(ق["نية"] + "|" + نص(ق["ثقة"]) + "|" + د[١]) }');
+let out=run('متغير ن = استورد("ضاد/نواة_مصنف")\nمتغير م = ن.درّب('+lit(tr)+'، {})\nمتغير ت = '+lit(va)+'\nمن_أجل (د في ت) { متغير ق = ن.صنّف(م، د[٠])\nاطبع(ق["فئة"] + "|" + نص(ق["ثقة"]) + "|" + د[١]) }');
 console.log('زمن تدريب التحقق',((Date.now()-t0)/1000).toFixed(0),'ث');
 const ar=s=>s.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace('٫','.');
 const rows=out.map(l=>{const [a,b,c]=l.split('|');return [a,parseFloat(ar(b)),c]});
@@ -25,7 +25,7 @@ let best=0,bt=0;for(let t=0;t<=.8;t+=.05){let ok=0;rows.forEach(([p,c,y])=>{if((
 console.log('عتبة الامتناع (من التحقق):',bt.toFixed(2),'دقة التحقق',best.toFixed(3));
 // ٢) النموذج النهائي على كل البيانات
 const t1=Date.now();
-out=run('متغير ن = استورد("ضاد/نواة_نوايا")\nمتغير م = ن.درّب('+lit(all)+'، {})\nاطبع(اربط(م["تصنيفات"]، "|"))\nاطبع(اربط(م["انحياز"]، "|"))\nمن_أجل (ف في مفاتيح(م["أوزان"])) { اطبع(نص(ف) + ":" + اربط(م["أوزان"][ف]، ",")) }');
+out=run('متغير ن = استورد("ضاد/نواة_مصنف")\nمتغير م = ن.درّب('+lit(all)+'، {})\nاطبع(اربط(م["تصنيفات"]، "|"))\nاطبع(اربط(م["انحياز"]، "|"))\nمن_أجل (ف في مفاتيح(م["أوزان"])) { اطبع(نص(ف) + ":" + اربط(م["أوزان"][ف]، ",")) }');
 console.log('زمن التدريب النهائي',((Date.now()-t1)/1000).toFixed(0),'ث');
 const lat=s=>s.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٬/g,'');
 const cls=out[0].split('|'),bias=lat(out[1]).split('|').map(Number);
@@ -34,5 +34,5 @@ const A=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
 const body=W.map(([k,v])=>A(k)+':'+v.map(A).join(',')).join(';');
 const tpl=fs.readFileSync(path.join(__dirname,'intents_weights.tpl'),'utf8');
 let src=tpl.replace('__CLS__',cls.map(c=>'"'+c+'"').join('،')).replace('__BIAS__',bias.map(A).join(',')).replace('__BODY__',body).replace('__THR__',A(bt).replace('.','٫'));
-fs.writeFileSync(path.join(__dirname,'..','stdlib','نواة_نوايا_أوزان.dhad'),src);
+fs.writeFileSync(path.join(__dirname,'..','stdlib','نواة_مصنف_أوزان.dhad'),src);
 console.log('كُتب النموذج:',W.length,'سمة غير مهملة،',(src.length/1024).toFixed(0),'ك.بايت');
