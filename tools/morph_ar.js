@@ -77,7 +77,9 @@ function generate(root, pat) {
 function analyze(word) {
   // ألف الوصل تُكتب في المراجع «اِ»: نجرّب الصورتين (الأمر الثلاثي يبدأ بـ«اِ» فعلًا، والمزيدات بألف وصل)
   const base = word.normalize('NFC'); const seen = new Set(); const all = [];
-  for (const v of [base, base.replace(/^اِ/, 'ٱ')]) for (const r of analyze1(v)) { const k = r.جذر + '|' + r.وزن; if (!seen.has(k)) { seen.add(k); all.push(r); } }
+  // ألف الوصل المجرّدة (ٱ أو ا بلا علامة) قد تقابل اُ أو اِ في قوالب الأمر
+  const wasla = /^[ٱا](?![\u064B-\u0652])/.test(base) ? ['اِ', 'اُ', 'ٱ'].map(x => x + base.slice(1)) : [];
+  for (const v of [base, base.replace(/^اِ/, 'ٱ'), base.replace(/^اُ/, 'ٱ'), ...wasla]) for (const r of analyze1(v)) { const k = r.جذر + '|' + r.وزن; if (!seen.has(k)) { seen.add(k); all.push(r); } }
   return all;
 }
 function analyze1(word) {
