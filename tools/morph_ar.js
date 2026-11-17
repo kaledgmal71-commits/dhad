@@ -5,7 +5,7 @@
 // بصيغ الغائب المفرد المذكّر والأمر وأهم المشتقات. المعتل والرباعي والإسناد للضمائر واللواصق: مراحل لاحقة.
 'use strict';
 const A = require('./atomic_ar.js');
-const SLOTS = 'فعل';
+const SLOTS = 'فعلق'; // مواضع الجذر: ف ع ل، والقاف للحرف الرابع في الرباعي
 
 // الأوزان: [اسم الوزن، الباب، القالب]. الفاء والعين واللام في القالب مواضع الجذر (لا حروف حرفية).
 const PATTERNS = [
@@ -44,6 +44,11 @@ const PATTERNS = [
   // المثال في الافتعال (إدغام): ٱتَّصَلَ، ٱتَّخَذَ، ٱتَّسَعَ؛ والمهموز في الإفعال: آمَنَ
   ['ٱتَّعَلَ', 'ماضٍ مثال', 'VIII', 'ٱتَّعَلَ', { missing: 0, fill: ['و', 'ي', 'ء'] }],
   ['آعَلَ', 'ماضٍ مهموز', 'IV', 'آعَلَ', { missing: 0, fill: ['ء'] }],
+  // ===== الرباعي: فَعْلَلَ (دَحْرَجَ)، تَفَعْلَلَ (تَدَحْرَجَ)، افْعَنْلَلَ (احْرَنْجَمَ)، افْعَلَلَّ (اقْشَعَرَّ) =====
+  ...[['فَعْلَقَ', 'ماضٍ'], ['يُفَعْلِقُ', 'مضارع'], ['فَعْلِقْ', 'أمر'], ['فَعْلَقَةٌ', 'مصدر'], ['فِعْلَاقٌ', 'مصدر'], ['مُفَعْلِقٌ', 'اسم فاعل'], ['مُفَعْلَقٌ', 'اسم مفعول']].map(([q, n]) => [q, n, 'رباعي I', q, { quad: true }]),
+  ...[['تَفَعْلَقَ', 'ماضٍ'], ['يَتَفَعْلَقُ', 'مضارع'], ['تَفَعْلَقْ', 'أمر'], ['تَفَعْلُقٌ', 'مصدر'], ['مُتَفَعْلِقٌ', 'اسم فاعل']].map(([q, n]) => [q, n, 'رباعي II', q, { quad: true }]),
+  ...[['ٱفْعَنْلَقَ', 'ماضٍ'], ['يَفْعَنْلِقُ', 'مضارع'], ['ٱفْعَنْلِقْ', 'أمر'], ['ٱفْعِنْلَاقٌ', 'مصدر'], ['مُفْعَنْلِقٌ', 'اسم فاعل']].map(([q, n]) => [q, n, 'رباعي III', q, { quad: true }]),
+  ...[['ٱفْعَلَقَّ', 'ماضٍ'], ['يَفْعَلِقُّ', 'مضارع'], ['ٱفْعَلِقَّ', 'أمر'], ['ٱفْعِلْقَاقٌ', 'مصدر'], ['مُفْعَلِقٌّ', 'اسم فاعل']].map(([q, n]) => [q, n, 'رباعي IV', q, { quad: true }]),
 ].map(([وزن, نوع, باب, قالب, opts]) => ({ وزن, نوع, باب, units: parse(قالب), ...(opts || {}) }));
 
 // وحدة = {ب: الحرف القاعدي، ع: علاماته}. تفكيك النص إلى وحدات ذرية.
@@ -54,6 +59,7 @@ const GLYPH = u => u.ب + u.ع;
 // توليد: (جذر ثلاثي، وزن) → كلمة مشكَّلة (بنص عادي) وبصورتها الذرية
 function applies(root, pat) {
   const r = [...root];
+  if (r.length !== (pat.quad ? 4 : 3)) return false;
   if (pat.dbl) return r[1] === r[2];
   if (pat.missing != null) return pat.fill.includes(r[pat.missing]);
   return true;
@@ -74,7 +80,7 @@ function analyze1(word) {
   const w = units(word); const out = [];
   for (const p of PATTERNS) {
     if (p.units.length !== w.length) continue;
-    let ok = true; const root = ['', '', ''];
+    let ok = true; const root = ['', '', '', ''];
     for (let i = 0; i < w.length && ok; i++) {
       const t = p.units[i];
       if ('slot' in t) { if (w[i].ع !== t.ع) ok = false; else root[t.slot] = w[i].ب; }
@@ -84,7 +90,7 @@ function analyze1(word) {
       const cands = [];
       if (p.dbl) { root[2] = root[1]; cands.push(root.join('')); }
       else if (p.missing != null) for (const f of p.fill) { const q = root.slice(); q[p.missing] = f; cands.push(q.join('')); }
-      else cands.push(root.join(''));
+      else cands.push(root.slice(0, p.quad ? 4 : 3).join(''));
       for (const جذر of cands) out.push({ جذر, وزن: p.وزن, نوع: p.نوع, باب: p.باب, معتل: /[اويءأإؤئآى]/.test(جذر) || !!p.dbl });
       continue;
     }
