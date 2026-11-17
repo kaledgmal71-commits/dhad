@@ -11,7 +11,7 @@ let words=0,multi=0,miss=0,other=0;
 for(let i=0;i<400;i++){const r=[0,0,0].map(()=>L[Math.floor(rnd()*L.length)]);if(r[1]===r[2]||r[0]===r[1])continue;const root=r.join('');
  for(const p of M.PATTERNS){const w=M.generate(root,p);const a=M.analyze(w);words++;
   if(!a.some(x=>x.جذر===root&&x.وزن===p.وزن))miss++;
-  const extra=a.filter(x=>x.جذر!==root||x.وزن!==p.وزن);
+  const extra=a.filter(x=>(x.جذر!==root||x.وزن!==p.وزن)&&!x.معتل); // تحليلات بجذور معتلة تُعلَّم وتُرجأ إلى معجم الجذور
   if(extra.length){multi++;if(!(extra.every(x=>x.باب==='VII'||x.باب==='VIII')&&(p.باب==='VII'||p.باب==='VIII')))other++}}}
 t(miss===0,'إغلاق عكوس: غائب '+miss+' من '+words);
 t(other===0,'غموض خارج السابع/الثامن: '+other);
