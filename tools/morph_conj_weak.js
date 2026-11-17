@@ -1,7 +1,7 @@
 // إسناد الماضي المعتل والمضعّف إلى الضمائر على الحروف الذرية: أجوف (قُلْتُ)، ناقص (دَعَوْتُ، رَمَتْ)، مضعّف (مَدَدْتُ، مَدُّوا).
 // القاعدة: مع ضمائر الرفع الساكنة (تُ، نَا، نَ …) يُقصَّر الأجوف ويُفكّ المضعّف ويُقلب ختام الناقص؛ ومع الباقي تبقى الصيغة.
 'use strict';
-const M = require('./morph_ar.js'), C = require('./morph_conj.js');
+const M = require('./morph_ar.js'), C = require('./morph_conj.js'), PW = require('./morph_conj_weak_pres.js');
 const strip = s => s.normalize('NFC');
 const glyph = u => u.ب + u.ع;
 const S_PRON = new Set(C.PRONOUNS.filter(r => r[2] === 'ْ').map(r => r[0]));
@@ -82,7 +82,7 @@ function analyze(word) {
 }
 function analyzeAll(word) {
   const seen = new Set(), out = [];
-  for (const a of [...analyze(word), ...C.analyze(word)]) { const k = [a.جذر, a.وزن, a.نوع, a.ضمير].join('|'); if (!seen.has(k)) { seen.add(k); out.push(a); } }
+  for (const a of [...analyze(word), ...C.analyze(word), ...PW.analyzePresent(word), ...PW.analyzeImperative(word)]) { const k = [a.جذر, a.وزن, a.نوع, a.ضمير].join('|'); if (!seen.has(k)) { seen.add(k); out.push(a); } }
   return out;
 }
 module.exports = { isHollow, isDefective, isDoubled, conjugate, analyze, analyzeAll, S_PRON };

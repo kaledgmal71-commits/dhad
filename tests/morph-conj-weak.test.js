@@ -10,6 +10,15 @@ for(let i=0;i<150;i++){const a=pk(L),b=pk(L),d=pk(L);if(a===b||b===d||a===d)cont
  for(const root of roots)for(const p of pats){if(!M.applies(root,p))continue;const vows=W.isHollow(p)&&p.باب==='I'?(root[1]==='و'?['ُ','ِ']:['ِ']):[undefined];
   for(const vow of vows)for(const [pr] of C.PRONOUNS){const w=W.conjugate(root,p,pr,vow);n++;
    const r=W.analyzeAll(w).some(x=>x.جذر===root&&x.وزن===p.وزن&&x.ضمير===pr);if(!r){miss++;const k=p.وزن+'/'+pr;bad2[k]=(bad2[k]||0)+1;if(miss<8)console.log('غائب',root,p.وزن,pr,w)}}}}
+// المضارع والأمر للمعتل والمضعّف
+const PW=require('../tools/morph_conj_weak_pres.js');let n3=0,m3=0;const bad3={};
+const pp=M.PATTERNS.filter(PW.isPresW),ip=M.PATTERNS.filter(PW.isImpW);
+for(let i=0;i<200;i++){const a=pk(L),b=pk(L),d=pk(L);if(a===b||b===d||a===d)continue;const wk=pk(['و','ي']);
+ for(const root of [a+wk+d,a+b+wk,a+b+b]){
+  for(const p of pp){if(!M.applies(root,p))continue;for(const [pr] of PW.PP){const w=PW.conjPresent(root,p,pr);n3++;if(!W.analyzeAll(w).some(x=>x.جذر===root&&x.وزن===p.وزن&&x.ضمير===pr)){m3++;const k='م '+p.وزن+'/'+pr;bad3[k]=(bad3[k]||0)+1;if(m3<8)console.log('غائب مضارع',root,p.وزن,pr,w)}}}
+  for(const p of ip){if(!M.applies(root,p))continue;for(const [pr] of PW.IMP){const w=PW.conjImperative(root,p,pr);n3++;if(!W.analyzeAll(w).some(x=>x.جذر===root&&x.وزن===p.وزن&&x.ضمير===pr)){m3++;const k='أ '+p.وزن+'/'+pr;bad3[k]=(bad3[k]||0)+1;if(m3<8)console.log('غائب أمر',root,p.وزن,pr,w)}}}}}
+t(m3===0,'إغلاق مضارع/أمر المعتل: غائب '+m3+' من '+n3);if(m3)console.log(Object.entries(bad3).slice(0,12));
+console.log('مضارع/أمر معتل',n3,'غائب',m3);
 t(miss===0,'إغلاق المعتل والمضعّف: غائب '+miss+' من '+n);
 if(miss)console.log(Object.entries(bad2).slice(0,12));
 console.log('صيغ',n,'غائب',miss,'| نجح',ok,'فشل',bad);process.exit(bad?1:0);
