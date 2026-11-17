@@ -32,7 +32,19 @@ const PATTERNS = [
   // أفعال رباعية مزيدة من اسم (ضمن مرجع Arramooz): جذرها الثلاثي بإضافة م/ت/و/ي
   ['مَفْعَلَ', 'ماضٍ', 'اشتقاق من اسم', 'مَفْعَلَ'], ['تَفْعَلَ', 'ماضٍ', 'اشتقاق من اسم', 'تَفْعَلَ'],
   ['فَوْعَلَ', 'ماضٍ', 'اشتقاق من اسم', 'فَوْعَلَ'], ['فَيْعَلَ', 'ماضٍ', 'اشتقاق من اسم', 'فَيْعَلَ'], ['فَعْوَلَ', 'ماضٍ', 'اشتقاق من اسم', 'فَعْوَلَ'],
-].map(([وزن, نوع, باب, قالب]) => ({ وزن, نوع, باب, units: parse(قالب) }));
+  // ===== المعتل والمضعّف (الماضي للغائب المفرد المذكر). opts: missing = موضع الجذر غير الظاهر، fill = حروفه الممكنة، dbl = اللام = العين =====
+  // الأجوف (العين علة): قَالَ، أَقَامَ، ٱنْقَادَ، ٱخْتَارَ، ٱسْتَقَامَ
+  ...[['فَالَ', 'I'], ['أَفَالَ', 'IV'], ['ٱنْفَالَ', 'VII'], ['ٱفْتَالَ', 'VIII'], ['ٱسْتَفَالَ', 'X']].map(([q, b]) => [q, 'ماضٍ أجوف', b, q, { missing: 1, fill: ['و', 'ي'] }]),
+  // الناقص (اللام علة): دَعَا، رَمَى، نَسِيَ، ضَحَّى، نَادَى، أَعْطَى، تَمَنَّى، تَعَالَى، ٱنْبَغَى، ٱشْتَرَى، ٱسْتَعْلَى
+  ['فَعَا', 'ماضٍ ناقص', 'I', 'فَعَا', { missing: 2, fill: ['و'] }], ['فَعَى', 'ماضٍ ناقص', 'I', 'فَعَى', { missing: 2, fill: ['ي'] }],
+  ['فَعِيَ', 'ماضٍ ناقص', 'I', 'فَعِيَ', { missing: 2, fill: ['و', 'ي'] }],
+  ...[['فَعَّى', 'II'], ['فَاعَى', 'III'], ['أَفْعَى', 'IV'], ['تَفَعَّى', 'V'], ['تَفَاعَى', 'VI'], ['ٱنْفَعَى', 'VII'], ['ٱفْتَعَى', 'VIII'], ['ٱسْتَفْعَى', 'X']].map(([q, b]) => [q, 'ماضٍ ناقص', b, q, { missing: 2, fill: ['و', 'ي'] }]),
+  // المضعّف (العين = اللام): مَدَّ، حَاجَّ، أَحَبَّ، ٱنْفَكَّ، ٱمْتَدَّ، ٱسْتَمَدَّ
+  ...[['فَعَّ', 'I'], ['فَاعَّ', 'III'], ['أَفَعَّ', 'IV'], ['ٱنْفَعَّ', 'VII'], ['ٱفْتَعَّ', 'VIII'], ['ٱسْتَفَعَّ', 'X']].map(([q, b]) => [q, 'ماضٍ مضعّف', b, q, { dbl: true }]),
+  // المثال في الافتعال (إدغام): ٱتَّصَلَ، ٱتَّخَذَ، ٱتَّسَعَ؛ والمهموز في الإفعال: آمَنَ
+  ['ٱتَّعَلَ', 'ماضٍ مثال', 'VIII', 'ٱتَّعَلَ', { missing: 0, fill: ['و', 'ي', 'ء'] }],
+  ['آعَلَ', 'ماضٍ مهموز', 'IV', 'آعَلَ', { missing: 0, fill: ['ء'] }],
+].map(([وزن, نوع, باب, قالب, opts]) => ({ وزن, نوع, باب, units: parse(قالب), ...(opts || {}) }));
 
 // وحدة = {ب: الحرف القاعدي، ع: علاماته}. تفكيك النص إلى وحدات ذرية.
 function units(text) { return [...A.encode(text)].map(u => { const d = [...A.decode(u)]; return { ب: d[0], ع: d.slice(1).join('') }; }); }
@@ -40,6 +52,12 @@ function parse(t) { return units(t).map(u => SLOTS.includes(u.ب) ? { slot: SLOT
 const GLYPH = u => u.ب + u.ع;
 
 // توليد: (جذر ثلاثي، وزن) → كلمة مشكَّلة (بنص عادي) وبصورتها الذرية
+function applies(root, pat) {
+  const r = [...root];
+  if (pat.dbl) return r[1] === r[2];
+  if (pat.missing != null) return pat.fill.includes(r[pat.missing]);
+  return true;
+}
 function generate(root, pat) {
   const r = [...root];
   const s = pat.units.map(u => 'slot' in u ? r[u.slot] + u.ع : u.lit).join('');
@@ -47,6 +65,12 @@ function generate(root, pat) {
 }
 // تحليل: كلمة مشكَّلة → كل (جذر، وزن) تطابق وحداتها قالب الوزن
 function analyze(word) {
+  // ألف الوصل تُكتب في المراجع «اِ»: نجرّب الصورتين (الأمر الثلاثي يبدأ بـ«اِ» فعلًا، والمزيدات بألف وصل)
+  const base = word.normalize('NFC'); const seen = new Set(); const all = [];
+  for (const v of [base, base.replace(/^اِ/, 'ٱ')]) for (const r of analyze1(v)) { const k = r.جذر + '|' + r.وزن; if (!seen.has(k)) { seen.add(k); all.push(r); } }
+  return all;
+}
+function analyze1(word) {
   const w = units(word); const out = [];
   for (const p of PATTERNS) {
     if (p.units.length !== w.length) continue;
@@ -56,11 +80,19 @@ function analyze(word) {
       if ('slot' in t) { if (w[i].ع !== t.ع) ok = false; else root[t.slot] = w[i].ب; }
       else if (GLYPH(w[i]) !== t.lit) ok = false;
     }
-    if (ok) { const جذر = root.join(''); out.push({ جذر, وزن: p.وزن, نوع: p.نوع, باب: p.باب, معتل: /[اويءأإؤئآى]/.test(جذر) }); }
+    if (ok) {
+      const cands = [];
+      if (p.dbl) { root[2] = root[1]; cands.push(root.join('')); }
+      else if (p.missing != null) for (const f of p.fill) { const q = root.slice(); q[p.missing] = f; cands.push(q.join('')); }
+      else cands.push(root.join(''));
+      for (const جذر of cands) out.push({ جذر, وزن: p.وزن, نوع: p.نوع, باب: p.باب, معتل: /[اويءأإؤئآى]/.test(جذر) || !!p.dbl });
+      continue;
+    }
+    if (false) { const جذر = root.join(''); out.push({ جذر, وزن: p.وزن, نوع: p.نوع, باب: p.باب, معتل: /[اويءأإؤئآى]/.test(جذر) }); }
   }
   return out;
 }
-module.exports = { PATTERNS, generate, analyze, units };
+module.exports = { PATTERNS, generate, analyze, units, applies };
 
 if (require.main === module) {
   const w = process.argv[2];
