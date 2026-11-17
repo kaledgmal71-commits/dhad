@@ -10,6 +10,8 @@ const PRONOUNS = [
   ['أنتما', 'تُمَا', S], ['أنتم', 'تُمْ', S], ['أنتنّ', 'تُنَّ', S], ['هما (م)', 'ا', F], ['هما (م)', 'ا', F],
   ['هما (ث)', 'تَا', F], ['هم', 'وا', D], ['هنّ', 'نَ', S],
 ].filter((p, i, a) => a.findIndex(q => q[1] === p[1]) === i);
+// الأجوف والمضعّف يتصرّفان كالصحيح مع الضمائر غير الساكنة (قَالَتْ، مَدَّتْ، قَالُوا)؛ الناقص له قواعده في morph_conj_weak.js
+const tailSukun = () => false;
 const PAST_SOUND = p => /^ماضٍ/.test(p.نوع) && p.missing == null && !p.dbl;
 const strip = s => s.normalize('NFC');
 // الغائب المفرد → صيغة مسندة
@@ -42,7 +44,7 @@ function analyze(word) {
     }
     for (const base of bases) for (const a of M.analyze(base)) {
       const pat = M.PATTERNS.find(p => p.وزن === a.وزن && p.نوع === a.نوع);
-      if (pat && PAST_SOUND(pat)) out.push({ ...a, ضمير: pron, اللاحقة: suf });
+      if (pat && (PAST_SOUND(pat) || (!tailSukun(pat) && /^ماضٍ/.test(pat.نوع)))) out.push({ ...a, ضمير: pron, اللاحقة: suf });
     }
   }
   return out;

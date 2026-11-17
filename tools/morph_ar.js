@@ -82,9 +82,9 @@ function analyze(word) {
   for (const v of [base, base.replace(/^اِ/, 'ٱ'), base.replace(/^اُ/, 'ٱ'), ...wasla]) for (const r of analyze1(v)) { const k = r.جذر + '|' + r.وزن; if (!seen.has(k)) { seen.add(k); all.push(r); } }
   return all;
 }
-function analyze1(word) {
+function analyze1(word, pats = PATTERNS) {
   const w = units(word); const out = [];
-  for (const p of PATTERNS) {
+  for (const p of pats) {
     if (p.units.length !== w.length) continue;
     let ok = true; const root = ['', '', '', ''];
     for (let i = 0; i < w.length && ok; i++) {
@@ -104,7 +104,8 @@ function analyze1(word) {
   }
   return out;
 }
-module.exports = { PATTERNS, generate, analyze, units, applies };
+const makePattern = (وزن, نوع, باب, قالب, opts) => ({ وزن, نوع, باب, units: parse(قالب), ...(opts || {}) });
+module.exports = { PATTERNS, generate, analyze, units, applies, analyzeWith: analyze1, makePattern };
 
 if (require.main === module) {
   const w = process.argv[2];
