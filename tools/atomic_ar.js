@@ -45,9 +45,17 @@ function encode(text) {
 }
 function decode(text) { return [...text].map(c => REVERSE.get(c) || c).join(''); }
 
+// ===== صيغة العرض =====
+// الخط لا يصل حرفًا ذريًّا بحرف عربي عادي: ينقسم النص إلى مقاطع تشكيل حسب الخط (Script) فيفقد الوصل.
+// لذا تُحوَّل الحروف العارية أيضًا إلى نقاط PUA مجاورة (٣٧ نقطة بعد الـ٤٨١) للعرض فقط؛ التخزين والتدريب يبقيان على encode.
+const BARE = new Map(), BARE_REV = new Map();
+BASES.forEach((b, i) => { const ch = String.fromCodePoint(next + i); BARE.set(b, ch); BARE_REV.set(ch, b); });
+const toDisplay = s => [...encode(s)].map(c => BARE.get(c) || c).join('');
+const fromDisplay = s => decode([...s].map(c => BARE_REV.get(c) || c).join(''));
+
 const utf8 = s => Buffer.byteLength(s, 'utf8');
 const count = s => [...s].length;
-module.exports = { BASES, MARK_SETS, TABLE, REVERSE, encode, decode, utf8, count, PUA_START, size: TABLE.size };
+module.exports = { BASES, MARK_SETS, TABLE, REVERSE, encode, decode, toDisplay, fromDisplay, utf8, count, PUA_START, size: TABLE.size };
 
 if (require.main === module) {
   const s = process.argv[2];

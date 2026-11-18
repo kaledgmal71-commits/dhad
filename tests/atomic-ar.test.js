@@ -20,4 +20,7 @@ const F='بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيم
 t(A.decode(A.encode(F))===F.normalize('NFC'),'ذهاب وإياب نص مشكَّل');
 t(A.utf8(A.encode(F))<A.utf8(F),'ينقص الحجم بالبايت');
 t(A.count(A.encode(F))<A.count(F),'ينقص عدد الرموز');
+// صيغة العرض: الحروف العارية أيضًا نقاط PUA (٣٧ بعد الـ٤٨١)، والتحويل عكوس
+t(A.fromDisplay(A.toDisplay(F))===F.normalize('NFC'),'عرض: ذهاب وإياب الفاتحة');
+t([...A.toDisplay(F)].every(c=>c===' '||(c.codePointAt(0)>=0xE000&&c.codePointAt(0)<=0xE205)||/[\u064B-\u0652\u0670]/.test(c)),'عرض: كل حرف عربي صار PUA');
 console.log('نجح',ok,'فشل',bad);process.exit(bad?1:0);
