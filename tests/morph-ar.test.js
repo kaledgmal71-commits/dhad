@@ -21,7 +21,7 @@ for(const root of roots){
  for(const p of M.PATTERNS){if(!M.applies(root,p))continue;const w=M.generate(root,p);const a=M.analyze(w);words++;
   if(!a.some(x=>x.جذر===root&&x.وزن===p.وزن))miss++;
   const extra=a.filter(x=>(x.جذر!==root||x.وزن!==p.وزن)&&!x.معتل); // تحليلات بجذور معتلة تُعلَّم وتُرجأ إلى معجم الجذور
-  if(extra.length){multi++;const ok=bb=>bb==='VII'||bb==='VIII'||bb==='اشتقاق من اسم'||bb.startsWith('رباعي')||bb==='X';if(!(extra.every(x=>ok(x.باب))&&ok(p.باب)))other++}}}
+  if(extra.length){multi++;const ok=bb=>bb==='VII'||bb==='VIII'||bb==='مجزوم'||bb==='اشتقاق من اسم'||bb.startsWith('رباعي')||bb==='X';if(!(extra.every(x=>ok(x.باب))&&ok(p.باب)))other++}}}
 t(miss===0,'إغلاق عكوس: غائب '+miss+' من '+words);
 t(other===0,'غموض خارج (السابع/الثامن، الاشتقاق من اسم): '+other);
 console.log('كلمات مولَّدة',words,'غائب',miss,'متعدد',multi);

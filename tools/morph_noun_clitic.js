@@ -37,7 +37,8 @@ function peel(word) {
 }
 function enclitics(rest) { // [{stem, enc}] ؛ ضمير الإضافة يلي حركة الإعراب
   const out = [{ stem: rest, enc: null }];
-  for (const [e, ref] of POSS) { const s = strip(e); if (rest.endsWith(s) && rest.length > s.length + 1) { const stem = rest.slice(0, -s.length); out.push({ stem, enc: [e, ref] }); if (/تُ$|تِ$|تَ$/.test(stem)) out.push({ stem: strip(stem.slice(0, -2) + 'ةُ'), enc: [e, ref] }); } }
+  const KV = POSS.filter(x => /^هُ/.test(x[0])).map(x => [x[0].replace('ُ', 'ِ'), x[1]]); // هِ هِمَا هِمْ هِنَّ بعد الكسرة (قَوْلِهِ)
+  for (const [e, ref] of [...POSS, ...KV]) { const s = strip(e); if (rest.endsWith(s) && rest.length > s.length + 1) { const stem = rest.slice(0, -s.length); out.push({ stem, enc: [e, ref] }); if (/تُ$|تِ$|تَ$/.test(stem)) out.push({ stem: strip(stem.slice(0, -2) + 'ةُ'), enc: [e, ref] }); } }
   return out;
 }
 function analyze(word) {

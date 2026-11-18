@@ -80,7 +80,7 @@
   // جلب ما يخص المهمة من الملفات المربوطة: يُقرأ من المصدر عند الحاجة ويُسلَّم للجلسة، ثم تُفرَّغ مكتبتها عند اختلاف المهمة
   var lastSel = null, rcache = {}, rorder = [];
   function normQ(t) { return String(t).replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase(); }
-  var STOP = {}; 'ابحث اريد اكتب ملفاتي ملفي الملفات مكتبتي المكتبه هذا هذه عن على الي الذي التي ماذا كيف هل لماذا اين متى اعطني اذكر الويب ويب الرابط رابط هنا انت تحسن تعمل بكفاءه الان حلل لخص اشرح وضح ثم ايضا كل بعض'.split(' ').forEach(function (w) { STOP[w] = 1; });
+  var STOP = {}; 'ابحث اريد اكتب ملفاتي ملفي الملفات مكتبتي المكتبه هذا هذه عن على الي الذي التي ماذا كيف هل لماذا اين متى اعطني اذكر الويب ويب الرابط رابط هنا انت تحسن تعمل بكفاءه الان حلل لخص اشرح وضح ثم ايضا كل بعض طيب قلت قلته قولك كلامك ردك جوابك لما اذن يعني تقصد اقصد ذكرت اعلاه'.split(' ').forEach(function (w) { STOP[w] = 1; });
   function qTokens(t) { return normQ(t).split(/[^ء-غف-يa-z0-9]+/).map(function (w) { return w.replace(/^(وال|بال|لل|ال)/, ''); }).filter(function (w) { return w.length >= 3 && !STOP[w]; }); }
   function readLinked(p) {
     if (rcache[p]) return Promise.resolve(rcache[p]);
@@ -449,9 +449,11 @@
     curConv.msgs.push({ role: 'u', text: t });
     var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length), my = ++reqId; curPending = pending;
     col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
-    ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); }).then(function (r) {
+    var mr = null; try { var mt = window.NawaMorph && window.NawaMorph.answer(t); if (mt) mr = { 'نوع': 'صرف_ذري', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'صرف_ذري', 'حالة': 'نُفّذ', 'تفصيل': 'تحليل بالوزن على الحروف الذرية' }], 'نتائج': {}, 'ذكريات': [], 'رد': mt }; } catch (e) { mr = null; }
+    (mr ? Promise.resolve(mr) : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
+      if (mr) call('سجّل_ردّ', r['رد']).catch(function () {});
       var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
     }, function (err) {
       if (my !== reqId) return 'x';

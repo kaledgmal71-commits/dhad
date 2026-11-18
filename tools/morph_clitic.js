@@ -23,7 +23,7 @@ function analyze(word) {
   for (const [p, fn, presOnly] of PROCLITICS) { const s = strip(p); if (w0.startsWith(s) && w0.length > s.length) heads.push({ pre: [[p, fn, presOnly]], rest: w0.slice(s.length) });
     for (const [p2, fn2, po2] of PROCLITICS) { const s2 = strip(p2); if (p !== p2 && w0.startsWith(s + s2)) heads.push({ pre: [[p, fn, presOnly], [p2, fn2, po2]], rest: w0.slice(s.length + s2.length) }) } }
   for (const h of heads) for (const { stem, enc } of stems(h.rest)) {
-    const ans = [...M.analyze(stem), ...C.analyze(stem)].map(a => ({ ...a, حالة: 'رفع/ماضٍ' }));
+    const ans = [...M.analyze(stem), ...C.analyzeAll(stem)].map(a => ({ ...a, حالة: 'رفع/ماضٍ' }));
     // المضارع منصوبًا ومجزومًا: آخره فتحة أو سكون بدل الضمة
     const m = stem.match(/^(.*[^\u064B-\u0652])([\u064E\u0652])$/);
     if (m) for (const a of M.analyze(m[1] + '\u064F')) if (isPresent(a)) ans.push({ ...a, حالة: m[2] === '\u064E' ? 'نصب' : 'جزم' });
