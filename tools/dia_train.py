@@ -4,6 +4,7 @@ import sys, time, json, math, argparse
 sys.path.insert(0, __file__.rsplit('/', 1)[0])
 import numpy as np, dia_model as M, diacritizer_data as DD
 xp = M.xp
+KEEP = [DD.IDX[c] for c in 'اىيو']   # حروف آخر الكلمة التي يصحّ فيها غياب الحركة
 def predict(m, X, T=None, stride=None):
     T = T or m.cfg['maxlen']; stride = stride or T // 2; out = np.zeros(len(X), np.uint8); n = len(X)
     starts = list(range(0, max(1, n - T + stride), stride)); batch = []
@@ -32,7 +33,7 @@ def load_eval(path):
 if __name__ == '__main__':
     a = argparse.ArgumentParser(); a.add_argument('data'); a.add_argument('out')
     for k, v in dict(minutes=30., d=128, layers=3, heads=4, ff=512, batch=32, T=128, lr=1e-3, seed=0).items(): a.add_argument('--' + k, type=type(v), default=v)
-    a.add_argument('--val', default=None); a.add_argument('--resume', default=None); A = a.parse_args()
+    a.add_argument('--mask-final-none', action='store_true'); a.add_argument('--val', default=None); a.add_argument('--resume', default=None); A = a.parse_args()
     d = np.load(A.data); X, Y = d['X'], d['Y']; cut = int(len(X) * 0.98); VX, VY = X[cut:], Y[cut:]; X, Y = X[:cut], Y[:cut]
     m = M.Model.load(A.resume) if A.resume else M.Model(dict(d=A.d, layers=A.layers, heads=A.heads, ff=A.ff, maxlen=A.T), A.seed)
     AX = AY = None
@@ -42,7 +43,10 @@ if __name__ == '__main__':
     rng = np.random.default_rng(A.seed + 1); t0 = time.time(); step = 0; T = A.T; B = A.batch
     while time.time() - t0 < A.minutes * 60:
         st = rng.integers(0, len(X) - T, B); ids = np.stack([X[s:s + T] for s in st]).astype(np.int64); y = np.stack([Y[s:s + T] for s in st]).astype(np.int64)
-        mask = (ids > 1); z, ca = m.forward(xp.asarray(ids), True); z = z - z.max(-1, keepdims=True); pr = xp.exp(z); pr /= pr.sum(-1, keepdims=True)
+        mask = (ids > 1)
+        if A.mask_final_none:   # تسمية ناقصة: حرف ساكن أخير بلا حركة في بيانات الحديث (مقابل ٠٪ في المعيار) فلا يُحسب عليه الخسارة
+            nx = np.concatenate([ids[:, 1:], np.zeros((B, 1), np.int64)], 1); mask &= ~((nx == 1) & (y == 0) & ~np.isin(ids, KEEP))
+        z, ca = m.forward(xp.asarray(ids), True); z = z - z.max(-1, keepdims=True); pr = xp.exp(z); pr /= pr.sum(-1, keepdims=True)
         yy, mk = xp.asarray(y), xp.asarray(mask); bi, ti = xp.arange(B)[:, None], xp.arange(T)[None, :]; n = float(mk.sum())
         loss = float(-(xp.log(pr[bi, ti, yy] + 1e-9) * mk).sum() / n); dz = pr; dz[bi, ti, yy] -= 1; dz = dz * mk[..., None] / n
         g = m.backward(dz, ca); gn = math.sqrt(sum(float((v * v).sum()) for v in g.values())); sc = min(1.0, 1.0 / (gn + 1e-9)); step += 1
