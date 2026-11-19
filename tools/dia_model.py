@@ -56,7 +56,8 @@ class Model:
             dxn = dq @ p[f'q{l}'].T + dk_ @ p[f'k{l}'].T + dv @ p[f'v{l}'].T
             dd, g[f'ln1g{l}'], g[f'ln1b{l}'] = ln_b(dxn, c1); dx = dx1 + dd
         dE = xp.zeros_like(p['E']); dd = dx * math.sqrt(d)
-        if GPU: xp.scatter_add(dE, ids, dd)
+        if GPU:
+            import cupyx; cupyx.scatter_add(dE, xp.asarray(ids), dd)
         else: np.add.at(dE, ids, dd)
         g['E'] = dE; return g
     def save(s, path):
