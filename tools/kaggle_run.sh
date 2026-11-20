@@ -3,7 +3,14 @@
 set -e
 cd /kaggle/working
 nvidia-smi -L || { echo "لا توجد بطاقة رسوم: فعّل GPU من إعدادات الجلسة (Accelerator) ثم أعد"; exit 1; }
-pip -q install "cupy-cuda12x[ctk]"   # يجلب مكتبات CUDA (cuBLAS وغيرها) مع cupy
+probe() { python3 -W ignore -c "import cupy as xp; a=xp.ones((4,4),xp.float32); float((a@a).sum())" 2>/dev/null; }
+if probe; then echo "cupy الجاهز يعمل"; else
+  for pk in cupy-cuda12x cupy-cuda13x; do
+    pip list 2>/dev/null | awk '/^cupy/{print $1}' | xargs -r pip -q uninstall -y   # حزم cupy المتعددة تتعارض
+    pip -q install "$pk[ctk]" && probe && { echo "cupy: $pk"; break; }
+  done
+fi
+probe || { echo "تعذر تشغيل cupy على البطاقة"; exit 1; }
 rm -rf dhad Open-Hadith-Data arabic-text-diacritization
 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.git
 git clone -q --depth 1 https://github.com/mhashim6/Open-Hadith-Data.git
