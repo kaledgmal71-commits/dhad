@@ -3,7 +3,7 @@
 set -e
 cd /kaggle/working
 nvidia-smi -L || { echo "لا توجد بطاقة رسوم: فعّل GPU من إعدادات الجلسة (Accelerator) ثم أعد"; exit 1; }
-pip -q install cupy-cuda12x
+pip -q install "cupy-cuda12x[ctk]"   # يجلب مكتبات CUDA (cuBLAS وغيرها) مع cupy
 rm -rf dhad Open-Hadith-Data arabic-text-diacritization
 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.git
 git clone -q --depth 1 https://github.com/mhashim6/Open-Hadith-Data.git

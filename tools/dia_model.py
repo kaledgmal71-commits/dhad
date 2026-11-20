@@ -4,7 +4,7 @@ import json, math
 try:
     import cupy as xp
     if xp.cuda.runtime.getDeviceCount() < 1: raise RuntimeError('no CUDA device')
-    xp.zeros(1) + 1; GPU = True   # يختبر الجهاز فعليًا: cupy قد يُستورد دون بطاقة
+    a = xp.ones((4, 4), xp.float32); float((a @ a).sum()); GPU = True   # يختبر الجهاز فعليًا: cupy قد يُستورد دون بطاقة
 except Exception:
     import numpy as xp; GPU = False   # رجوع آمن إلى المعالج بدل الانهيار
 import numpy as np
