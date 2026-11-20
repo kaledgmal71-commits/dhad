@@ -2,9 +2,11 @@
 # مستقل عن العتاد: وحدة المصفوفات xp = numpy افتراضيًا، وcupy إن وُجدت (نفس الكود). الأوزان: npz + config.json.
 import json, math
 try:
-    import cupy as xp; GPU = True
+    import cupy as xp
+    if xp.cuda.runtime.getDeviceCount() < 1: raise RuntimeError('no CUDA device')
+    xp.zeros(1) + 1; GPU = True   # يختبر الجهاز فعليًا: cupy قد يُستورد دون بطاقة
 except Exception:
-    import numpy as xp; GPU = False
+    import numpy as xp; GPU = False   # رجوع آمن إلى المعالج بدل الانهيار
 import numpy as np
 DEFAULT = dict(vocab=40, classes=15, d=128, layers=3, heads=4, ff=512, maxlen=128)
 def sinus(T, d):
