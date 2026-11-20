@@ -3,14 +3,16 @@
 set -e
 cd /kaggle/working
 nvidia-smi -L || { echo "لا توجد بطاقة رسوم: فعّل GPU من إعدادات الجلسة (Accelerator) ثم أعد"; exit 1; }
-probe() { python3 -W ignore -c "import cupy as xp; a=xp.ones((4,4),xp.float32); float((a@a).sum())" 2>/dev/null; }
+# مكتبات CUDA التي تأتي مع pip (nvidia/*/lib) لا تدخل مسار البحث وحدها: نضيفها قبل كل فحص
+setld() { export LD_LIBRARY_PATH="$(python3 -c "import glob,site; print(':'.join(d for s in site.getsitepackages() for d in glob.glob(s+'/nvidia/*/lib')))")${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; }
+probe() { setld; python3 -W ignore -c "import cupy as xp; a=xp.ones((4,4),xp.float32); float((a@a).sum())" 2>/dev/null; }
 if probe; then echo "cupy الجاهز يعمل"; else
   for pk in cupy-cuda12x cupy-cuda13x; do
     pip list 2>/dev/null | awk '/^cupy/{print $1}' | xargs -r pip -q uninstall -y   # حزم cupy المتعددة تتعارض
     pip -q install "$pk[ctk]" && probe && { echo "cupy: $pk"; break; }
   done
 fi
-probe || { echo "تعذر تشغيل cupy على البطاقة"; exit 1; }
+probe || { echo "تعذر تشغيل cupy على البطاقة؛ سبب الخطأ:"; setld; python3 -W ignore -c "import cupy as xp; a=xp.ones((4,4),xp.float32); float((a@a).sum())" 2>&1 | tail -n 3; ls /usr/local | head; exit 1; }
 rm -rf dhad Open-Hadith-Data arabic-text-diacritization
 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.git
 git clone -q --depth 1 https://github.com/mhashim6/Open-Hadith-Data.git
