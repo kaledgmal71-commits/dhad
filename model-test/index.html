@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>تجربة نموذج المحرر</title>
+<style>
+:root { --bg:#16181d; --card:#1f2229; --line:#323744; --fg:#e8e6df; --mut:#9aa0ad; --acc:#e9b949; --ok:#5fd08a; --bad:#ff7b72; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.7 system-ui,"Segoe UI",Tahoma,sans-serif; padding:16px max(16px,env(safe-area-inset-left)); }
+main { max-width:760px; margin:0 auto; }
+h1 { font-size:20px; margin:8px 0 14px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin:12px 0; }
+.card h2 { font-size:16px; margin:0 0 8px; color:var(--acc); }
+button { font:inherit; background:var(--acc); color:#1a1405; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:700; }
+button[disabled] { opacity:.45; cursor:default; }
+button.sec { background:#2c313c; color:var(--fg); border:1px solid var(--line); }
+select { font:inherit; background:#12141a; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:7px; max-width:100%; }
+.row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+.st { color:var(--mut); font-size:13.5px; }
+.ok { color:var(--ok); } .bad { color:var(--bad); }
+pre { background:#101217; border:1px solid var(--line); border-radius:8px; padding:10px; overflow:auto; white-space:pre-wrap; direction:rtl; font:13px/1.6 ui-monospace,Menlo,Consolas,monospace; max-height:260px; margin:6px 0; }
+progress { width:100%; height:10px; }
+textarea { width:100%; min-height:130px; background:#101217; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:10px; font:13px/1.6 ui-monospace,Menlo,Consolas,monospace; direction:rtl; }
+</style>
+</head>
+<body>
+<main>
+<h1>تجربة نموذج المحرر</h1>
+
+<div class="card">
+  <h2>الجهاز</h2>
+  <div id="env" class="st">…</div>
+</div>
+
+<div class="card">
+  <h2>الطريق الأول: أولاما على هذا الجهاز</h2>
+  <div class="row"><button id="ol-check" class="sec">فحص أولاما</button><select id="ol-model" disabled></select><button id="ol-run" disabled>ابدأ الاختبار</button></div>
+  <div id="ol-st" class="st"></div>
+</div>
+
+<div class="card">
+  <h2>الطريق الثاني: داخل المتصفح (يتطلب بطاقة رسوميات تدعم WebGPU)</h2>
+  <div class="row"><select id="wl-model" disabled><option>…</option></select><button id="wl-load" disabled>تحميل النموذج</button><button id="wl-run" disabled>ابدأ الاختبار</button></div>
+  <progress id="wl-prog" value="0" max="1" hidden></progress>
+  <div id="wl-st" class="st"></div>
+</div>
+
+<div class="card">
+  <h2>المخرجات</h2>
+  <pre id="log">لم يبدأ اختبار بعد.</pre>
+  <div class="row"><button id="copy" class="sec">نسخ النتيجة</button></div>
+  <textarea id="summary" readonly placeholder="ملخص النتيجة يظهر هنا"></textarea>
+</div>
+</main>
+
+<script src="/assets/engine.api.js"></script>
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var SYSTEM = [
+    "أنت مساعد برمجة بلغة «ضاد» (لغة برمجة عربية). اكتب ضاد صحيحة فقط، والتزم بالقواعد حرفيًا، ولا تخترع دوالّ.",
+    "الكلمات المحجوزة: دالة، ارجع، إذا، وإلا، طالما، من_أجل، من، إلى، متغير، صحيح، خطأ، لاشيء، و، أو، ليس، توقف، أكمل.",
+    "- متغير: متغير س = ٥ (ثم س = ٦ للتغيير). شرط: إذا (شرط) { … } وإلا إذا (شرط) { … } وإلا { … }",
+    "- حلقات: طالما (شرط) { … } و من_أجل (ع من ١ إلى ١٠) { … } (النهاية شاملة) و من_أجل (س في قائمة) { … }",
+    "- دالة: دالة اسم(أ، ب) { ارجع أ + ب }. الفاصلة بين المعاملات «،». التعليق: # إلى آخر السطر.",
+    "- قائمة: [١، ٢، ٣] وفهرستها ق[٠] تبدأ من ٠، وق[-١] آخر عنصر، وشرائح ق[١:٣] (النهاية غير شاملة). قاموس: {اسم: \"علي\"}.",
+    "- العوامل: + - * / % == != < > <= >= و أو ليس، و«س في قائمة» لفحص الوجود. س += ١ و س++ جملة مستقلة.",
+    "- دوال جاهزة: اطبع، طول، أضف، رتب، انزع، أدرج، مدى، اعكس، نص، عدد، اقتطع، استبدل، يحوي، افصل، اربط، جذر، قوة، مطلق، جولة، أرضية، سقف، الأكبر، الأصغر.",
+    "- لا تستعمل كلمة محجوزة اسمًا لمتغير. اكتب الدالة المطلوبة فقط داخل كتلة ``` بلا شرح."
+  ].join("\n");
+  var TESTS = [
+    { id: "مضروب", d: "اكتب دالة مضروب(ن) تعيد مضروب العدد", call: "اطبع(مضروب(5))", expect: "120" },
+    { id: "أولي", d: "اكتب دالة أولي(ن) تعيد صحيح إن كان العدد أوليا وإلا خطأ", call: "اطبع(أولي(7))\nاطبع(أولي(9))", expect: "صحيح|خطأ" },
+    { id: "عكس", d: "اكتب دالة عكس_القائمة(ق) تعيد قائمة جديدة بترتيب معكوس دون تعديل الأصلية", call: "اطبع(عكس_القائمة([1،2،3]))", expect: "[3، 2، 1]" },
+    { id: "مجموع", d: "اكتب دالة مجموع_الزوجي(ق) تعيد مجموع العناصر الزوجية في قائمة أعداد", call: "اطبع(مجموع_الزوجي([1،2،3،4]))", expect: "6" }
+  ];
+  var logEl = $("#log"), results = [], meta = {};
+  function log(t) { logEl.textContent += (logEl.textContent === "لم يبدأ اختبار بعد." ? "" : "\n") + t; logEl.scrollTop = logEl.scrollHeight; }
+  function digits(s) { return String(s).replace(/[٠-٩]/g, function (d) { return "٠١٢٣٤٥٦٧٨٩".indexOf(d); }); }
+  function extract(t) {
+    t = String(t).replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    var m = /```[a-zA-Z]*\n([\s\S]*?)```/.exec(t); return (m ? m[1] : t).trim();
+  }
+  function execute(code) {
+    var api = window.__api, out = [];
+    try {
+      var c = api.compile(api.parse(code));
+      var vm = new api.VM({ maxSteps: 3000000, maxMs: 2000, onPrint: function (l) { out.push(String(l)); }, onSaveFile: function () {}, onInput: function () { return "ضاد"; } });
+      vm.run(c.mainChunkIndex, c.functionChunks); return { ok: true, out: out };
+    } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+  }
+  function summarize() {
+    var pass = results.filter(function (r) { return r.pass; }).length;
+    var s = ["الطريق: " + meta.path, "النموذج: " + meta.model, "الجهاز: " + $("#env").textContent.replace(/\s+/g, " "), "النجاح: " + pass + " من " + results.length];
+    results.forEach(function (r) { s.push("- " + r.id + ": " + (r.pass ? "نجح" : "فشل (" + r.why + ")") + " | " + r.sec + " ث | " + (r.tps ? r.tps + " رمز/ث" : "")); });
+    $("#summary").value = s.join("\n");
+  }
+  async function runAll(path, model, generate) {
+    results = []; meta = { path: path, model: model }; logEl.textContent = "لم يبدأ اختبار بعد.";
+    for (var i = 0; i < TESTS.length; i++) {
+      var t = TESTS[i], t0 = performance.now();
+      log("▶ " + t.id + " …");
+      try {
+        var g = await generate([{ role: "system", content: SYSTEM }, { role: "user", content: t.d + "\n/no_think" }]);
+        var sec = (performance.now() - t0) / 1000, code = extract(g.text);
+        var run = execute(code + "\n" + t.call), got = run.ok ? digits(run.out.join("|")) : "خطأ: " + run.error;
+        var pass = got === t.expect;
+        results.push({ id: t.id, pass: pass, why: pass ? "" : got.slice(0, 80), sec: sec.toFixed(1), tps: g.tps ? g.tps.toFixed(1) : "" });
+        log((pass ? "✔ " : "✘ ") + t.id + " (" + sec.toFixed(1) + " ث)\n" + code + (pass ? "" : "\nالناتج: " + got));
+      } catch (e) { results.push({ id: t.id, pass: false, why: String(e.message || e).slice(0, 80), sec: ((performance.now() - t0) / 1000).toFixed(1), tps: "" }); log("✘ " + t.id + ": " + (e.message || e)); }
+      summarize();
+    }
+    log("انتهى الاختبار. انسخ الملخص أدناه.");
+  }
+
+  /* ---- الجهاز ---- */
+  var hasGPU = !!navigator.gpu;
+  $("#env").textContent = (hasGPU ? "WebGPU متاح" : "WebGPU غير متاح") + " · ذاكرة تقريبية: " + (navigator.deviceMemory ? navigator.deviceMemory + " جيجا" : "غير معروفة") + " · أنوية: " + (navigator.hardwareConcurrency || "؟");
+
+  /* ---- أولاما ---- */
+  var OL = "http://localhost:11434";
+  $("#ol-check").onclick = async function () {
+    $("#ol-st").textContent = "أفحص…"; $("#ol-st").className = "st";
+    try {
+      var r = await fetch(OL + "/api/tags"), j = await r.json(), sel = $("#ol-model"); sel.innerHTML = "";
+      (j.models || []).forEach(function (m) { var o = document.createElement("option"); o.value = m.name; o.textContent = m.name + " (" + (m.size / 1e9).toFixed(1) + " جيجا)"; sel.appendChild(o); });
+      var pref = Array.prototype.find.call(sel.options, function (o) { return /qwen3\.5.*4b/i.test(o.value); }); if (pref) sel.value = pref.value;
+      sel.disabled = !sel.options.length; $("#ol-run").disabled = !sel.options.length;
+      $("#ol-st").textContent = sel.options.length ? "أولاما يعمل. اختر النموذج." : "أولاما يعمل لكن لا نموذج عليه؛ نفّذ: ollama pull qwen3.5:4b";
+      $("#ol-st").className = "st " + (sel.options.length ? "ok" : "bad");
+    } catch (e) {
+      $("#ol-st").className = "st bad";
+      $("#ol-st").textContent = "تعذّر الوصول إلى أولاما (" + (e.message || e) + "). تأكد أنه يعمل، وأن عنوان هذه الصفحة " + location.origin + " مضاف في OLLAMA_ORIGINS ثم أعد تشغيل أولاما.";
+    }
+  };
+  $("#ol-run").onclick = async function () {
+    var model = $("#ol-model").value; this.disabled = true;
+    await runAll("أولاما", model, async function (messages) {
+      var r = await fetch(OL + "/api/chat", { method: "POST", body: JSON.stringify({ model: model, messages: messages, stream: true, think: false, options: { temperature: 0.1, num_ctx: 4096, num_predict: 700 } }) });
+      if (!r.ok) throw new Error("أولاما: " + r.status);
+      var rd = r.body.getReader(), dec = new TextDecoder(), buf = "", text = "", tps = 0;
+      for (;;) {
+        var x = await rd.read(); if (x.done) break; buf += dec.decode(x.value, { stream: true });
+        var ls = buf.split("\n"); buf = ls.pop();
+        ls.forEach(function (l) { if (!l.trim()) return; var o = JSON.parse(l); if (o.message && o.message.content) text += o.message.content; if (o.done && o.eval_count && o.eval_duration) tps = o.eval_count / (o.eval_duration / 1e9); });
+      }
+      return { text: text, tps: tps };
+    });
+    this.disabled = false;
+  };
+
+  /* ---- داخل المتصفح (WebLLM) ---- */
+  var webllm = null, engine = null;
+  (async function () {
+    if (!hasGPU) { $("#wl-st").textContent = "هذا المتصفح لا يدعم WebGPU؛ استعمل Chrome أو Edge حديثًا على كمبيوتر، أو اختر طريق أولاما."; $("#wl-st").className = "st bad"; return; }
+    try {
+      webllm = await import("https://esm.run/@mlc-ai/web-llm");
+      var list = webllm.prebuiltAppConfig.model_list.filter(function (m) { return /qwen/i.test(m.model_id) && /(1\.5B|1\.7B|2B|3B|4B|7B)/i.test(m.model_id) && !/vision|VL|math/i.test(m.model_id); });
+      var sel = $("#wl-model"); sel.innerHTML = "";
+      list.forEach(function (m) { var o = document.createElement("option"); o.value = m.model_id; o.textContent = m.model_id + (m.vram_required_MB ? " (ذاكرة رسوميات ≈ " + (m.vram_required_MB / 1024).toFixed(1) + " جيجا)" : ""); sel.appendChild(o); });
+      var pref = Array.prototype.find.call(sel.options, function (o) { return /Qwen3.*4B/i.test(o.value) || /Qwen2\.5-Coder-3B/i.test(o.value); }); if (pref) sel.value = pref.value;
+      sel.disabled = false; $("#wl-load").disabled = !sel.options.length;
+      $("#wl-st").textContent = sel.options.length ? "اختر نموذجًا ثم اضغط تحميل. أول مرة يُحمَّل عدة جيجابايت ثم يُحفظ في هذا المتصفح." : "لم أجد نماذج Qwen في قائمة WebLLM الحالية.";
+    } catch (e) { $("#wl-st").className = "st bad"; $("#wl-st").textContent = "تعذّر تحميل مكتبة التشغيل: " + (e.message || e); }
+  })();
+  $("#wl-load").onclick = async function () {
+    var id = $("#wl-model").value, p = $("#wl-prog"); this.disabled = true; p.hidden = false; p.value = 0;
+    try {
+      engine = await webllm.CreateMLCEngine(id, { initProgressCallback: function (r) { p.value = r.progress || 0; $("#wl-st").textContent = r.text || ""; } });
+      $("#wl-st").className = "st ok"; $("#wl-st").textContent = "تم التحميل. اضغط ابدأ الاختبار."; $("#wl-run").disabled = false;
+    } catch (e) { $("#wl-st").className = "st bad"; $("#wl-st").textContent = "تعذّر التحميل: " + (e.message || e); this.disabled = false; }
+  };
+  $("#wl-run").onclick = async function () {
+    this.disabled = true;
+    await runAll("داخل المتصفح (WebLLM)", $("#wl-model").value, async function (messages) {
+      var t0 = performance.now(), text = "", n = 0, usage = null;
+      var s = await engine.chat.completions.create({ messages: messages, stream: true, temperature: 0.1, max_tokens: 700, stream_options: { include_usage: true } });
+      for await (var ch of s) { var d = ch.choices && ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content; if (d) { text += d; n++; } if (ch.usage) usage = ch.usage; }
+      var tps = usage && usage.extra && usage.extra.decode_tokens_per_s ? usage.extra.decode_tokens_per_s : n / ((performance.now() - t0) / 1000);
+      return { text: text, tps: tps };
+    });
+    this.disabled = false;
+  };
+
+  $("#copy").onclick = function () { var t = $("#summary"); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); } };
+})();
+</script>
+</body>
+</html>

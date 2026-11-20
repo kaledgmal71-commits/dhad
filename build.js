@@ -35,6 +35,8 @@ build(
 fs.mkdirSync("dist", { recursive: true });
 fs.copyFileSync("manifest.json", "dist/manifest.json");
 console.log("Copied manifest.json");
+fs.mkdirSync("dist/model-test", { recursive: true });
+fs.copyFileSync("model-test/index.html", "dist/model-test/index.html");
 
 build(
   "guide_shell.html",

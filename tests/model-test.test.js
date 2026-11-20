@@ -1,0 +1,25 @@
+// صفحة تجربة النموذج: بأولاما مزيَّف (استجابات مُدفَّقة) تُشغَّل الاختبارات وتُصحَّح بمحرك ضاد الحقيقي.
+const {chromium}=require('playwright'),http=require('http'),fs=require('fs'),path=require('path');
+const dist=path.join(__dirname,'..','dist');let bad=0;const ck=(n,c)=>{console.log((c?'ok  ':'FAIL')+' '+n);if(!c)bad++;};
+const srv=http.createServer((q,r)=>{let f=path.join(dist,q.url.split('?')[0]);if(f.endsWith('/'))f+='index.html';fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);r.end();return;}r.writeHead(200,{'content-type':f.endsWith('.js')?'text/javascript':'text/html; charset=utf-8'});r.end(d);});});
+const ANS={'مضروب':'```\nدالة مضروب(ن) {\n  إذا (ن <= ١) { ارجع ١ }\n  ارجع ن * مضروب(ن - ١)\n}\n```','أولي':'```\nدالة أولي(ن) {\n  إذا (ن < ٢) { ارجع خطأ }\n  من_أجل (ق من ٢ إلى ن - ١) { إذا (ن % ق == ٠) { ارجع خطأ } }\n  ارجع صحيح\n}\n```','عكس':'```\nدالة عكس_القائمة(ق) { ارجع اعكس(ق) }\n```','مجموع':'<think>x</think>```\nدالة مجموع_الزوجي(ق) {\n  متغير م = ٠\n  من_أجل (ع في ق) { إذا (ع % ٢ == ٠) { م += ع } }\n  ارجع م\n}\n```'};
+(async()=>{await new Promise(r=>srv.listen(0,r));const port=srv.address().port;
+ const b=await chromium.launch(),p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(String(e)));
+ await p.route('http://localhost:11434/**',async rt=>{const u=rt.request().url();
+  if(u.endsWith('/api/tags'))return rt.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({models:[{name:'qwen3.5:4b',size:3.4e9}]})});
+  if(rt.request().method()==='OPTIONS')return rt.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'}});
+  const body=JSON.parse(rt.request().postData()),u2=body.messages[1].content;const key=Object.keys(ANS).find(k=>u2.includes(k==='عكس'?'عكس_القائمة':k==='مجموع'?'مجموع_الزوجي':'دالة '+k+'('))||'مضروب';
+  const ans=ANS[key],chunks=ans.match(/[\s\S]{1,20}/g).map(c=>JSON.stringify({message:{content:c},done:false})),last=JSON.stringify({done:true,eval_count:50,eval_duration:2e9});
+  rt.fulfill({status:200,contentType:'application/x-ndjson',headers:{'access-control-allow-origin':'*'},body:chunks.concat(last).join('\n')+'\n'});});
+ await p.goto('http://localhost:'+port+'/model-test/');
+ ck('page loads, env line shown',(await p.textContent('#env')).includes('أنوية'));
+ await p.waitForFunction(()=>document.querySelector('#wl-st').textContent.length>5,null,{timeout:20000});
+ ck('browser path shows a clear status (library blocked here → error message)',(await p.textContent('#wl-st')).length>5);
+ await p.click('#ol-check');await p.waitForFunction(()=>!document.querySelector('#ol-run').disabled,null,{timeout:5000});
+ ck('ollama detected and model listed',(await p.textContent('#ol-model')).includes('qwen3.5:4b'));
+ await p.click('#ol-run');await p.waitForFunction(()=>document.querySelector('#log').textContent.includes('انتهى الاختبار'),null,{timeout:30000});
+ const s=await p.inputValue('#summary');console.log(s);
+ ck('all 4 tests pass with the real engine',/النجاح: 4 من 4/.test(s));
+ ck('tokens/sec reported',/25\.0 رمز\/ث/.test(s));
+ ck('no page errors',errs.length===0);if(errs.length)console.log(errs);
+ await b.close();srv.close();console.log(bad?'FAILED':'ALL OK');process.exit(bad?1:0);})();
