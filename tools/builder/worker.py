@@ -55,6 +55,22 @@ def solve(t):
         msgs += [{'role': 'assistant', 'content': a}, {'role': 'user', 'content': 'فشل التحقق: ' + v['reason'] + '\nصحّح الشيفرة وأعد الكتلة كاملة.'}]
     return {'id': t['id'], 'ok': v['ok'], 'attempts': k, 'code': a, 'last': v['reason'], 'time': int(time.time())}
 os.makedirs(W, exist_ok=True)
+if os.environ.get('OUT'):
+    # وضع الدفعة (يُشغَّل من GitHub Actions عبر Kaggle API): يحلّ المهام الجديدة فقط ويكتب النتائج في OUT دون أي دفع إلى git.
+    import urllib.request
+    OUT = os.environ['OUT']; os.makedirs(OUT, exist_ok=True)
+    try: done = json.load(urllib.request.urlopen(f'https://raw.githubusercontent.com/{REPO.replace(".git","").split("github.com/")[-1]}/{BR}/results/done.json', timeout=30))
+    except Exception: done = {}
+    tdir = os.environ.get('TASKS', HERE + '/tasks'); newdone = {}
+    for f in sorted(os.listdir(tdir)):
+        if not f.endswith('.json'): continue
+        t = json.load(open(f'{tdir}/{f}', encoding='utf8'))
+        if t['id'] in done: continue
+        r = solve(t); newdone[t['id']] = {'ok': r['ok'], 'attempts': r['attempts']}
+        json.dump(r, open(f'{OUT}/{t["id"]}.json', 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+        json.dump(newdone, open(f'{OUT}/done_new.json', 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+        print(t['id'], 'نجح' if r['ok'] else 'فشل', 'محاولات', r['attempts'], flush=True)
+    print('انتهت الدفعة:', len(newdone), 'مهمة', flush=True); sys.exit(0)
 while time.time() < END:
     try:
         sync(); tasks = main_tasks(); verifier_dir = HERE
