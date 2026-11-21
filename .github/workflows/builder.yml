@@ -53,7 +53,7 @@ jobs:
           git config user.name nawa-builder; git config user.email builder@nawa.local
           git fetch origin builder-results 2>/dev/null && git checkout -B builder-results origin/builder-results || { git checkout --orphan builder-results; git rm -rfq .; }
           mkdir -p results status
-          find out -name "*.json" ! -name "nawa-builder*" -exec cp {} results/ ; 2>/dev/null || true
+          find out -name "*.json" ! -name "nawa-builder*" -exec cp {} results/ \; 2>/dev/null || true
           python3 - <<'PY'
           import json,os
           d=json.load(open('results/done.json')) if os.path.exists('results/done.json') else {}
