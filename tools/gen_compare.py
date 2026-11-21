@@ -31,8 +31,9 @@ for name, mid in MODELS:
         res = []
         for q in QUESTIONS:
             kw = {'enable_thinking': False} if 'Qwen3' in mid else {}
-            ids = tok.apply_chat_template([{'role': 'user', 'content': q}], add_generation_prompt=True, return_tensors='pt', **kw).to(model.device)
-            with torch.no_grad(): o = model.generate(ids, max_new_tokens=MAXNEW, do_sample=False, repetition_penalty=1.05)
+            enc = tok.apply_chat_template([{'role': 'user', 'content': q}], add_generation_prompt=True, return_tensors='pt', return_dict=True, **kw)
+            ids = (enc['input_ids'] if hasattr(enc, 'keys') else enc).to(model.device)
+            with torch.no_grad(): o = model.generate(ids, attention_mask=torch.ones_like(ids), max_new_tokens=MAXNEW, do_sample=False, repetition_penalty=1.05)
             gen = o[0][ids.shape[1]:]; res.append({'q': q, 'a': tok.decode(gen, skip_special_tokens=True).strip(), 'hit': int(len(gen) >= MAXNEW)})
         m = metrics(res); json.dump({'model': mid, 'license': lic, 'answers': res, 'seconds': round(time.time() - t0), **m}, open(p, 'w'), ensure_ascii=False, indent=1)
         summ.append(f'{name}: {m} | ترخيص: {lic} | {round(time.time() - t0)}ث'); print(summ[-1], flush=True)
