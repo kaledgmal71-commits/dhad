@@ -36,7 +36,7 @@ jobs:
       - name: تشغيل Kaggle
         if: steps.chk.outputs.new != '0'
         run: |
-          pip -q install kaggle
+          pip -q install kaggle six python-slugify requests tqdm
           [ -n "$KAGGLE_USERNAME" ] || { echo "سرّ KAGGLE_USERNAME غير مضبوط"; exit 1; }
           mkdir kd && cp tools/builder/kernel/nawa-builder.py kd/ && sed "s/__USER__/${KAGGLE_USERNAME}/" tools/builder/kernel/kernel-metadata.json > kd/kernel-metadata.json
           kaggle kernels push -p kd
