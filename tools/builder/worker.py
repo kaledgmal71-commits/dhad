@@ -47,11 +47,19 @@ def verify(task, code):
     p = subprocess.run(['node', f'{HERE}/verify.js', tp], input=code, capture_output=True, text=True)
     try: return json.loads(p.stdout)
     except Exception: return {'ok': False, 'reason': p.stderr[:300]}
+import re
+DIAC = re.compile('[\u064B-\u0652\u0670]')
+def fix_name(t, code):
+    # النموذج يُسقط علامات التشكيل من اسم الدالة المطلوب؛ نعيد الاسم كما ورد في المهمة حرفيًا (معالجة جذرية لا لمهمة بعينها).
+    m = re.search('«([^»\\s]+)»', t['prompt'])
+    if not m: return code
+    want = m.group(1); bare = DIAC.sub('', want)
+    return re.sub(r'(?<![\w_])' + re.escape(bare) + r'(?![\w_])', want, code) if bare != want else code
 def solve(t):
     msgs = [{'role': 'system', 'content': sysmsg}, {'role': 'user', 'content': t['prompt']}]
     hist = []
     for k in range(1, K + 1):
-        a = gen(msgs, t); v = verify(t, a); hist.append({'code': a[-1500:], 'reason': v['reason'][:300]})
+        a = fix_name(t, gen(msgs, t)); v = verify(t, a); hist.append({'code': a[-1500:], 'reason': v['reason'][:300]})
         if v['ok']: break
         msgs += [{'role': 'assistant', 'content': a}, {'role': 'user', 'content': 'فشل التحقق: ' + v['reason'] + '\nصحّح الشيفرة وأعد الكتلة كاملة.'}]
     return {'id': t['id'], 'ok': v['ok'], 'attempts': k, 'code': a, 'last': v['reason'], 'history': hist, 'time': int(time.time())}
