@@ -1,0 +1,32 @@
+[{"stream_name":"stdout","time":2.435139632,"data":"$ nvidia-smi -L \n"}
+,{"stream_name":"stdout","time":2.466561276,"data":"GPU 0: Tesla T4 (UUID: GPU-095f0a22-03d8-2198-aa13-b137e386e497)\n"}
+,{"stream_name":"stdout","time":2.466591066,"data":"GPU 1: Tesla T4 (UUID: GPU-c4607c9e-db52-29dd-a195-becb7634c80d)\n"}
+,{"stream_name":"stdout","time":2.473758439,"data":"$ pip -q install tokenizers datasets huggingface_hub 2\u003e\u00261 \n"}
+,{"stream_name":"stdout","time":8.178302351,"data":"$ rm -rf /kaggle/working/dhad \u0026\u0026 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.gi\n"}
+,{"stream_name":"stdout","time":10.114077087,"data":"$ python3 /kaggle/working/dhad/tools/lm/prep.py\n"}
+,{"stream_name":"stdout","time":126.767045856,"data":"hadith: 117799 وثيقة، 92.7M حرف، ODbL-1.0\n"}
+,{"stream_name":"stdout","time":126.767083742,"data":"quran: 228 وثيقة، 1.4M حرف، CC-BY-SA-4.0\n"}
+,{"stream_name":"stdout","time":126.767097364,"data":"openiti_0400AH: 698 وثيقة، 267.4M حرف، CC-BY-NC-SA-4.0\n"}
+,{"stream_name":"stdout","time":126.792020659,"data":"$ python3 /kaggle/working/dhad/tools/lm/train.py\n"}
+,{"stream_name":"stderr","time":140.074447348,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":140.074806387,"data":"  File \"/kaggle/working/dhad/tools/lm/train.py\", line 12, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":140.0748233,"data":"    CFG['steps'] = int(os.environ.get('MAX_STEPS', CFG['steps']))\n"}
+,{"stream_name":"stderr","time":140.074828526,"data":"                   ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":140.074833143,"data":"ValueError: invalid literal for int() with base 10: ''\n"}
+,{"stream_name":"stderr","time":146.209447241,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":146.210255737,"data":"  File \"/kaggle/src/script.py\", line 10, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":146.210270753,"data":"    sh('python3 /kaggle/working/dhad/tools/lm/train.py')\n"}
+,{"stream_name":"stderr","time":146.210275735,"data":"    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":146.210280124,"data":"  File \"/kaggle/src/script.py\", line 3, in sh\n"}
+,{"stream_name":"stderr","time":146.210284957,"data":"    def sh(c): print('$', c.split('|')[0][:100], flush=True); subprocess.run(c, shell=True, check=True)\n"}
+,{"stream_name":"stderr","time":146.21029027,"data":"                                                              ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":146.210295246,"data":"  File \"/usr/lib/python3.13/subprocess.py\", line 578, in run\n"}
+,{"stream_name":"stderr","time":146.210299925,"data":"    raise CalledProcessError(retcode, process.args,\n"}
+,{"stream_name":"stderr","time":146.210304093,"data":"                             output=stdout, stderr=stderr)\n"}
+,{"stream_name":"stderr","time":146.210308287,"data":"subprocess.CalledProcessError: Command 'python3 /kaggle/working/dhad/tools/lm/train.py' returned non-zero exit status 1.\n"}
+,{"stream_name":"stderr","time":148.814982295,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":148.815024091,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":149.261151184,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":149.261179296,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":150.138717051,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":151.504147517,"data":"[NbConvertApp] Writing 275936 bytes to __results__.html\n"}
