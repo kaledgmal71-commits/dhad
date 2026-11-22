@@ -1,0 +1,38 @@
+Sun Nov 22 00:27:48 UTC 2026
+dhad
+nawa-builder.log
+out
+w
+data":"t06 نجح محاولات 2\n"}
+,{"stream_name":"stdout","time":244.49397829,"data":"t07 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":251.765753072,"data":"t08 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":261.042590825,"data":"t09 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":281.795764595,"data":"t10 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":302.93718392,"data":"t11 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":307.674816995,"data":"t12 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":349.561910284,"data":"t13 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":355.354570248,"data":"t14 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":360.107721952,"data":"t15 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":367.95139297,"data":"t16 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":374.681825167,"data":"t17 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":380.7974435,"data":"t18 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":387.7378419,"data":"t19 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":410.096894454,"data":"t20 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":427.594325137,"data":"t21 نجح محاولات 2\n"}
+,{"stream_name":"stdout","time":434.290790734,"data":"t22 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":468.954106686,"data":"t23 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":490.102217903,"data":"t24 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":497.744204225,"data":"t25 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":525.626725693,"data":"t26 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":554.252526235,"data":"t27 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":616.528567752,"data":"t28 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":637.040810462,"data":"t29 فشل محاولات 3\n"}
+,{"stream_name":"stdout","time":641.838544404,"data":"t30 نجح محاولات 1\n"}
+,{"stream_name":"stdout","time":641.838592363,"data":"انتهت الدفعة: 30 مهمة\n"}
+,{"stream_name":"stderr","time":651.65901155,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":651.659049288,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":652.148301468,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":652.148333143,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":653.209318338,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":654.679666993,"data":"[NbConvertApp] Writing 274923 bytes to __results__.html\n"}
+]
