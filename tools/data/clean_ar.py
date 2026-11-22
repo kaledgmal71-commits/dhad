@@ -5,6 +5,7 @@ import re, collections
 TASH = 'ً-ْٰ'          # فتحتان..سكون + ألف خنجرية
 MARK = f'[{TASH}]'
 FOOT = re.compile(r'<FootNote\b[^>]*>(.*?)</FootNote>', re.S)
+NUM = re.compile(r'<(رقم_حديث|الصفحات)\b[^>]*>.*?</\1>', re.S)   # أرقام الأحاديث والصفحات: ليست من المتن
 TAG = re.compile(r'</?[^<>\n]{1,80}?/?>')
 ZW = re.compile('[​-‏‪-‮⁦-⁩﻿]')
 PERS = {'ی': 'ي', 'ک': 'ك', 'ھ': 'ه', 'ہ': 'ه', 'ە': 'ه'}
@@ -14,6 +15,7 @@ def split_markup(s):
     """يعيد (النص الصافي، [نصوص الحواشي]) مع إزالة الوسوم وإبقاء ما بينها."""
     notes = [m.group(1).strip() for m in FOOT.finditer(s)]
     s = FOOT.sub(' ', s)
+    s = NUM.sub(' ', s)
     s = TAG.sub('', s)
     return s, notes
 

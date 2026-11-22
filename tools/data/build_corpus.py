@@ -7,7 +7,7 @@ urllib.request.urlretrieve(SRC,'/content/w/clean_ar.py'); sys.path.insert(0,'/co
 from clean_ar import clean
 E='/content/drive/MyDrive/nawa-libraries/hadith-export'
 P='/content/drive/MyDrive/nawa-libraries/hadith-sample/profile.json'
-O='/content/drive/MyDrive/nawa-libraries/hadith-clean'
+O='/content/drive/MyDrive/nawa-libraries/hadith-clean-v2'
 os.makedirs(O,exist_ok=True)
 prof=json.load(open(P,encoding='utf8'))
 AR=re.compile(r'[؀-ۿ]')
