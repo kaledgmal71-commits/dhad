@@ -3,10 +3,6 @@
   "ok": true,
   "attempts": 1
  },
- "t02": {
-  "ok": false,
-  "attempts": 3
- },
  "t03": {
   "ok": true,
   "attempts": 1
@@ -35,21 +31,9 @@
   "ok": true,
   "attempts": 1
  },
- "t10": {
-  "ok": false,
-  "attempts": 3
- },
- "t11": {
-  "ok": false,
-  "attempts": 3
- },
  "t12": {
   "ok": true,
   "attempts": 1
- },
- "t13": {
-  "ok": false,
-  "attempts": 3
  },
  "t14": {
   "ok": true,
@@ -75,10 +59,6 @@
   "ok": true,
   "attempts": 1
  },
- "t20": {
-  "ok": false,
-  "attempts": 3
- },
  "t21": {
   "ok": true,
   "attempts": 2
@@ -87,33 +67,9 @@
   "ok": true,
   "attempts": 1
  },
- "t23": {
-  "ok": false,
-  "attempts": 3
- },
- "t24": {
-  "ok": false,
-  "attempts": 3
- },
  "t25": {
   "ok": true,
   "attempts": 1
- },
- "t26": {
-  "ok": false,
-  "attempts": 3
- },
- "t27": {
-  "ok": false,
-  "attempts": 3
- },
- "t28": {
-  "ok": false,
-  "attempts": 3
- },
- "t29": {
-  "ok": false,
-  "attempts": 3
  },
  "t30": {
   "ok": true,
