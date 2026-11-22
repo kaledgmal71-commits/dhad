@@ -2,7 +2,7 @@
 # لا يُدفع أي نص إلى أي مستودع؛ كل شيء داخل مجلد DATA على جهاز التدريب.
 import os, re, sys, csv, json, glob, subprocess, collections
 DATA = os.environ.get('DATA', '/kaggle/working/data'); SRC = DATA + '/_src'; os.makedirs(SRC, exist_ok=True)
-MAXMB = int(os.environ.get('MAX_MB', '1500'))
+MAXMB = int(os.environ.get('MAX_MB') or 1500)
 AR = re.compile(r'[؀-ۿ]')
 def ar_ratio(s):
     L = [c for c in s if c.isalpha()]
@@ -70,7 +70,7 @@ for c in [x for x in CENT if x]:
     f.close()
 json.dump({'subjects_top': subj.most_common(40)}, open(DATA + '/subjects.json', 'w', encoding='utf8'), ensure_ascii=False)
 # ٤) العربية العامة (ويكيبيديا)
-N = int(os.environ.get('WIKI_DOCS', '0'))
+N = int(os.environ.get('WIKI_DOCS') or 0)
 if N:
     try:
         from datasets import load_dataset

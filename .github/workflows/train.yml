@@ -55,7 +55,7 @@ jobs:
           for f in glob.glob('out/*.log'):
               try:
                   for l in open(f, encoding='utf8'):
-                      l = l.strip().rstrip(',')
+                      l = l.strip().lstrip('[').rstrip(',').rstrip(']')
                       if l.startswith('{') and 'data' in l:
                           try: out += json.loads(l)['data']
                           except Exception: pass

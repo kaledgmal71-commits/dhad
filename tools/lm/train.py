@@ -9,7 +9,7 @@ HF_TOKEN = os.environ.get('HF_TOKEN', ''); HF_REPO = os.environ.get('HF_REPO', '
 CFG = {'smoke': dict(d=256, L=4, H=4, T=512, mb=16, acc=1, vocab=8000, lr=1e-3, steps=600),
        'small': dict(d=640, L=10, H=10, T=1024, mb=12, acc=3, vocab=24000, lr=6e-4, steps=30000),
        'base': dict(d=768, L=12, H=12, T=1024, mb=10, acc=4, vocab=32000, lr=5e-4, steps=60000)}[PRESET]
-CFG['steps'] = int(os.environ.get('MAX_STEPS', CFG['steps']))
+CFG['steps'] = int(os.environ.get('MAX_STEPS') or CFG['steps'])
 dev = 'cuda' if torch.cuda.is_available() else 'cpu'; print('الجهاز', dev, torch.cuda.get_device_name(0) if dev == 'cuda' else '', flush=True)
 api = None
 if HF_TOKEN:
