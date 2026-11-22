@@ -75,21 +75,9 @@
   "ok": true,
   "attempts": 1
  },
- "t02": {
-  "ok": false,
-  "attempts": 3
- },
  "t10": {
   "ok": true,
   "attempts": 1
- },
- "t11": {
-  "ok": false,
-  "attempts": 3
- },
- "t13": {
-  "ok": false,
-  "attempts": 3
  },
  "t20": {
   "ok": true,
@@ -106,17 +94,5 @@
  "t26": {
   "ok": true,
   "attempts": 1
- },
- "t27": {
-  "ok": false,
-  "attempts": 3
- },
- "t28": {
-  "ok": false,
-  "attempts": 3
- },
- "t29": {
-  "ok": false,
-  "attempts": 3
  }
 }
