@@ -68,13 +68,14 @@ if os.environ.get('OUT'):
     # وضع الدفعة (يُشغَّل من GitHub Actions عبر Kaggle API): يحلّ المهام الجديدة فقط ويكتب النتائج في OUT دون أي دفع إلى git.
     import urllib.request
     OUT = os.environ['OUT']; os.makedirs(OUT, exist_ok=True)
-    try: done = json.load(urllib.request.urlopen(f'https://raw.githubusercontent.com/{REPO.replace(".git","").split("github.com/")[-1]}/{BR}/results/done.json', timeout=30))
+    try: done = json.load(urllib.request.urlopen(f'https://raw.githubusercontent.com/{REPO.replace(".git","").split("github.com/")[-1]}/{BR}/{os.environ.get("DONE_PATH", "results/done.json")}', timeout=30))
     except Exception: done = {}
     tdir = os.environ.get('TASKS', HERE + '/tasks'); newdone = {}
     for f in sorted(os.listdir(tdir)):
         if not f.endswith('.json'): continue
         t = json.load(open(f'{tdir}/{f}', encoding='utf8'))
         if t['id'] in done: continue
+        if os.environ.get('ONLY') and not re.fullmatch(os.environ['ONLY'], t['id']): continue
         r = solve(t); newdone[t['id']] = {'ok': r['ok'], 'attempts': r['attempts']}
         json.dump(r, open(f'{OUT}/{t["id"]}.json', 'w', encoding='utf8'), ensure_ascii=False, indent=1)
         json.dump(newdone, open(f'{OUT}/done_new.json', 'w', encoding='utf8'), ensure_ascii=False, indent=1)
