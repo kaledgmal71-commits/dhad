@@ -37,9 +37,9 @@ else:
     mid = os.environ.get('MODEL', 'Qwen/Qwen3-8B')
     tok = AutoTokenizer.from_pretrained(mid); model = AutoModelForCausalLM.from_pretrained(mid, torch_dtype=torch.float16, device_map='auto')
     def gen(msgs, t):
-        enc = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors='pt', return_dict=True)
+        enc = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors='pt', return_dict=True, enable_thinking=False)
         ids = enc['input_ids'].to(model.device)
-        with torch.no_grad(): o = model.generate(ids, attention_mask=torch.ones_like(ids), max_new_tokens=700, do_sample=False)
+        with torch.no_grad(): o = model.generate(ids, attention_mask=torch.ones_like(ids), max_new_tokens=900, do_sample=False)
         return tok.decode(o[0][ids.shape[1]:], skip_special_tokens=True).strip()
 sysmsg = open(f'{HERE}/fewshot.md', encoding='utf8').read()
 def verify(task, code):
@@ -49,11 +49,12 @@ def verify(task, code):
     except Exception: return {'ok': False, 'reason': p.stderr[:300]}
 def solve(t):
     msgs = [{'role': 'system', 'content': sysmsg}, {'role': 'user', 'content': t['prompt']}]
+    hist = []
     for k in range(1, K + 1):
-        a = gen(msgs, t); v = verify(t, a)
+        a = gen(msgs, t); v = verify(t, a); hist.append({'code': a[-1500:], 'reason': v['reason'][:300]})
         if v['ok']: break
         msgs += [{'role': 'assistant', 'content': a}, {'role': 'user', 'content': 'فشل التحقق: ' + v['reason'] + '\nصحّح الشيفرة وأعد الكتلة كاملة.'}]
-    return {'id': t['id'], 'ok': v['ok'], 'attempts': k, 'code': a, 'last': v['reason'], 'time': int(time.time())}
+    return {'id': t['id'], 'ok': v['ok'], 'attempts': k, 'code': a, 'last': v['reason'], 'history': hist, 'time': int(time.time())}
 os.makedirs(W, exist_ok=True)
 if os.environ.get('OUT'):
     # وضع الدفعة (يُشغَّل من GitHub Actions عبر Kaggle API): يحلّ المهام الجديدة فقط ويكتب النتائج في OUT دون أي دفع إلى git.
