@@ -122,5 +122,81 @@
  "t49": {
   "ok": true,
   "attempts": 1
+ },
+ "t02": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t11": {
+  "ok": true,
+  "attempts": 1
+ },
+ "t13": {
+  "ok": true,
+  "attempts": 1
+ },
+ "t27": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t28": {
+  "ok": true,
+  "attempts": 2
+ },
+ "t31": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t32": {
+  "ok": true,
+  "attempts": 3
+ },
+ "t33": {
+  "ok": true,
+  "attempts": 1
+ },
+ "t35": {
+  "ok": true,
+  "attempts": 3
+ },
+ "t37": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t38": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t39": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t42": {
+  "ok": true,
+  "attempts": 2
+ },
+ "t43": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t44": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t45": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t46": {
+  "ok": false,
+  "attempts": 3
+ },
+ "t48": {
+  "ok": true,
+  "attempts": 1
+ },
+ "t50": {
+  "ok": true,
+  "attempts": 2
  }
 }
