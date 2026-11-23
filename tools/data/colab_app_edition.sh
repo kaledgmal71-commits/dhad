@@ -1,5 +1,5 @@
 #!/bin/bash
-# Colab: يبني «نسخة التطبيق المصلَّحة» من قاعدة الجامع: تجميع القاعدة → إصلاحات آمنة بالمفتاح الأساسي → تغليف قطع → رفع إلى Hugging Face خاص.
+# Colab (يُشغَّل بعد أن تضع الخلية HF_TOKEN في البيئة): يبني «نسخة التطبيق المصلَّحة» من قاعدة الجامع: تجميع القاعدة → إصلاحات آمنة بالمفتاح الأساسي → تغليف قطع → رفع إلى Hugging Face خاص.
 # يمكن إعادة تشغيله: الإصلاح متساوي القوة (لا يغيّر ما أُصلح) والرفع يتخطى الموجود.
 set -e
 D=/content/drive/MyDrive/nawa-libraries
@@ -17,11 +17,11 @@ node apply_fixes.mjs /content/pgdata "$D/hadith-clean-v2/clean_report.json" /con
 VER=2026-11-23-fixed1
 rm -rf /content/out/*; node pack_pglite.mjs /content/pgdata /content/out $VER
 ls /content/out | head -3; ls /content/out | wc -l
+[ -n "$HF_TOKEN" ] || { echo "خطأ: لم يُدخَل رمز Hugging Face"; exit 1; }
 python3 - <<'PY'
-import getpass, os
+import os
 from huggingface_hub import HfApi
-tok=getpass.getpass('رمز الكتابة في Hugging Face (يُخفى): ')
-api=HfApi(token=tok)
+api=HfApi(token=os.environ['HF_TOKEN'])
 repo='kaledgmal/aljami-private'
 api.create_repo(repo, repo_type='dataset', private=True, exist_ok=True)
 api.upload_folder(folder_path='/content/out', repo_id=repo, repo_type='dataset', commit_message='نسخة التطبيق المصلَّحة 2026-11-23-fixed1')
