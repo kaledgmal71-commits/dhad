@@ -5,7 +5,7 @@
 // and then the unpacking, and a cut connection resumes from the last finished part.
 import { useEffect, useState } from 'react'
 import {
-  fetchOfflineManifest, formatBytes, offlineSupported, pauseOfflineDownload, refreshOfflineStatus,
+  offlineToken, fetchOfflineManifest, formatBytes, offlineSupported, pauseOfflineDownload, refreshOfflineStatus,
   removeOfflineData, startOfflineDownload, useOfflineState, type OfflineManifest,
 } from '@/lib/offline/client'
 import { canPrompt, installApp } from '@/app/components/InstallApp'
@@ -142,12 +142,14 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
                   : `تعذّر التحميل${online ? '' : ' (لا يوجد اتصال)'}. أعد المحاولة، وسيكمل من حيث توقّف.`}
             </p>
           )}
-          <button type="button" onClick={installAndStart} disabled={!online || (!m && !s.status?.manifest)}
+          <button type="button" onClick={installAndStart} disabled={!online || (!m && !s.status?.manifest && !!offlineToken())}
             className={btn + ' mt-3 disabled:opacity-50'}>
             <DownloadIcon /> {s.phase === 'paused' || s.status?.staged ? 'متابعة التحميل' : 'تثبيت الجامع'}
           </button>
           {!online && <p className="text-xs text-muted mt-2">يلزم اتصال بالإنترنت للتحميل.</p>}
-          {online && !m && s.phase !== 'checking' && <p className="text-xs text-muted mt-2">بيانات التحميل غير متاحة الآن.</p>}
+          {online && !m && s.phase !== 'checking' && (offlineToken()
+            ? <p className="text-xs text-muted mt-2">بيانات التحميل غير متاحة الآن.</p>
+            : <p className="text-xs text-muted mt-2">عند الضغط يُطلب منك رمز القراءة مرة واحدة.</p>)}
         </>
       )}
     </Card>
