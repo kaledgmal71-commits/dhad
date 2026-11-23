@@ -19,7 +19,7 @@ def split_markup(s):
     s = TAG.sub('', s)
     return s, notes
 
-def fix_orthography(s, stats=None):
+def fix_orthography(s, stats=None, skip=()):
     st = stats if stats is not None else collections.Counter()
     def sub(name, rx, rep):
         nonlocal s
@@ -53,7 +53,7 @@ def fix_orthography(s, stats=None):
     if n: st['orphan_mark_dropped'] += n
     # مسافات
     sub('multi_space', r'[ \t]{2,}', ' ')
-    sub('space_before_punct', r'\s+([،؛؟.:!])(?=\s|$)', r'\1')
+    if 'space_before_punct' not in skip: sub('space_before_punct', r'\s+([،؛؟.:!])(?=\s|$)', r'\1')
     return s.strip(), st
 
 def normalize_digits(s):
@@ -66,3 +66,23 @@ def clean(s, keep_notes=False):
     out, st = fix_orthography(plain, st)
     out = normalize_digits(out)
     return (out, notes, st) if keep_notes else (out, st)
+
+APP_SKIP = ('space_before_punct',)   # تجميلي وقد يخالف رسم الطبعات: لا يُطبَّق على نسخة التطبيق
+
+def fix_for_app(s, stats=None):
+    """إصلاح آمن للتطبيق: يُبقي الوسوم والأرقام والأسطر والحواشي كما هي حرفيًّا، ويصلح النص بين الوسوم فقط
+    (بلا حذف مسافة قبل علامة الترقيم ولا strip). الأعمدة غير الموسومة تُعامَل كلها كنص واحد."""
+    st = stats if stats is not None else collections.Counter()
+    out, last = [], 0
+    for m in TAG.finditer(s):
+        seg = s[last:m.start()]
+        out.append(_fix_seg(seg, st)); out.append(m.group(0)); last = m.end()
+    out.append(_fix_seg(s[last:], st))
+    return ''.join(out), st
+
+def _fix_seg(seg, st):
+    if not seg: return seg
+    y, _ = fix_orthography(seg, st, skip=APP_SKIP)
+    # fix_orthography يعمل strip: نعيد المسافات الطرفية الأصلية
+    lead = seg[:len(seg) - len(seg.lstrip())]; trail = seg[len(seg.rstrip()):]
+    return lead + y + trail

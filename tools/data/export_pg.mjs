@@ -20,6 +20,7 @@ if(!fs.existsSync(PG+'/PG_VERSION')){
   }
   console.log('reassembled',files.length,'files')
 }
+if(process.env.ONLY_REASSEMBLE){console.log('تم التجميع');process.exit(0)}
 const db=await PGlite.create({dataDir:PG,extensions:{pg_trgm,unaccent}})
 const tabs=(await db.query(`select c.relname n, pg_total_relation_size(c.oid) tot, pg_relation_size(c.oid) heap from pg_class c join pg_namespace s on s.oid=c.relnamespace where s.nspname='public' and c.relkind='r' order by 2 desc`)).rows
 const summary=[]
