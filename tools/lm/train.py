@@ -105,7 +105,12 @@ opt = torch.optim.AdamW([{'params': dec, 'weight_decay': 0.1}, {'params': nod, '
 scaler = torch.amp.GradScaler(enabled=(dev == 'cuda')); step = 0
 last = hf_get('last.pt') or (OUT + '/last.pt' if os.path.exists(OUT + '/last.pt') else None)
 if last:
-    ck = torch.load(last, map_location=dev); model.load_state_dict(ck['model']); opt.load_state_dict(ck['opt']); step = ck['step']; print('استئناف من الخطوة', step, flush=True)
+    ck = torch.load(last, map_location=dev)
+    SHAPE = [k for k in CFG if k not in ('steps', 'lr', 'mb', 'acc')]
+    if all(ck.get('cfg', {}).get(k) == CFG[k] for k in SHAPE):
+        model.load_state_dict(ck['model']); opt.load_state_dict(ck['opt']); step = ck['step']; print('استئناف من الخطوة', step, flush=True)
+    else:
+        print('نقطة الحفظ من إعداد مختلف (', {k: ck.get('cfg', {}).get(k) for k in SHAPE}, ') فيبدأ التدريب من الصفر', flush=True)
 def lr_at(s):
     w = 200
     if s < w: return CFG['lr'] * (s + 1) / w
