@@ -1,0 +1,739 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from '@/app/components/Link'
+import ReportPrintButton from './ReportPrintButton'
+import SaveHadith from './SaveHadith'
+import HadithExport from './HadithExport'
+import ChainTimeline from './ChainTimeline'
+import HadithNote from './HadithNote'
+import TrackHadithView from './TrackHadithView'
+import IsnadTree from './IsnadTree'
+import UiIcon from './UiIcon'
+import MatnVariants from './MatnVariants'
+import { displayNarratorName } from '@/lib/narratorName'
+import { SECOND_EDITION } from '@/lib/printEditions'
+import MatnSimilaritySection from './MatnSimilaritySection'
+import PrevNextNav from './PrevNextNav'
+import GhareebMatn from './GhareebMatn'
+import SanadNarrators from './SanadNarrators'
+import CollapsibleSection from './CollapsibleSection'
+import SectionIcon, { hasSectionIcon } from './SectionIcon'
+import Chips from './Chips'
+import HadithServiceSection, { activeServiceSections } from './HadithServiceSection'
+import type { HadithServiceKey } from './HadithServiceSection'
+import { stripTashkeel } from '@/lib/ghareeb'
+import HadithHighlights from './HadithHighlights'
+import { splitSanadMatn, stripXmlToVerbatim, extractTarf } from '@/lib/hadithText'
+import { findTarfRange, withTarf } from '@/lib/tarf'
+import type { SanadNarratorPreview, SanadSegment } from '@/lib/sanadNarrators'
+import type { ReactNode } from 'react'
+
+function cleanHadithContent(xml: string): string {
+  return stripXmlToVerbatim(xml)
+}
+
+// Reader-adjustable matn sizes (responsive clamps so every level scales on mobile).
+// The matn opens at 24px; the reader can step it down or up with أ−/أ+ (the choice is remembered
+// under MATN_SIZE_KEY — renamed whenever the default changes, so stored old defaults don't stick).
+const MATN_SIZES = ['1rem', '1.125rem', '1.3125rem', '1.5rem', '1.75rem'] // 16–28px at full size
+const MATN_SIZE_DEFAULT = 3
+const MATN_SIZE_KEY = 'matnSize.v2'
+
+export interface NarratorInChain {
+  id: number
+  name: string
+  abb_name: string | null
+  martaba_ibn_hajar: string | null
+  martaba_zahabi: string | null
+  is_companion: boolean
+  companion_title?: string | null
+  is_female?: boolean | null
+  tabaqa: string | null
+  death_year_num: number | null
+  death_year: string | null
+}
+
+export interface Chain {
+  narrators: NarratorInChain[]
+  tahdethTerm?: string | null
+  narratorTerms?: Record<number, string>
+}
+
+// جرح وتعديل sayings for one narrator, grouped by the critic who said them.
+export interface CriticismGroup {
+  scientist_name: string
+  scientist_noun_id: number | null
+  entries: { text: string; garh_label: string | null }[]
+}
+
+export interface Judgment {
+  say_text: string
+  scientist_id: number | null
+  scientist_name: string | null
+  abb_name: string | null
+  death_year_num: number | null
+  martaba_ibn_hajar: string | null
+  grade_class: string | null
+  source_book: string | null
+  source_part: number | null
+  source_page: number | null
+  source_content_id: number | null
+}
+
+export interface HadithInfo {
+  main_id: number
+  book_id: number
+  book_title: string
+  takhrij_author: string | null
+  takhrij_death: number | null
+  section_text: string | null
+  chapter_text: string | null
+  part_num: number
+  page_num: number
+  tarqeem_harf: string | null
+  tarqeem_matboa1: string | null
+  tarqeem_matboa2?: number | null
+  print1_edition: string | null
+  tarf: string | null
+  content: string
+  prev_paragraph_id: number
+  next_paragraph_id: number
+}
+
+export type { HadithServiceKey }
+
+export interface HadithSidebarLayoutProps {
+  hadithId: number
+  sectionTarget?: number
+  chapterTarget?: number
+  hadith: HadithInfo
+  chains: Chain[]
+  narratorCriticism?: Record<number, CriticismGroup[]>
+  commonNarrators: NarratorInChain[]
+  judgments: Judgment[]
+  subjects: Array<{ id: number; title: string }>
+  relatedHadiths: Array<{ main_id: number; tarf: string | null; book_title: string }>
+  takhrijBooks: string[]
+  takhrijSummary: { mutabaatCount: number; shawahidCount: number }
+  booksTakhrij?: Array<{ id: number; title: string }>
+  hadithServices?: Partial<Record<HadithServiceKey, boolean>>
+  isnadType?: number | null
+  sanadSegments?: SanadSegment[]
+  sanadNarrators?: Record<number, SanadNarratorPreview>
+  matngroupSlot?: ReactNode
+  takhrijSlot: ReactNode
+  // Header chips for sections whose counts come from the server (SectionBadges), keyed by section id
+  sectionBadges?: Record<string, ReactNode>
+  // Dorar's ruling (stored by scripts/dorar-crawl.mjs), shown in the line under the hadith title
+  relatedTopicsSlot?: ReactNode
+  dorarSlot?: ReactNode
+  // The English translation (Sunnah.com), under the matn
+  translationSlot?: ReactNode
+}
+
+const ISNAD_TYPE_MAP: Record<number, { label: string; cls: string; desc: string }> = {
+  1: { label: 'مرفوع',  cls: 'bg-green-100 text-green-800 border-green-300',  desc: 'يُنسب إلى النبي ﷺ' },
+  2: { label: 'موقوف',  cls: 'bg-amber-100 text-amber-800 border-amber-300',  desc: 'ينتهي عند الصحابي' },
+  3: { label: 'مقطوع',  cls: 'bg-orange-100 text-orange-800 border-orange-300', desc: 'ينتهي عند التابعي' },
+  4: { label: 'مرسل',   cls: 'bg-blue-100 text-blue-800 border-blue-300',     desc: 'التابعي يروي عن النبي ﷺ مباشرة' },
+}
+
+export default function HadithSidebarLayout({
+  sectionTarget, chapterTarget,
+  hadithId, hadith: h, chains, narratorCriticism = {}, commonNarrators,
+  judgments, subjects, relatedHadiths, takhrijBooks, takhrijSummary,
+  hadithServices, isnadType,
+  sanadSegments,
+  sanadNarrators = {},
+  matngroupSlot,
+  takhrijSlot,
+  sectionBadges = {},
+  dorarSlot,
+  relatedTopicsSlot,
+  translationSlot,
+}: HadithSidebarLayoutProps) {
+  const [showTashkeel, setShowTashkeel] = useState(true)
+  const [matnSize, setMatnSize] = useState(MATN_SIZE_DEFAULT)
+
+  // The first printed number and the edition it belongs to. Books with no named edition
+  // (البيهقي، المستدرك) have no printed numbering at all — their «المطبوع» is Harf's
+  // number repeated — so it is dropped rather than credited to an edition.
+  const edition1 = h.print1_edition?.trim() && h.print1_edition.trim() !== '0' ? h.print1_edition.trim() : null
+  const matboa1 = edition1 ? h.tarqeem_matboa1?.trim() || null : null
+
+  // Track the sticky header height so the TOC sidebar + section anchors sit flush under it
+  useEffect(() => {
+    const header = document.querySelector('header')
+    if (!header) return
+    const apply = () => document.documentElement.style.setProperty('--app-header-h', `${Math.round(header.getBoundingClientRect().height)}px`)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(header)
+    return () => ro.disconnect()
+  }, [])
+
+  // Persist the reader's matn-size preference across hadiths/sessions
+  useEffect(() => {
+    const saved = parseInt(localStorage.getItem(MATN_SIZE_KEY) ?? '', 10)
+    if (!Number.isNaN(saved) && saved >= 0 && saved < MATN_SIZES.length) setMatnSize(saved)
+  }, [])
+  useEffect(() => {
+    localStorage.setItem(MATN_SIZE_KEY, String(matnSize))
+  }, [matnSize])
+
+  const serviceSections = activeServiceSections(hadithServices)
+
+  // Sections shown in main content and sidebar TOC — dynamic based on available data
+  const SECTIONS = [
+    { id: 'matn', label: 'المتن' },
+    { id: 'isnad',   label: 'الأسانيد والرواة' },
+    { id: 'takhrij', label: 'التخريج' },
+    { id: 'variants', label: 'الروايات الموازية' },
+    { id: 'matn-similarity', label: 'مطابقة المتون' },
+    ...serviceSections.filter(s => s.kind === 'witnesses').map(s => ({ id: s.id, label: s.label })),
+    ...(judgments.length > 0 ? [{ id: 'aqwal', label: 'أقوال العلماء' }] : []),
+    ...serviceSections.filter(s => s.kind !== 'witnesses').map(s => ({ id: s.id, label: s.label })),
+    { id: 'adawat',  label: 'أدوات البحث' },
+  ]
+
+  function applyTashkeel(text: string): string {
+    if (showTashkeel) return text
+    return stripTashkeel(text)
+  }
+
+  // Judgment grade styles
+  const gradeOf = (g: string | null) =>
+    g === 'صحيح' ? { bar: 'bg-green-500', badge: 'bg-green-100 text-green-800 border-green-200', border: 'border-green-200' } :
+    g === 'حسن'  ? { bar: 'bg-blue-400',  badge: 'bg-blue-100 text-blue-800 border-blue-200',   border: 'border-blue-100'  } :
+    g === 'ضعيف' ? { bar: 'bg-red-400',   badge: 'bg-red-100 text-red-700 border-red-200',     border: 'border-red-100'   } :
+                    { bar: 'bg-gray-300',  badge: 'bg-gray-100 text-gray-600 border-gray-200',  border: 'border-gray-100'  }
+
+  // Group judgments by scientist
+  const judgmentGroups: Judgment[][] = []
+  const keyIndex = new Map<string, number>()
+  for (const j of judgments) {
+    const key = j.scientist_id != null ? `id-${j.scientist_id}` : `name-${j.scientist_name ?? 'unknown'}`
+    if (keyIndex.has(key)) {
+      judgmentGroups[keyIndex.get(key)!].push(j)
+    } else {
+      keyIndex.set(key, judgmentGroups.length)
+      judgmentGroups.push([j])
+    }
+  }
+
+  const tocLinkClass = "w-full text-right px-3 py-2.5 flex items-center gap-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-green-800 border-l-[3px] border-transparent hover:border-green-300 transition-all"
+
+  return (
+    <div className="flex flex-col sm:flex-row -mx-3 sm:-mx-4 gap-0 min-w-0">
+
+      {/* ── RIGHT SIDEBAR (TOC) ── */}
+      <aside className="w-52 shrink-0 self-start sticky hidden sm:flex flex-col bg-white border-l border-gray-200 shadow-sm" style={{ top: 'var(--app-header-h, 9rem)', height: 'calc(100dvh - var(--app-header-h, 9rem))' }}>
+        <div className="px-3 pt-3 pb-2 border-b border-gray-100 shrink-0">
+          <p className="text-[11px] font-bold text-gray-400 tracking-wider uppercase">المحتوى</p>
+        </div>
+
+        {/* Section list + quick links scroll together so the list isn't squeezed by a pinned footer */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <nav className="py-1">
+            {SECTIONS.map(s => (
+              <a key={s.id} href={`#${s.id}`} className={tocLinkClass}>
+                {hasSectionIcon(s.id)
+                  ? <SectionIcon id={s.id} size={17} className="shrink-0 text-accent-gold" />
+                  : <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />}
+                {s.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="border-t border-gray-100 px-3 py-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">روابط سريعة</p>
+            {[
+              { href: `/hadith/${hadithId}/witnesses`,       label: 'الشواهد والمتابعات' },
+              { href: `/hadith/${hadithId}/pivot`,           label: 'مدار الحديث' },
+              { href: `/hadith/${hadithId}/isnad-ranking`,   label: 'ترتيب الأسانيد' },
+              { href: `/hadith/${hadithId}/across-books`,    label: 'الحديث في المصادر' },
+            ].map(lnk => (
+              <a key={lnk.href} href={lnk.href}
+                className="block text-xs text-green-700 hover:text-green-900 hover:underline py-0.5">
+                {lnk.label} ←
+              </a>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="flex-1 min-w-0 px-3 sm:px-4 pt-2 pb-8">
+        <TrackHadithView hadithId={hadithId} hadithTitle={h.book_title + (h.tarqeem_harf ? ` رقم ${h.tarqeem_harf}` : '')} />
+
+        {/* Source card first: book, chapter, part/page, numbering, then the text */}
+        <header id="source-details" className="hadith-source-index scroll-mt-header" dir="rtl">
+          <nav aria-label="مسار الكتاب" className="hadith-source-breadcrumb">
+            <Link href="/books">الكتب</Link>
+            <span aria-hidden="true">‹</span>
+            <Link href={`/books/${h.book_id}`}>{h.book_title}</Link>
+            {h.section_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${sectionTarget ? `?section=${sectionTarget}` : ''}`}><UiIcon name="books" size={18} /><span>{/^(كتاب|باب)/.test(h.section_text.trim()) ? h.section_text.trim() : `الكتاب: ${h.section_text.trim()}`}</span></Link>
+            </>}
+            {h.chapter_text?.trim() && <>
+              <span aria-hidden="true">‹</span>
+              <Link className="hadith-breadcrumb-heading" href={`/books/${h.book_id}${chapterTarget ? `?section=${chapterTarget}` : ''}`}><UiIcon name="document" size={18} /><span>{h.chapter_text.trim().startsWith('باب') ? h.chapter_text.trim() : `الباب: ${h.chapter_text.trim()}`}</span></Link>
+            </>}
+          </nav>
+          {/* One line for the full reference: book, author, part, page, and every numbering —
+              so nothing below repeats it. Each number names its own edition, so no number
+              reads as belonging to another's. */}
+          <p className="hadith-source-edition">
+            <strong>المرجع: </strong>{[
+              h.book_title,
+              h.takhrij_author,
+              // With no first number to carry it, the edition still names the part and page
+              !matboa1 && edition1 && `الطبعة: ${edition1}`,
+              h.part_num > 0 && `ج ${h.part_num}`,
+              h.page_num > 0 && `ص ${h.page_num}`,
+              matboa1 && `المطبوع (${edition1}): ${matboa1}`,
+              h.tarqeem_matboa2 != null && `المطبوع ٢ (${SECOND_EDITION[h.book_id] ?? 'طبعة أخرى'}): ${h.tarqeem_matboa2}`,
+              h.tarqeem_harf?.trim() && `حرف (موسوعة الحديث الشريف): ${h.tarqeem_harf.trim()}`,
+            ].filter(Boolean).join(' · ')}
+          </p>
+          {/* The book is named in the breadcrumb above; the page heading stays for screen readers and search */}
+          <h1 className="sr-only">{h.book_title}</h1>
+          <dl className="hadith-source-hierarchy">
+          {isnadType && ISNAD_TYPE_MAP[isnadType] && (() => {
+            const t = ISNAD_TYPE_MAP[isnadType]
+            return (
+              <div>
+                <dt>نوع الحديث</dt>
+                <dd title={t.desc}>{t.label}</dd>
+              </div>
+            )
+          })()}
+          {(() => {
+            const terms = chains.map(c => c.tahdethTerm).filter(Boolean) as string[]
+            if (terms.length === 0) return null
+            const freq: Record<string, number> = {}
+            terms.forEach(t => { freq[t] = (freq[t] ?? 0) + 1 })
+            const dominant = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0]
+            return (
+              <div>
+                <dt>صيغة التحديث</dt>
+                <dd>{dominant}</dd>
+              </div>
+            )
+          })()}
+
+        {(() => {
+          const companion = chains.flatMap(c => c.narrators).find(n => n.is_companion)
+          if (!companion) return null
+          return (
+            <div className="hadith-source-wide">
+              <dt><UiIcon name="narrator" size={18} />الراوي</dt>
+              <dd>
+              <Link href={`/narrator/${companion.id}`} className="text-green-800 hover:underline font-semibold" title={companion.name}>
+                {displayNarratorName(companion.name, companion.abb_name)}
+              </Link>
+              </dd>
+            </div>
+          )
+        })()}
+            {h.takhrij_author && (
+              <div className="hadith-source-wide">
+                <dt><UiIcon name="narrator" size={18} />المؤلف</dt>
+                <dd>{h.takhrij_author}{h.takhrij_death ? ` (ت ${h.takhrij_death} هـ)` : ''}</dd>
+              </div>
+            )}
+            {subjects.length > 0 && <div className="hadith-source-wide"><dt><UiIcon name="topics" size={18} />الموضوعات</dt><dd className="hadith-source-subjects">{subjects.map(s => <Link key={s.id} href={`/topics/item/${s.id}`}>{s.title}</Link>)}</dd></div>}
+          </dl>
+        </header>
+
+        {/* Hadith text — sanad then matn (matn is the hero) */}
+        {(() => {
+          const { sanad, matn, tail, footnotes } = splitSanadMatn(h.content)
+          const matnText = matn || cleanHadithContent(h.content)
+          // The tarf is shown where it sits in the matn (a faint highlight), not repeated beside it
+          const tarf = extractTarf(h.content)
+          const plainMatn = applyTashkeel(matnText)
+          const tarfRange = findTarfRange(plainMatn, tarf, showTashkeel)
+          return (
+            <div className="ui-card mb-4 overflow-hidden">
+              <header aria-label="أدوات الحديث" className="hadith-reader-toolbar border-b border-border bg-surface px-4 sm:px-6 py-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <a href={`/hadith/compare?a=${hadithId}`}
+                    className="text-xs border border-indigo-200 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+                    قارن
+                  </a>
+                  <button
+                    onClick={() => setShowTashkeel(v => !v)}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+                      showTashkeel
+                        ? 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                        : 'border-amber-300 bg-amber-50 text-amber-700 font-medium'
+                    }`}
+                  >
+                    {showTashkeel ? 'بلا تشكيل' : 'مع التشكيل'}
+                  </button>
+                  {/* Matn font-size stepper */}
+                  <div className="inline-flex items-center rounded-lg border border-gray-200 overflow-hidden" data-no-convert>
+                    <button
+                      onClick={() => setMatnSize(s => Math.max(0, s - 1))}
+                      disabled={matnSize <= 0}
+                      title="تصغير حجم المتن"
+                      aria-label="تصغير حجم المتن"
+                      className="px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      أ−
+                    </button>
+                    <span className="px-1.5 text-[10px] text-gray-400 border-x border-gray-200 select-none" title="حجم المتن">حجم</span>
+                    <button
+                      onClick={() => setMatnSize(s => Math.min(MATN_SIZES.length - 1, s + 1))}
+                      disabled={matnSize >= MATN_SIZES.length - 1}
+                      title="تكبير حجم المتن"
+                      aria-label="تكبير حجم المتن"
+                      className="px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      أ+
+                    </button>
+                  </div>
+                  <ReportPrintButton
+                    report={{
+                      title: h.book_title,
+                      subtitle: h.tarqeem_harf || h.tarqeem_matboa1 ? `رقم ${h.tarqeem_harf || h.tarqeem_matboa1}` : 'حديث نبوي',
+                      text: [
+                        cleanHadithContent(h.content || h.tarf || ''),
+                        chains.length > 0 ? `\n\nالسند: ${chains[0].narrators.map((n) => n.name).join(' ← ')}` : '',
+                      ].filter(Boolean).join('\n'),
+                    }}
+                    label="طباعة الحديث"
+                  />
+                  <SaveHadith hadithId={hadithId} />
+                  <HadithExport
+                    hadith={{
+                      main_id: hadithId,
+                      book_title: h.book_title,
+                      takhrij_author: h.takhrij_author,
+                      takhrij_death: h.takhrij_death,
+                      section_text: h.section_text,
+                      chapter_text: h.chapter_text,
+                      part_num: h.part_num,
+                      page_num: h.page_num,
+                      tarqeem_harf: h.tarqeem_harf,
+                      tarqeem_matboa1: h.tarqeem_matboa1,
+                      tarf: h.tarf,
+                    }}
+                    chain={chains[0]?.narrators || []}
+                    takhrijBooks={takhrijBooks}
+                    takhrijSummary={takhrijSummary}
+                    judgments={judgments.map(j => ({
+                      say_text: j.say_text,
+                      scientist_name: j.scientist_name,
+                      grade_class: j.grade_class,
+                    }))}
+                  />
+                  <HadithNote hadithId={hadithId} />
+
+                </div>
+              </header>
+              {sanad && (
+                <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border bg-surface-sunken">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">السند</p>
+                  {sanadSegments && sanadSegments.length > 0 ? (
+                    <SanadNarrators
+                      segments={sanadSegments}
+                      narrators={sanadNarrators}
+                      showTashkeel={showTashkeel}
+                      className="hadith-sanad"
+                    />
+                  ) : (
+                    <p className="hadith-sanad whitespace-pre-wrap" dir="rtl">
+                      {applyTashkeel(sanad)}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div
+                id="matn"
+                tabIndex={-1}
+                className={sanad ? 'scroll-mt-header px-4 sm:px-6 py-6 sm:py-8' : 'scroll-mt-header px-4 sm:px-6 py-8 sm:py-10'}
+                style={{ ['--matn-size' as string]: MATN_SIZES[matnSize] }}
+              >
+                {sanad && (
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 font-sans">المتن</p>
+                )}
+                {hadithServices?.ghareeb ? (
+                  <GhareebMatn
+                    hadithId={hadithId}
+                    matn={matnText}
+                    tarf={tarf}
+                    showTashkeel={showTashkeel}
+                    className="hadith-matn"
+                  />
+                ) : (
+                  <p className="hadith-matn whitespace-pre-wrap" dir="rtl">
+                    {withTarf(plainMatn, 0, tarfRange, tarf, 'matn')}
+                  </p>
+                )}
+                {/* a tail that is only punctuation (often a lone «.») isn't shown */}
+                {/[\p{L}\p{N}]/u.test(tail) && (
+                  <div className="mt-4 pt-4 border-t border-border text-sm text-gray-700 leading-loose whitespace-pre-wrap" dir="rtl">
+                    {applyTashkeel(tail)}
+                  </div>
+                )}
+                {dorarSlot && (
+                  <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-2 font-sans" dir="rtl">{dorarSlot}</div>
+                )}
+                {(takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 || hadithServices?.ghareeb) && (
+                  <p className={`${dorarSlot ? 'mt-2' : 'mt-4 pt-3 border-t border-border'} flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-sans`} dir="rtl">
+                    {takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount > 0 && (
+                      <a href="#takhrij" className="text-green-700 hover:underline">{takhrijSummary.mutabaatCount + takhrijSummary.shawahidCount} رواية أخرى في التخريج</a>
+                    )}
+                    {hadithServices?.ghareeb && <span className="text-gray-600">غريب الحديث</span>}
+                  </p>
+                )}
+                <HadithHighlights hadithId={hadithId} />
+                {translationSlot}
+                {footnotes.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-border space-y-1" dir="rtl">
+                    {footnotes.map(f => (
+                      <div key={f.id} className="text-xs text-gray-500 leading-relaxed">
+                        <span className="font-medium text-gray-600">({f.id})</span> {applyTashkeel(f.text)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
+        {relatedTopicsSlot}
+
+        {/* Mobile: horizontal TOC strip */}
+        <div className="sm:hidden mb-5 -mx-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-1.5 pb-1 px-1 min-w-max">
+            {SECTIONS.map(s => (
+              <a key={s.id} href={`#${s.id}`}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-green-300 shrink-0 transition-colors">
+                {s.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* ── الأسانيد والرواة ── */}
+        <section className="research-group research-group-isnad" aria-labelledby="research-isnad-title">
+        <h2 id="research-isnad-title" className="research-group-title">السند والرواة</h2>
+        <p className="research-group-description">تتبّع سلسلة الرواية وتعرّف إلى رجال الإسناد</p>
+        <CollapsibleSection sub="سلاسل الإسناد وتراجم الرواة وأقوال النقاد" id="isnad" label="الأسانيد والرواة" badges={chains.length > 0 ? (() => {
+            const dm: Record<number, string> = {3:'ثلاثي',4:'رباعي',5:'خماسي',6:'سداسي',7:'سباعي',8:'ثماني',9:'تساعي',10:'عشاري'}
+            const lens = chains.map(c => c.narrators.length)
+            const mn = Math.min(...lens), mx = Math.max(...lens)
+            const dl = mn === mx ? (dm[mn] || `${mn} رواة`) : `${dm[mn]||mn}–${dm[mx]||mx}`
+            const narrators = new Set(chains.flatMap(c => c.narrators.map(n => n.id))).size
+            return <Chips chips={[
+              { text: `${chains.length} ${chains.length === 1 ? 'سند' : 'أسانيد'}` },
+              { text: `${narrators} راوٍ`, tone: 'info' },
+              { text: dl, tone: 'violet' },
+            ]} />
+          })() : undefined}>
+          {chains.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4">لا يوجد إسناد مسجل لهذا الحديث</p>
+          ) : (
+            <div className="space-y-3">
+              {/* Primary: this hadith's isnad in a React Flow (rich سلسلة nodes) with a toggle to the full cross-book tree */}
+              <IsnadTree hadithId={hadithId} chains={chains} narratorCriticism={narratorCriticism} />
+
+              {/* Secondary: chronological (death-year) view of the primary chain */}
+              <details className="rounded-xl border border-border bg-surface overflow-hidden group">
+                <summary className="cursor-pointer list-none select-none px-4 py-3 flex items-center justify-between gap-2 text-sm font-medium text-gray-600 hover:text-green-800 transition-colors">
+                  <span>الجدول الزمني للسند — الفجوات بين الرواة</span>
+                  <span className="text-xs text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div className="px-4 pb-4 -mt-1">
+                  <ChainTimeline narrators={chains[0].narrators} />
+                </div>
+              </details>
+
+              {commonNarrators.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-green-800 mb-2">مدار الأسانيد المعروضة — موضع تفرّع الطرق</p>
+                  <p className="text-xs text-gray-600 mb-2">آخر راوٍ في المسار المشترك قبل تفرّعه إلى تلميذين أو أكثر. النتيجة مقصورة على الأسانيد المعروضة، وليست حكماً بالتفرد المطلق أو بصحة الحديث.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {commonNarrators.map(n => (
+                      <Link key={n.id} href={`/narrator/${n.id}`}
+                        className="text-sm px-3 py-1 rounded-lg border border-green-200 bg-surface hover:shadow-sm hover:border-green-300 transition-all">
+                        {n.abb_name || n.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CollapsibleSection>
+
+        </section>
+        <section className="research-group research-group-comparison" aria-labelledby="research-comparison-title">
+        <h2 id="research-comparison-title" className="research-group-title">التخريج ومقارنة الروايات</h2>
+        <p className="research-group-description">حدّد المصادر وقارن الطرق والألفاظ بين الروايات</p>
+        {/* ── التخريج ── */}
+        <CollapsibleSection id="takhrij" label="التخريج" badges={sectionBadges.takhrij} sub="مصادر الحديث في كتب السنة — التصنيف من برنامج الجامع">
+          {takhrijSlot}
+        </CollapsibleSection>
+
+        {/* ── الروايات الموازية (takhrij groups) ── */}
+        <CollapsibleSection id="variants" label="الروايات الموازية" badges={sectionBadges.variants} sub="روايات موازية من كتب التخريج">
+          <MatnVariants
+            hadithId={hadithId}
+            currentTarf={h.tarf}
+            currentBookTitle={h.book_title}
+            currentDeath={h.takhrij_death}
+          />
+        </CollapsibleSection>
+
+        {/* ── مطابقة المتون (حساب مباشر) ── */}
+        <CollapsibleSection id="matn-similarity" label="مطابقة المتون" badges={sectionBadges['matn-similarity']} sub="حساب مباشر — نسبة تطابق الألفاظ بين المتون">
+          <MatnSimilaritySection hadithId={hadithId} bare />
+        </CollapsibleSection>
+
+        {serviceSections.filter(cfg => cfg.kind === 'witnesses').map(cfg => (
+          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label} badges={sectionBadges[cfg.id]} sub="الطرق الموازية والشواهد المرتبطة بالحديث">
+            <HadithServiceSection hadithId={hadithId} config={cfg} />
+          </CollapsibleSection>
+        ))}
+        {matngroupSlot}
+        </section>
+        {(judgmentGroups.length > 0 || serviceSections.some(cfg => cfg.kind !== 'witnesses') || relatedHadiths.length > 0) && <section className="research-group research-group-study" aria-labelledby="research-study-title">
+        <h2 id="research-study-title" className="research-group-title">الشروح والدراسة</h2>
+        <p className="research-group-description">راجع الشروح وأقوال العلماء والنصوص المرتبطة</p>
+        {/* ── أقوال العلماء والدرجة ── */}
+        {judgmentGroups.length > 0 && (
+          <CollapsibleSection id="aqwal" label="أقوال العلماء" badges={<Chips chips={[{ text: `${judgments.length} قول` }, { text: `${judgmentGroups.length} عالم`, tone: 'info' }]} />}>
+            <div className="space-y-3">
+              {judgmentGroups.map((group, gi) => {
+                const first = group[0]
+                const cardStyle = gradeOf(first.grade_class)
+                return (
+                  <div key={gi} className={`rounded-xl border bg-white overflow-hidden ${cardStyle.border}`}>
+                    <div className={`h-1 w-full ${cardStyle.bar}`} />
+                    <div className="p-4">
+                      {group.map((j, ji) => (
+                        <div key={ji}>
+                          {ji > 0 && <hr className="my-3 border-gray-100" />}
+                          <div className="flex items-start gap-2 mb-1">
+                            {j.grade_class && (
+                              <span className={`shrink-0 mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${gradeOf(j.grade_class).badge}`}>
+                                {j.grade_class}
+                              </span>
+                            )}
+                            <p className="text-gray-800 text-sm leading-relaxed">{j.say_text}</p>
+                          </div>
+                          {j.source_book && (
+                            <div className="mt-1">
+                              {j.source_content_id ? (
+                                <Link href={`/service-content/${j.source_content_id}`}
+                                  className="text-xs text-blue-600 hover:underline">
+                                  {j.source_book}{j.source_part != null && j.source_page != null ? `: (${j.source_part} / ${j.source_page})` : ''}
+                                </Link>
+                              ) : (
+                                <span className="text-xs text-gray-400">
+                                  {j.source_book}{j.source_part != null && j.source_page != null ? `: (${j.source_part} / ${j.source_page})` : ''}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t border-gray-50">
+                        {first.scientist_name ? (
+                          <>
+                            {first.scientist_id ? (
+                              <Link href={`/narrator/${first.scientist_id}`}
+                                className="text-sm font-bold text-green-800 hover:text-green-600 hover:underline">
+                                {first.abb_name || first.scientist_name}
+                              </Link>
+                            ) : (
+                              <span className="text-sm font-bold text-green-800">
+                                {first.abb_name || first.scientist_name}
+                              </span>
+                            )}
+                            {first.death_year_num && (
+                              <span className="text-xs text-gray-400">ت {first.death_year_num}هـ</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400">غير محدد العالم</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {serviceSections.filter(cfg => cfg.kind !== 'witnesses').map(cfg => (
+          <CollapsibleSection key={cfg.id} id={cfg.id} label={cfg.label} badges={sectionBadges[cfg.id]}>
+            <HadithServiceSection hadithId={hadithId} config={cfg} />
+          </CollapsibleSection>
+        ))}
+
+        {relatedHadiths.length > 0 && (
+          <CollapsibleSection id="related" label="أحاديث ذات صلة" badges={<Chips chips={[{ text: `${relatedHadiths.length} حديث` }]} />} sub="روايات مرتبطة بنفس الموضوع أو الغرض">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {relatedHadiths.map((related) => (
+                <Link
+                  key={related.main_id}
+                  href={`/hadith/${related.main_id}`}
+                  className="ui-card p-3 hover:border-green-300 transition-colors"
+                >
+                  <span className="block text-xs font-medium text-green-900">{related.book_title}</span>
+                  {related.tarf ? (
+                    <span className="block text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                      {applyTashkeel(stripXmlToVerbatim(related.tarf)).slice(0, 180)}
+                    </span>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        </section>}
+        <div className="research-group research-group-tools">
+        <h2 className="research-group-title">أدوات الباحث</h2>
+        {/* ── أدوات البحث ── */}
+        <CollapsibleSection id="adawat" label="أدوات البحث">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { href: `/hadith/${hadithId}/transmission-history`, label: 'تاريخ انتشار الحديث',    desc: 'ترتيب زمني للكتب التي أوردت هذا الحديث حسب وفاة مؤلفيها' },
+              { href: `/hadith/${hadithId}/chain-analysis`,       label: 'التحليل الزمني للإسناد', desc: 'رسم زمني لرواة السند مع الفجوات الزمنية' },
+              { href: `/hadith/${hadithId}/all-narrators`,        label: 'رجال الحديث',            desc: 'قائمة كاملة بكل رواة هذا الحديث من مجموع الأسانيد' },
+              { href: `/hadith/${hadithId}/witnesses`,            label: 'الشواهد والمتابعات',     desc: 'روايات موازية من صحابة آخرين — تُستخدم لتقوية الحديث' },
+              { href: `/hadith/${hadithId}/matn-variants`,        label: 'مقارنة الألفاظ',          desc: 'الفروق المصنَّفة بين الروايات' },
+              { href: `/hadith/${hadithId}/across-books`,         label: 'الحديث في كتب الحديث',   desc: 'مقارنة نص الحديث عبر جميع الكتب التي خرّجته' },
+              { href: `/hadith/${hadithId}/pivot`,                label: 'مدار الحديث',            desc: 'الراوي الذي تجتمع عنده جميع أسانيد الحديث' },
+              { href: `/hadith/${hadithId}/isnad-ranking`,        label: 'ترتيب الأسانيد قوةً',    desc: 'ترتيب جميع أسانيد الحديث من الأقوى إلى الأضعف' },
+              { href: `/hadith/${hadithId}/chain-weakness`,       label: 'الحلقات الضعيفة',        desc: 'مواطن الضعف في السند' },
+            ].map(item => (
+              <a key={item.href} href={item.href}
+                className="flex flex-col gap-0.5 ui-card p-3 hover:border-green-300 transition-all">
+                <span className="text-sm font-medium text-green-900">{item.label}</span>
+                <span className="text-xs text-gray-400">{item.desc}</span>
+              </a>
+            ))}
+          </div>
+        </CollapsibleSection>
+        </div>
+
+        <PrevNextNav
+          prevId={h.prev_paragraph_id || null}
+          nextId={h.next_paragraph_id || null}
+        />
+
+      </div>
+    </div>
+  )
+}

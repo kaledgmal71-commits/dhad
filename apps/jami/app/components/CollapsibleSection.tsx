@@ -1,0 +1,65 @@
+'use client'
+
+import { useEffect, useState, type ReactNode } from 'react'
+import SectionIcon, { hasSectionIcon } from './SectionIcon'
+
+// A hadith-page section that starts closed: the reader sees its title and summary, and opens only
+// what they want. The body is mounted on first open (so its data loads then, not on page load) and
+// kept mounted afterwards. A link to #id (the page's table of contents) opens it.
+export default function CollapsibleSection({
+  id, label, sub, badges, children,
+}: {
+  id: string
+  label: string
+  sub?: string
+  // Summary chips shown beside the title, so the section's size is visible while it is closed.
+  badges?: ReactNode
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const show = () => { setOpen(true); setMounted(true) }
+    if (window.location.hash === `#${id}`) show()
+    const onClick = (e: MouseEvent) => {
+      if ((e.target as Element | null)?.closest?.(`a[href="#${id}"]`)) show()
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [id])
+
+  return (
+    <section id={id} className={`research-accordion ui-card mb-3 scroll-mt-header overflow-hidden ${open ? 'ring-1 ring-accent-gold/40' : ''}`}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${id}-body`}
+        onClick={() => { setOpen(o => !o); setMounted(true) }}
+        className={`research-accordion-heading w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-right cursor-pointer transition-colors hover:bg-surface-sunken/50 ${open ? 'border-b border-border bg-surface-sunken/40' : ''}`}
+      >
+        {hasSectionIcon(id) && (
+          <span className="research-section-icon w-10 h-10 shrink-0"><SectionIcon id={id} size={22} /></span>
+        )}
+        <span className="flex-1 min-w-0">
+          <span className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+            <span className="text-lg sm:text-xl font-bold text-ink font-display leading-snug">{label}</span>
+          </span>
+          {badges && <span className="research-section-counts flex flex-wrap gap-1.5 mt-2">{badges}</span>}
+          {sub && <span className="block text-xs text-gray-500 font-sans mt-0.5">{sub}</span>}
+        </span>
+        <span className="research-section-toggle shrink-0">
+          <span className="sr-only">{open ? 'إخفاء' : 'عرض'}</span>
+          <svg aria-hidden viewBox="0 0 20 20" className={`w-5 h-5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 8l5 5 5-5" />
+          </svg>
+        </span>
+      </button>
+      {mounted && (
+        <div id={`${id}-body`} hidden={!open} className="px-3 sm:px-5 pt-4 pb-5">
+          {children}
+        </div>
+      )}
+    </section>
+  )
+}

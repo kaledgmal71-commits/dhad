@@ -1,0 +1,141 @@
+import { NextResponse } from 'next/server'
+import pool from '@/lib/db'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const narratorId = parseInt(id, 10)
+  if (isNaN(narratorId)) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  }
+
+  try {
+    // Base narrator info
+    const narratorRes = await pool.query(
+      `SELECT id, name, abb_name, kunia, death_year_num,
+              birth_year, death_city, birth_city, tabaqa, tabaqa_num,
+              hadiths_count, martaba_ibn_hajar, martaba_zahabi, is_companion
+       FROM narrators WHERE id = $1`,
+      [narratorId]
+    )
+
+    if (narratorRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Narrator not found' }, { status: 404 })
+    }
+
+    // Books this narrator appears in
+    const booksRes = await pool.query(
+      // The narrator's hadiths are found once, then counted per book (joining the chains per book
+      // repeated the same chain scan for every book: seconds for a prolific narrator)
+      `SELECT b.id, b.title, COUNT(DISTINCT h.main_id)::int AS hadith_count
+       FROM narrator_books nb
+       JOIN books b ON b.id = nb.book_id
+       LEFT JOIN (
+         SELECT DISTINCT ht.main_id, ht.book_id
+         FROM isnad_chains ic
+         JOIN isnad_hadiths ih ON ih.isnad_id = ic.id
+         JOIN hadith_toc ht ON ht.main_id = ih.hadith_id AND ht.is_leaf = true
+         WHERE ic.narrator_id_array @> ARRAY[$1::int]
+       ) h ON h.book_id = b.id
+       WHERE nb.narrator_id = $1
+       GROUP BY b.id, b.title
+       ORDER BY b.title`,
+      [narratorId]
+    )
+
+    // Teachers (شيوخه): is_sheikh=true means second_id IS the sheikh.
+    // So first_id=narrator is the student, second_id are his teachers.
+    const teachersRes = await pool.query(
+      `SELECT n.id, n.name, COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.shyoukh_id
+       WHERE nt.rawy_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
+       LIMIT 100`,
+      [narratorId]
+    )
+
+    // Students (تلاميذه): is_sheikh=true means second_id IS the sheikh.
+    // So second_id=narrator is the teacher, first_id are his students.
+    const studentsRes = await pool.query(
+      `SELECT n.id, n.name, COALESCE(nt.hadiths_count, 0)::int AS hadith_count
+       FROM narrator_teachers nt
+       JOIN narrators n ON n.id = nt.rawy_id
+       WHERE nt.shyoukh_id = $1
+       ORDER BY nt.hadiths_count DESC, n.name
+       LIMIT 100`,
+      [narratorId]
+    )
+
+    // جرح وتعديل — all scholar criticisms/gradings grouped by scientist_name
+    const criticismRes = await pool.query(
+      `SELECT scientist_name, scientist_noun_id, say_text, say_sort, garh_label
+       FROM narrator_criticism
+       WHERE narrator_id = $1
+       ORDER BY scientist_name, say_sort`,
+      [narratorId]
+    )
+
+    // Group criticism by scientist_name
+    const criticismByScientist: Record<string, { saySort: number; scientist_noun_id: number | null; texts: string[] }> = {}
+    for (const row of criticismRes.rows) {
+      const name = row.scientist_name || 'غير معروف'
+      if (!criticismByScientist[name]) {
+        criticismByScientist[name] = { saySort: row.say_sort, scientist_noun_id: row.scientist_noun_id, texts: [] }
+      }
+      if (row.say_text) criticismByScientist[name].texts.push(row.say_text)
+    }
+
+    const criticism = Object.entries(criticismByScientist).map(([name, data]) => ({
+      scientist_name: name,
+      scientist_noun_id: data.scientist_noun_id,
+      texts: data.texts,
+    }))
+
+    // Biography from classical books, deduplicated by main_id
+    const biographyRes = await pool.query(
+      `SELECT DISTINCT ON (nb.main_id) nb.book_name, nb.book_id, nb.title, nb.content,
+              hsc.part_num, hsc.page_num
+       FROM narrator_biography nb
+       LEFT JOIN hadith_service_content hsc ON hsc.id = nb.main_id
+       WHERE nb.narrator_id = $1
+       ORDER BY nb.main_id, nb.book_name`,
+      [narratorId]
+    )
+
+    // Group biography by book
+    const bioMap: Record<string, { book_id: number; entries: { title: string; content: string; part_num: number | null; page_num: number | null }[] }> = {}
+    for (const row of biographyRes.rows) {
+      const bname = row.book_name || 'غير معروف'
+      if (!bioMap[bname]) bioMap[bname] = { book_id: row.book_id, entries: [] }
+      const content = (row.content || '').trim()
+      if (!content || content.length < 10) continue
+      const already = bioMap[bname].entries.some(e => e.content === content)
+      if (!already) bioMap[bname].entries.push({
+        title: row.title || '',
+        content,
+        part_num: row.part_num ?? null,
+        page_num: row.page_num ?? null,
+      })
+    }
+    const biography = Object.entries(bioMap)
+      .filter(([, v]) => v.entries.length > 0)
+      .map(([book_name, v]) => ({ book_name, book_id: v.book_id, entries: v.entries }))
+
+    return NextResponse.json({
+      narrator: narratorRes.rows[0],
+      books: booksRes.rows,
+      students: studentsRes.rows,
+      teachers: teachersRes.rows,
+      criticism,
+      biography,
+    })
+  } catch (err) {
+    console.error('Narrator API error:', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}

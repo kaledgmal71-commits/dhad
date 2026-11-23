@@ -1,0 +1,56 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useNumbering } from '@/lib/numberingContext'
+
+export default function HadithNumSearch({ bookId }: { bookId: number }) {
+  const { pref } = useNumbering()
+  const [num, setNum] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmed = num.trim()
+    if (!trimmed) return
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(
+        `/api/books/${bookId}/by-num?num=${encodeURIComponent(trimmed)}&pref=${pref}`
+      )
+      const data = await res.json()
+      if (data.found && data.main_id) {
+        router.push(`/hadith/${data.main_id}`)
+      } else {
+        setError(`لم يُعثر على الحديث رقم ${trimmed}`)
+      }
+    } catch {
+      setError('حدث خطأ في البحث')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSearch} className="flex items-center gap-2">
+      <input
+        type="text"
+        value={num}
+        onChange={e => { setNum(e.target.value); setError('') }}
+        placeholder="رقم الحديث..."
+        className="w-32 bg-white/10 border border-white/25 text-white placeholder-white/50 rounded-lg px-3 py-1.5 text-sm font-sans focus:outline-none focus:border-amber-300/80 transition-colors"
+        dir="ltr"
+      />
+      <button
+        type="submit"
+        disabled={loading || !num.trim()}
+        className="text-sm font-sans text-amber-200 hover:text-white border border-white/25 hover:border-amber-300/60 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+      >
+        {loading ? '...' : 'انتقال'}
+      </button>
+      {error && <span className="text-xs text-red-300">{error}</span>}
+    </form>
+  )
+}
