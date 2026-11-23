@@ -29,7 +29,7 @@ jobs:
         run: |
           df -h . | tail -1
           mkdir -p w && cd w && npm i @electric-sql/pglite@0.5.13 2>&1 | tail -1
-          cp ../tools/jami_ai/gen_sft.mjs ../tools/jami_ai/fetch_db.mjs .
+          cp ../tools/jami_ai/*.mjs .
           node fetch_db.mjs /tmp/pgdata
           node gen_sft.mjs /tmp/pgdata /tmp/sft "$PER_KIND"
           ls -la /tmp/sft
