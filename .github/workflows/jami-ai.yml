@@ -1,0 +1,44 @@
+name: jami-ai
+# بناء بيانات تدريب ذكاء الجامع المضمَّن من قاعدة الجامع الخاصة (على HF خاص) ورفعها إلى مجموعة بيانات خاصة.
+on:
+  workflow_dispatch:
+    inputs:
+      stage: { description: 'probe | sft', default: 'probe' }
+      per_kind: { description: 'عدد العينات لكل نوع', default: '2000' }
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      STAGE: ${{ inputs.stage }}
+      PER_KIND: ${{ inputs.per_kind }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: فحص صلاحية الرمز على مجموعة الجامع الخاصة
+        run: |
+          code=$(curl -s -o /tmp/m.json -w '%{http_code}' -H "Authorization: Bearer $HF_TOKEN" https://huggingface.co/datasets/kaledgmal/aljami-private/resolve/main/manifest.json)
+          echo "manifest HTTP $code"; head -c 200 /tmp/m.json; echo
+          [ "$code" = 200 ] || { echo "::error::الرمز لا يقرأ aljami-private"; exit 1; }
+      - name: توليد بيانات التدريب
+        if: ${{ inputs.stage == 'sft' }}
+        run: |
+          df -h . | tail -1
+          mkdir -p w && cd w && npm i @electric-sql/pglite@0.5.13 2>&1 | tail -1
+          cp ../tools/jami_ai/gen_sft.mjs ../tools/jami_ai/fetch_db.mjs .
+          node fetch_db.mjs /tmp/pgdata
+          node gen_sft.mjs /tmp/pgdata /tmp/sft "$PER_KIND"
+          ls -la /tmp/sft
+          pip -q install huggingface_hub
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api=HfApi(token=os.environ['HF_TOKEN'])
+          api.create_repo('kaledgmal/aljami-sft',repo_type='dataset',private=True,exist_ok=True)
+          api.upload_folder(folder_path='/tmp/sft',repo_id='kaledgmal/aljami-sft',repo_type='dataset',commit_message='sft')
+          print('uploaded')
+          PY
