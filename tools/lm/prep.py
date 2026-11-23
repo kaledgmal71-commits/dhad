@@ -80,5 +80,16 @@ if N:
             w(r['text'])
         f.close()
     except Exception as e: print('wiki تعذّرت', e)
+# ٥) بيانات ذكاء الجامع المضمَّن (محادثات باستدعاء أدوات مولَّدة من قاعدة الجامع؛ خاصة، للتدريب فقط): JAMI_SFT=1
+if os.environ.get('JAMI_SFT') == '1':
+    try:
+        from huggingface_hub import hf_hub_download
+        jp = hf_hub_download('kaledgmal/aljami-sft', 'train.jsonl', repo_type='dataset', token=os.environ.get('HF_TOKEN'), local_dir=SRC)
+        st = {'docs': 0, 'chars': 0, 'license': 'private-aljami', 'tag': 'jami', 'rep': int(os.environ.get('JAMI_REP') or 3), 'source': 'kaledgmal/aljami-sft'}; manifest['jami_sft'] = st
+        with open(f'{DATA}/jami_sft.txt', 'w', encoding='utf8') as f:
+            for ln in open(jp, encoding='utf8'):
+                t = json.loads(ln)['text'].replace('\n\n', '\n')
+                f.write(t + '\n\n'); st['docs'] += 1; st['chars'] += len(t)
+    except Exception as e: print('jami_sft تعذّر', e, flush=True)
 json.dump(manifest, open(DATA + '/manifest.json', 'w', encoding='utf8'), ensure_ascii=False, indent=1)
 for k, v in manifest.items(): print(f"{k}: {v['docs']} وثيقة، {v['chars']/1e6:.1f}M حرف، {v['license']}", flush=True)

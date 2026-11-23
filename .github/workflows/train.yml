@@ -8,6 +8,10 @@ on:
       centuries: { description: 'مستودعات OpenITI مفصولة بفاصلة', default: '0300AH,0400AH,0500AH' }
       wiki_docs: { description: 'عدد وثائق ويكيبيديا العربية (0 = بدون)', default: '0' }
       steps: { description: 'أفق جدول المعدل بالخطوات (فارغ = افتراضي الإعداد)', default: '' }
+      hf_repo: { description: 'مستودع الأوزان على HF', default: 'kaledgmal/nawa-lm' }
+      jami: { description: 'إضافة بيانات ذكاء الجامع (0|1)', default: '0' }
+      init_repo: { description: 'بدء من أوزان مستودع آخر (ضبط)', default: '' }
+      jami_rep: { description: 'تكرار بيانات الجامع', default: '3' }
 concurrency: lm
 permissions:
   contents: write
@@ -25,6 +29,10 @@ jobs:
       CENT: ${{ inputs.centuries }}
       WIKI: ${{ inputs.wiki_docs }}
       STEPS: ${{ inputs.steps }}
+      HFREPO: ${{ inputs.hf_repo }}
+      JAMI: ${{ inputs.jami }}
+      INIT: ${{ inputs.init_repo }}
+      JREP: ${{ inputs.jami_rep }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,7 +41,7 @@ jobs:
         run: |
           pip -q install kaggle six python-slugify requests tqdm
           mkdir kd && cp tools/lm/kernel/nawa-lm.py kd/ && sed "s/__USER__/${KAGGLE_USERNAME}/" tools/lm/kernel/kernel-metadata.json > kd/kernel-metadata.json
-          sed -i "s#__PRESET__#${PRESET}#; s#__HOURS__#${HOURS}#; s#__HF__#${HF_TOKEN}#; s#__CENT__#${CENT}#; s#__WIKI__#${WIKI}#; s#__STEPS__#${STEPS}#" kd/nawa-lm.py
+          sed -i "s#__PRESET__#${PRESET}#; s#__HOURS__#${HOURS}#; s#__HF__#${HF_TOKEN}#; s#__CENT__#${CENT}#; s#__WIKI__#${WIKI}#; s#__STEPS__#${STEPS}#; s#__REPO__#${HFREPO}#; s#__JAMI__#${JAMI}#; s#__INIT__#${INIT}#; s#__JREP__#${JREP}#" kd/nawa-lm.py
           kaggle kernels push -p kd
           N=$(python3 -c "print(int(float('${HOURS}')*30)+40)")
           for i in $(seq 1 $N); do

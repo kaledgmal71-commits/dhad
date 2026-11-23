@@ -31,6 +31,10 @@ def docs(name):
         elif buf: yield '\n'.join(buf); buf = []
     if buf: yield '\n'.join(buf)
 tp = hf_get('tokenizer.json') or (OUT + '/tokenizer.json' if os.path.exists(OUT + '/tokenizer.json') else None)
+if not tp and os.environ.get('INIT_REPO'):
+    try:
+        from huggingface_hub import hf_hub_download as _h; tp = _h(os.environ['INIT_REPO'], 'tokenizer.json', token=HF_TOKEN, local_dir=OUT); print('مجزّئ من', os.environ['INIT_REPO'], flush=True)
+    except Exception as e: print('تعذّر مجزّئ البداية', e, flush=True)
 if tp: tok = Tokenizer.from_file(tp); print('مجزّئ مستأنف', tok.get_vocab_size(), flush=True)
 else:
     tok = Tokenizer(models.BPE()); tok.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False); tok.decoder = decoders.ByteLevel()
@@ -103,7 +107,13 @@ model = GPT(CFG).to(dev); npar = sum(p.numel() for p in model.parameters()); pri
 dec = [p for n, p in model.named_parameters() if p.dim() >= 2]; nod = [p for n, p in model.named_parameters() if p.dim() < 2]
 opt = torch.optim.AdamW([{'params': dec, 'weight_decay': 0.1}, {'params': nod, 'weight_decay': 0.0}], lr=CFG['lr'], betas=(0.9, 0.95), fused=(dev == 'cuda'))
 scaler = torch.amp.GradScaler(enabled=(dev == 'cuda')); step = 0
+INIT_REPO = os.environ.get('INIT_REPO', '')
 last = hf_get('last.pt') or (OUT + '/last.pt' if os.path.exists(OUT + '/last.pt') else None)
+if not last and INIT_REPO:   # ضبط: أوزان النموذج الأساسي فقط (بلا حالة المحسّن)، ثم تدريب جديد من الخطوة صفر بمعدل أخفض
+    try:
+        ip = hf_hub_download(INIT_REPO, 'last.pt', token=HF_TOKEN, local_dir=OUT + '/init'); ick = torch.load(ip, map_location=dev)
+        model.load_state_dict(ick['model']); CFG['lr'] *= float(os.environ.get('INIT_LR_SCALE') or 0.3); print('بدء من أوزان', INIT_REPO, 'خطوة', ick['step'], 'lr', CFG['lr'], flush=True)
+    except Exception as e: print('تعذّر تحميل أوزان البداية', e, flush=True)
 if last:
     ck = torch.load(last, map_location=dev)
     SHAPE = [k for k in CFG if k not in ('steps', 'lr', 'mb', 'acc')]
