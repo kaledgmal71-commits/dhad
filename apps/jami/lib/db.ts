@@ -12,7 +12,7 @@ function intEnv(name: string, fallback: number, min: number, max: number): numbe
 // leaves ample headroom.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DB_SSL !== '0' && process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: intEnv('DB_POOL_MAX', 15, 1, 30),
   min: intEnv('DB_POOL_MIN', 0, 0, 5),
   idleTimeoutMillis: intEnv('DB_IDLE_TIMEOUT_MS', 30_000, 10_000, 300_000),

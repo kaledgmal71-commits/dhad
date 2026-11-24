@@ -1,0 +1,81 @@
+name: jami-space
+# يختبر الجامع الخاص كخادم كامل على بيانات HF الخاصة (فك البيانات + PGlite + التطبيق + بوابة المفتاح)، ثم ينشره اختياريًّا إلى Hugging Face Space.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy: { description: 'نشر إلى Space بعد نجاح الاختبار (0|1)', default: '0' }
+      space: { description: 'اسم الـSpace', default: 'kaledgmal/jami-nawa' }
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: مساحة
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h / | tail -1
+      - name: تثبيت حزم الخادم
+        run: cd deploy/jami-space && npm install --no-audit --no-fund && npm ls @electric-sql/pglite @electric-sql/pglite-socket
+      - name: بناء التطبيق
+        run: cd apps/jami && npm install --no-audit --no-fund && npm run build 2>&1 | tail -25
+      - name: تشغيل الخادم الكامل
+        run: |
+          cd deploy/jami-space
+          export DATA_DIR=/tmp/data APP_DIR=$GITHUB_WORKSPACE/apps/jami PORT=7860 ACCESS_KEY=testkey123
+          nohup node start.mjs > /tmp/server.log 2>&1 &
+          for i in $(seq 1 240); do
+            grep -q '^جاهز' /tmp/server.log && break
+            grep -q 'فشل التجهيز' /tmp/server.log && break
+            sleep 5
+          done
+          tail -n 25 /tmp/server.log
+          grep -q '^جاهز' /tmp/server.log || { echo '::error::لم يجهز الخادم'; exit 1; }
+      - name: اختبارات الدخان
+        run: |
+          set -e
+          H='Cookie: jk='$(printf 'jami:testkey123' | sha256sum | cut -d' ' -f1)
+          code() { curl -s -o /tmp/out.html -w '%{http_code}' -H "$H" "http://127.0.0.1:7860$1"; }
+          echo "بلا مفتاح:"; curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:7860/
+          for p in / /books /narrators "/search?q=%D8%A5%D9%86%D9%85%D8%A7+%D8%A7%D9%84%D8%A3%D8%B9%D9%85%D8%A7%D9%84"; do
+            c=$(code "$p"); echo "$p -> $c ($(wc -c < /tmp/out.html) bytes)"; [ "$c" = 200 ] || { cat /tmp/server.log | tail -20; exit 1; }
+          done
+          echo 'عدد الأحاديث:'
+          curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"select count(*)::int c from hadith_toc"}' http://127.0.0.1:7860/api/ai/q; echo
+          echo 'منع التعديل:'
+          curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"delete from books"}' http://127.0.0.1:7860/api/ai/q; echo
+          echo 'أداة get_hadith:'
+          curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"select main_id, tarqeem_harf from hadith_toc where is_leaf = true limit 2"}' http://127.0.0.1:7860/api/ai/q; echo
+      - name: نشر إلى Space
+        if: ${{ inputs.deploy == '1' }}
+        run: |
+          pip install -q huggingface_hub
+          python3 - <<'PY'
+          import os, secrets, tempfile, pathlib, subprocess
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ['HF_TOKEN'])
+          repo = os.environ['SPACE']
+          sha = subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
+          key = secrets.token_urlsafe(9)
+          print('::add-mask::' + key)
+          api.create_repo(repo, repo_type='space', space_sdk='docker', private=False, exist_ok=True)
+          api.add_space_secret(repo, 'HF_TOKEN', os.environ['HF_TOKEN'])
+          api.add_space_secret(repo, 'ACCESS_KEY', key)
+          d = pathlib.Path(tempfile.mkdtemp())
+          df = pathlib.Path('deploy/jami-space/Dockerfile').read_text().replace('ARG SHA', 'ARG SHA=' + sha)
+          (d/'Dockerfile').write_text(df)
+          (d/'README.md').write_text(pathlib.Path('deploy/jami-space/README.md').read_text())
+          api.upload_folder(folder_path=str(d), repo_id=repo, repo_type='space', commit_message='jami ' + sha[:7])
+          # المفتاح إلى مجموعة البيانات الخاصة (لا يُطبع في السجل)
+          kp = d/'space_key.txt'; kp.write_text(key)
+          api.upload_file(path_or_fileobj=str(kp), path_in_repo='space_key.txt', repo_id='kaledgmal/aljami-private', repo_type='dataset', commit_message='space key')
+          print('تم النشر', repo, sha[:7])
+          PY
+        env:
+          SPACE: ${{ inputs.space }}

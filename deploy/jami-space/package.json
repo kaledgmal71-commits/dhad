@@ -1,0 +1,9 @@
+{
+  "name": "jami-space",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.13",
+    "@electric-sql/pglite-socket": "latest"
+  }
+}
