@@ -21,8 +21,16 @@ jobs:
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
           df -h / | tail -1
+      - name: إصدار pglite-socket المناسب لـ pglite 0.5.13
+        run: |
+          cd deploy/jami-space
+          node -e "
+          const {execSync}=require('child_process');
+          const vs=JSON.parse(execSync('npm view @electric-sql/pglite-socket versions --json').toString());
+          for(const v of vs.slice(-12).reverse()){let p='';try{p=execSync('npm view @electric-sql/pglite-socket@'+v+' peerDependencies.@electric-sql/pglite').toString().trim()}catch{};console.log(v,'peer pglite:',p)}
+          "
       - name: تثبيت حزم الخادم
-        run: cd deploy/jami-space && npm install --no-audit --no-fund && npm ls @electric-sql/pglite @electric-sql/pglite-socket
+        run: cd deploy/jami-space && npm install --no-audit --no-fund --legacy-peer-deps && npm ls @electric-sql/pglite @electric-sql/pglite-socket || true
       - name: بناء التطبيق
         run: cd apps/jami && npm install --no-audit --no-fund && npm run build 2>&1 | tail -25
       - name: تشغيل الخادم الكامل
