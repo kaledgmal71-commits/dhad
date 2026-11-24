@@ -6,8 +6,8 @@
 // it offers the download. To open without a connection, the offline app's page, its build
 // (/offline/app/), PostgreSQL's WebAssembly build (/offline/pglite/), scripts, styles and fonts are
 // kept here.
-const SHELL_CACHE = 'nawa-jami-shell-v1'
-const STATIC_CACHE = 'nawa-jami-static-v1'
+const SHELL_CACHE = 'nawa-jami-shell-v2'
+const STATIC_CACHE = 'nawa-jami-static-v2'
 const KEEP = [SHELL_CACHE, STATIC_CACHE]
 const OFFLINE_NOTICE = '/offline.html'
 const SHELL = '/offline'
@@ -145,6 +145,12 @@ self.addEventListener('fetch', event => {
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       const offline = async () => (await caches.match(SHELL, { cacheName: SHELL_CACHE })) || caches.match(OFFLINE_NOTICE)
+      // This private edition has no database on its server: with the encyclopedia on the device, the
+      // device answers first (online or not), whenever the offline reader is already kept here
+      if (!url.pathname.startsWith('/offline') && await downloaded()) {
+        const shell = await caches.match(SHELL, { cacheName: SHELL_CACHE })
+        if (shell) { fromDevice = true; return shell }
+      }
       const ctl = new AbortController()
       const net = fetch(req, { signal: ctl.signal })
       // A page that loads from the network means a working connection: a good moment to bring the
