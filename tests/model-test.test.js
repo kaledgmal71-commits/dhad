@@ -20,6 +20,6 @@ const ANS={'مضروب':'```\nدالة مضروب(ن) {\n  إذا (ن <= ١) { �
  await p.click('#ol-run');await p.waitForFunction(()=>document.querySelector('#log').textContent.includes('انتهى الاختبار'),null,{timeout:30000});
  const s=await p.inputValue('#summary');console.log(s);
  ck('all 4 tests pass with the real engine',/النجاح: 4 من 4/.test(s));
- ck('tokens/sec reported',/25\.0 رمز\/ث/.test(s));
+ ck('tokens/sec reported',/25\.0 رمز\/ث \| محاولات 1/.test(s));
  ck('no page errors',errs.length===0);if(errs.length)console.log(errs);
  await b.close();srv.close();console.log(bad?'FAILED':'ALL OK');process.exit(bad?1:0);})();

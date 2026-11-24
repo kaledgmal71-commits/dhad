@@ -56,20 +56,10 @@ textarea { width:100%; min-height:130px; background:#101217; color:var(--fg); bo
 </main>
 
 <script src="/assets/engine.api.js"></script>
+<script src="/assets/assistant_core.js"></script>
 <script>
 (function () {
   var $ = function (s) { return document.querySelector(s); };
-  var SYSTEM = [
-    "أنت مساعد برمجة بلغة «ضاد» (لغة برمجة عربية). اكتب ضاد صحيحة فقط، والتزم بالقواعد حرفيًا، ولا تخترع دوالّ.",
-    "الكلمات المحجوزة: دالة، ارجع، إذا، وإلا، طالما، من_أجل، من، إلى، متغير، صحيح، خطأ، لاشيء، و، أو، ليس، توقف، أكمل.",
-    "- متغير: متغير س = ٥ (ثم س = ٦ للتغيير). شرط: إذا (شرط) { … } وإلا إذا (شرط) { … } وإلا { … }",
-    "- حلقات: طالما (شرط) { … } و من_أجل (ع من ١ إلى ١٠) { … } (النهاية شاملة) و من_أجل (س في قائمة) { … }",
-    "- دالة: دالة اسم(أ، ب) { ارجع أ + ب }. الفاصلة بين المعاملات «،». التعليق: # إلى آخر السطر.",
-    "- قائمة: [١، ٢، ٣] وفهرستها ق[٠] تبدأ من ٠، وق[-١] آخر عنصر، وشرائح ق[١:٣] (النهاية غير شاملة). قاموس: {اسم: \"علي\"}.",
-    "- العوامل: + - * / % == != < > <= >= و أو ليس، و«س في قائمة» لفحص الوجود. س += ١ و س++ جملة مستقلة.",
-    "- دوال جاهزة: اطبع، طول، أضف، رتب، انزع، أدرج، مدى، اعكس، نص، عدد، اقتطع، استبدل، يحوي، افصل، اربط، جذر، قوة، مطلق، جولة، أرضية، سقف، الأكبر، الأصغر.",
-    "- لا تستعمل كلمة محجوزة اسمًا لمتغير. اكتب الدالة المطلوبة فقط داخل كتلة ``` بلا شرح."
-  ].join("\n");
   var TESTS = [
     { id: "مضروب", d: "اكتب دالة مضروب(ن) تعيد مضروب العدد", call: "اطبع(مضروب(5))", expect: "120" },
     { id: "أولي", d: "اكتب دالة أولي(ن) تعيد صحيح إن كان العدد أوليا وإلا خطأ", call: "اطبع(أولي(7))\nاطبع(أولي(9))", expect: "صحيح|خطأ" },
@@ -94,22 +84,28 @@ textarea { width:100%; min-height:130px; background:#101217; color:var(--fg); bo
   function summarize() {
     var pass = results.filter(function (r) { return r.pass; }).length;
     var s = ["الطريق: " + meta.path, "النموذج: " + meta.model, "الجهاز: " + $("#env").textContent.replace(/\s+/g, " "), "النجاح: " + pass + " من " + results.length];
-    results.forEach(function (r) { s.push("- " + r.id + ": " + (r.pass ? "نجح" : "فشل (" + r.why + ")") + " | " + r.sec + " ث | " + (r.tps ? r.tps + " رمز/ث" : "")); });
+    results.forEach(function (r) { s.push("- " + r.id + ": " + (r.pass ? "نجح" : "فشل (" + r.why + ")") + " | " + r.sec + " ث | " + (r.tps ? r.tps + " رمز/ث" : "") + " | محاولات " + r.rounds); });
     $("#summary").value = s.join("\n");
   }
-  async function runAll(path, model, generate) {
+  var S = null, lastTps = 0;
+  async function init() {
+    if (S) return S;
+    var K = await (await fetch("/ai/assistant-knowledge.json")).json();
+    S = window.DhadAssistant.create({ corpus: [], api: window.__api, knowledge: K }); return S;
+  }
+  async function runAll(path, model, adapter) {
     results = []; meta = { path: path, model: model }; logEl.textContent = "لم يبدأ اختبار بعد.";
+    await init();
+    var gen = async function (m) { var g = await adapter(m); lastTps = g.tps || lastTps; return g.text; };
     for (var i = 0; i < TESTS.length; i++) {
       var t = TESTS[i], t0 = performance.now();
       log("▶ " + t.id + " …");
       try {
-        var g = await generate([{ role: "system", content: SYSTEM }, { role: "user", content: t.d + "\n/no_think" }]);
-        var sec = (performance.now() - t0) / 1000, code = extract(g.text);
-        var run = execute(code + "\n" + t.call), got = run.ok ? digits(run.out.join("|")) : "خطأ: " + run.error;
-        var pass = got === t.expect;
-        results.push({ id: t.id, pass: pass, why: pass ? "" : got.slice(0, 80), sec: sec.toFixed(1), tps: g.tps ? g.tps.toFixed(1) : "" });
-        log((pass ? "✔ " : "✘ ") + t.id + " (" + sec.toFixed(1) + " ث)\n" + code + (pass ? "" : "\nالناتج: " + got));
-      } catch (e) { results.push({ id: t.id, pass: false, why: String(e.message || e).slice(0, 80), sec: ((performance.now() - t0) / 1000).toFixed(1), tps: "" }); log("✘ " + t.id + ": " + (e.message || e)); }
+        var r = await S.solve(t.d, "", gen, { rounds: 3 }), sec = (performance.now() - t0) / 1000, pass = false, why = r.say, code = r.result || "";
+        if (r.ok) { var run = execute(code + "\n" + t.call), got = run.ok ? digits(run.out.join("|")) : "خطأ: " + run.error; pass = got === t.expect; why = pass ? "" : got.slice(0, 80); }
+        results.push({ id: t.id, pass: pass, why: why, sec: sec.toFixed(1), tps: lastTps ? lastTps.toFixed(1) : "", rounds: r.rounds });
+        log((pass ? "✔ " : "✘ ") + t.id + " (" + sec.toFixed(1) + " ث، محاولات: " + (r.rounds || "؟") + ")\n" + code);
+      } catch (e) { results.push({ id: t.id, pass: false, why: String(e.message || e).slice(0, 80), sec: ((performance.now() - t0) / 1000).toFixed(1), tps: "", rounds: 0 }); log("✘ " + t.id + ": " + (e.message || e)); }
       summarize();
     }
     log("انتهى الاختبار. انسخ الملخص أدناه.");
@@ -126,7 +122,7 @@ textarea { width:100%; min-height:130px; background:#101217; color:var(--fg); bo
     try {
       var r = await fetch(OL + "/api/tags"), j = await r.json(), sel = $("#ol-model"); sel.innerHTML = "";
       (j.models || []).forEach(function (m) { var o = document.createElement("option"); o.value = m.name; o.textContent = m.name + " (" + (m.size / 1e9).toFixed(1) + " جيجا)"; sel.appendChild(o); });
-      var pref = Array.prototype.find.call(sel.options, function (o) { return /qwen3\.5.*4b/i.test(o.value); }); if (pref) sel.value = pref.value;
+      var pref = Array.prototype.find.call(sel.options, function (o) { return /qwen3(\.5)?:?.*(8b|4b)/i.test(o.value); }); if (pref) sel.value = pref.value;
       sel.disabled = !sel.options.length; $("#ol-run").disabled = !sel.options.length;
       $("#ol-st").textContent = sel.options.length ? "أولاما يعمل. اختر النموذج." : "أولاما يعمل لكن لا نموذج عليه؛ نفّذ: ollama pull qwen3.5:4b";
       $("#ol-st").className = "st " + (sel.options.length ? "ok" : "bad");
@@ -138,7 +134,7 @@ textarea { width:100%; min-height:130px; background:#101217; color:var(--fg); bo
   $("#ol-run").onclick = async function () {
     var model = $("#ol-model").value; this.disabled = true;
     await runAll("أولاما", model, async function (messages) {
-      var r = await fetch(OL + "/api/chat", { method: "POST", body: JSON.stringify({ model: model, messages: messages, stream: true, think: false, options: { temperature: 0.1, num_ctx: 4096, num_predict: 700 } }) });
+      var r = await fetch(OL + "/api/chat", { method: "POST", body: JSON.stringify({ model: model, messages: messages, stream: true, think: false, options: { temperature: 0.1, num_ctx: 8192, num_predict: 700 } }) });
       if (!r.ok) throw new Error("أولاما: " + r.status);
       var rd = r.body.getReader(), dec = new TextDecoder(), buf = "", text = "", tps = 0;
       for (;;) {

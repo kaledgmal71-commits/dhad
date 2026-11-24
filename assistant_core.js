@@ -86,7 +86,63 @@
       }
       return { say: "أستطيع الآن كتابة دوال معروفة، مثل: «اكتب دالة مضروب(ن)».", edits: [], ask: true };
     }
-    return { plan: plan, check: check, size: N };
+    /* ٢) مسار النموذج: مطالبة من معجم ضاد + فحص ساكن + تحقق بمحرك ضاد + إصلاح ذاتي (منقول من خط بناء نواة، قيس بـ Qwen3-8B).
+       generate(messages) → وعد بنص الرد؛ المحرك لا يعرف أين يعمل النموذج (أولاما، المتصفح، أو غيرهما). */
+    var K = opt.knowledge || null;
+    function lint(block) {
+      if (!K) return "";
+      if (/`/.test(block)) return "الشيفرة تحوي الرمز ` خارج كتلة الشيفرة؛ أعد كتلة واحدة سليمة.";
+      var c = block.replace(/"(?:[^"\\\n]|\\.)*"/g, '""').replace(/#.*$/gm, ""), names = [], m, re;
+      re = /(?:متغير|ثابت)\s+([^\s=،,()]+)/g; while ((m = re.exec(c))) names.push(m[1]);
+      re = /من_أجل\s*\(\s*([^\s)]+)\s+(?:في|من)\s/g; while ((m = re.exec(c))) names.push(m[1]);
+      re = /دالة\s*[^\s(]*\(([^)]*)\)/g; while ((m = re.exec(c))) m[1].split(/[،,]/).forEach(function (p) { p = p.trim(); if (p) names.push(p); });
+      for (var i = 0; i < names.length; i++) {
+        if (K.reserved.indexOf(names[i]) >= 0) return "الاسم «" + names[i] + "» كلمة محجوزة في ضاد ولا يصلح اسمًا لمتغير أو معامل؛ اختر اسمًا آخر.";
+        if (K.builtins.indexOf(names[i]) >= 0) return "الاسم «" + names[i] + "» دالة جاهزة في ضاد؛ تسميته لمتغير أو معامل تعطّل استدعاء الدالة. اختر اسمًا آخر.";
+      }
+      return "";
+    }
+    function blockOf(text) {
+      text = String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      var m = /```[^\n]*\n([\s\S]*?)```/.exec(text); return (m ? m[1] : text).trim();
+    }
+    /* يدمج كتلة النموذج في الشيفرة الحالية: دالة بنفس الاسم تُستبدل، وما سواها يُلحق في النهاية */
+    function merge(code, block) {
+      var out = code, fns = functionsOf(block), rest = block;
+      fns.forEach(function (f) {
+        rest = rest.replace(f.text, "");
+        var old = functionsOf(out).filter(function (o) { return o.name === f.name; })[0];
+        if (old) out = out.replace(old.text, f.text); else out = (out ? out.replace(/\s*$/, "") + "\n\n" : "") + f.text + "\n";
+      });
+      rest = rest.replace(/\n{3,}/g, "\n\n").trim();
+      if (rest) out = out.replace(/\s*$/, "") + "\n\n" + rest + "\n";
+      return out;
+    }
+    function diffEdits(oldCode, newCode) {
+      var a = oldCode.split("\n"), b = newCode.split("\n"), i = 0;
+      while (i < a.length && i < b.length && a[i] === b[i]) i++;
+      var ea = a.length, eb = b.length;
+      while (ea > i && eb > i && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+      var text = b.slice(i, eb).join("\n");
+      if (ea === i) return text === "" ? [] : [{ op: "insert", after: i, text: text }];
+      if (eb === i) return [{ op: "delete", from: i + 1, to: ea }];
+      return [{ op: "replace", from: i + 1, to: ea, text: text }];
+    }
+    async function solve(request, code, generate, o) {
+      o = o || {}; code = code || ""; var rounds = o.rounds || 3;
+      var ctx = code ? "الشيفرة الحالية في المحرر:\n```\n" + code + "\n```\nالطلب: " + request + "\nأعد فقط الدوال الجديدة أو المعدَّلة (بأسمائها نفسها) وأي أسطر جديدة، لا الشيفرة كلها." : request;
+      var msgs = [{ role: "system", content: (K && K.system) || "" }, { role: "user", content: ctx + "\n/no_think" }], last = null, hist = [];
+      for (var r = 1; r <= rounds; r++) {
+        var text; try { text = await generate(msgs); } catch (e) { return { ok: false, say: "تعذّر الوصول إلى النموذج: " + String(e && e.message || e), edits: [], hist: hist }; }
+        var block = blockOf(text), why = lint(block), next = "", v = null;
+        if (!why) { next = merge(code, block); v = check(next); if (!v.compiled || v.error) why = v.error || "لا تُترجم الشيفرة"; }
+        hist.push({ round: r, block: block, why: why });
+        if (!why) return { ok: true, say: r === 1 ? "كتبتُ ما طلبتَ وتحققتُ أنه يُترجم" + (v.ran ? " ويعمل بلا خطأ." : ".") : "كتبتُ ما طلبتَ بعد " + (r - 1) + " إصلاح تلقائي، وتحققتُ أنه يُترجم" + (v.ran ? " ويعمل." : "."), edits: diffEdits(code, next), result: next, verified: v, rounds: r, hist: hist };
+        last = why; msgs.push({ role: "assistant", content: text }, { role: "user", content: "فشل التحقق: " + why + "\nصحّح الشيفرة وأعد الكتلة كاملة." });
+      }
+      return { ok: false, say: "لم أصل إلى شيفرة سليمة بعد " + rounds + " محاولات. آخر خطأ: " + last, edits: [], rounds: rounds, hist: hist };
+    }
+    return { plan: plan, solve: solve, lint: lint, merge: merge, check: check, size: N };
   }
   return { create: create, norm: norm, toks: toks, functionsOf: functionsOf };
 });

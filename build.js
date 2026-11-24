@@ -37,6 +37,10 @@ fs.copyFileSync("manifest.json", "dist/manifest.json");
 console.log("Copied manifest.json");
 fs.mkdirSync("dist/model-test", { recursive: true });
 fs.copyFileSync("model-test/index.html", "dist/model-test/index.html");
+fs.mkdirSync("dist/ai", { recursive: true });
+fs.writeFileSync("dist/ai/assistant-knowledge.json", JSON.stringify(require("./tools/assistant_knowledge.js")()));
+fs.mkdirSync("dist/assets", { recursive: true });
+fs.copyFileSync("assistant_core.js", "dist/assets/assistant_core.js");
 
 build(
   "guide_shell.html",
