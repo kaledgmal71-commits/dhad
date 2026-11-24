@@ -10,6 +10,7 @@ import { PGliteWorker } from '/offline/pglite/worker/index.js'
 import { setOfflineRunner } from './shims/db'
 import { withQueryCache } from './cache'
 import { router } from './router'
+import AskPanel from './AskPanel'
 import { renderPage, handleApi, matchPage, type Rendered } from './core'
 import { NumberingProvider } from '@/lib/numberingContext'
 import { NumeralProvider } from '@/lib/numeralContext'
@@ -121,4 +122,7 @@ export function mount(el: HTMLElement) {
   if (target && target !== location.pathname + location.search) history.replaceState(null, '', target)
   router.sync()
   createRoot(el).render(<App />)
+  const host = document.createElement('div'); document.body.appendChild(host)
+  const db = { query: async (t: string, p?: unknown[]) => { const r = await pg.query(t, p ?? []); return { rows: r.rows } } }
+  createRoot(host).render(<AskPanel db={db} />)
 }

@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
   },
   // Installed on iOS («إضافة إلى الشاشة الرئيسية»): opens full-screen, named «الجامع»
-  appleWebApp: { capable: true, title: 'الجامع', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'جامع نواة', statusBarStyle: 'default' },
   // No preview title/description here: pages inherit the image and site name, while previews of a
   // page that only sets its own <title>/description fall back to those rather than the site's.
   openGraph: openGraph(),
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 }
 
 // The browser bar and the installed app's title bar take the site's green
-export const viewport: Viewport = { themeColor: '#0F3D2E' }
+export const viewport: Viewport = { themeColor: '#1B2A5C' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

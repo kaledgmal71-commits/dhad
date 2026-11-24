@@ -17,7 +17,7 @@ let abort = null
 
 const post = (msg) => self.postMessage(msg)
 const root = () => navigator.storage.getDirectory()
-const dataDirName = (version) => `aljami-pg-${version}`
+const dataDirName = (version) => `nawa-jami-pg-${version}`
 
 async function readState() {
   try {
@@ -158,10 +158,8 @@ async function download({ base, token }) {
       const est = await navigator.storage.estimate()
       const need = manifest.dbSize - written + AHEAD * 30e6 + 200e6
       const free = (est.quota ?? 0) - (est.usage ?? 0)
-      if (est.quota && need > free) {
-        post({ type: 'error', code: 'space', need, free, status: await status() })
-        return
-      }
+      // Chrome's estimate is conservative; try anyway and report only if a write really fails for lack of room
+      if (est.quota && need > free) post({ type: 'warn', code: 'space', need, free })
     } catch {}
 
     const dbDir = await r.getDirectoryHandle(state.dataDir, { create: true })
@@ -279,6 +277,9 @@ async function download({ base, token }) {
     abort.abort() // stops the fetches still running
     if (paused) {
       post({ type: 'paused', status: await status() })
+    } else if (e?.name === 'QuotaExceededError') {
+      let est = {}; try { est = await navigator.storage.estimate() } catch {}
+      post({ type: 'error', code: 'space', need: state.manifest?.dbSize ?? 0, free: (est.quota ?? 0) - (est.usage ?? 0), status: await status() })
     } else {
       post({ type: 'error', code: 'failed', message: String(e?.message || e), status: await status() })
     }

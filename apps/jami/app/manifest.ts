@@ -5,8 +5,8 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'الجامع — موسوعة الحديث النبوي الشريف',
-    short_name: 'الجامع',
+    name: 'جامع نواة — مكتبة الحديث الخاصة',
+    short_name: 'جامع نواة',
     description: 'أداةٌ للباحث في السنة النبوية: كتب السنة كما هي في مصادرها، بأسانيدها ومتونها ورواتها.',
     lang: 'ar',
     dir: 'rtl',
@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     orientation: 'any',
     background_color: '#FAF6EC',
-    theme_color: '#0F3D2E',
+    theme_color: '#1B2A5C',
     categories: ['education', 'books', 'reference'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

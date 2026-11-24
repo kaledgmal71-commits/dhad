@@ -6,8 +6,8 @@
 // it offers the download. To open without a connection, the offline app's page, its build
 // (/offline/app/), PostgreSQL's WebAssembly build (/offline/pglite/), scripts, styles and fonts are
 // kept here.
-const SHELL_CACHE = 'aljami-shell-v3'
-const STATIC_CACHE = 'aljami-static-v3'
+const SHELL_CACHE = 'nawa-jami-shell-v1'
+const STATIC_CACHE = 'nawa-jami-static-v1'
 const KEEP = [SHELL_CACHE, STATIC_CACHE]
 const OFFLINE_NOTICE = '/offline.html'
 const SHELL = '/offline'

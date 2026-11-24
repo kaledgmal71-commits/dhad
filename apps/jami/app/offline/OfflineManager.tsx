@@ -139,7 +139,7 @@ export default function OfflineManager({ compact = false }: { compact?: boolean 
                 ? `لا توجد مساحة كافية على الجهاز: يلزم نحو ${formatBytes(s.error.need ?? 0)}، والمتاح ${formatBytes(Math.max(0, s.error.free ?? 0))}.`
                 : s.error.code === 'busy'
                   ? 'البيانات مفتوحة في نافذة أخرى من الجامع. أغلق النوافذ الأخرى ثم أعد المحاولة.'
-                  : `تعذّر التحميل${online ? '' : ' (لا يوجد اتصال)'}. أعد المحاولة، وسيكمل من حيث توقّف.`}
+                  : `تعذّر التحميل${online ? '' : ' (لا يوجد اتصال)'}. أعد المحاولة، وسيكمل من حيث توقّف.${s.error.message ? ' [' + String(s.error.message).slice(0, 160) + ']' : ''}`}
             </p>
           )}
           <button type="button" onClick={installAndStart} disabled={!online || (!m && !s.status?.manifest && !!offlineToken())}
