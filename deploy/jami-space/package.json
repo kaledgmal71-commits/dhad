@@ -4,6 +4,6 @@
   "type": "module",
   "dependencies": {
     "@electric-sql/pglite": "0.5.13",
-    "@electric-sql/pglite-socket": "latest"
+    "@electric-sql/pglite-socket": "0.2.16"
   }
 }

@@ -30,7 +30,7 @@ jobs:
           for(const v of vs.slice(-12).reverse()){let p='';try{p=execSync('npm view @electric-sql/pglite-socket@'+v+' peerDependencies.@electric-sql/pglite').toString().trim()}catch{};console.log(v,'peer pglite:',p)}
           "
       - name: تثبيت حزم الخادم
-        run: cd deploy/jami-space && npm install --no-audit --no-fund --legacy-peer-deps && npm ls @electric-sql/pglite @electric-sql/pglite-socket || true
+        run: cd deploy/jami-space && npm install --no-audit --no-fund && npm ls @electric-sql/pglite @electric-sql/pglite-socket
       - name: بناء التطبيق
         run: cd apps/jami && npm install --no-audit --no-fund && npm run build 2>&1 | tail -25
       - name: تشغيل الخادم الكامل
@@ -54,12 +54,15 @@ jobs:
           for p in / /books /narrators "/search?q=%D8%A5%D9%86%D9%85%D8%A7+%D8%A7%D9%84%D8%A3%D8%B9%D9%85%D8%A7%D9%84"; do
             c=$(code "$p"); echo "$p -> $c ($(wc -c < /tmp/out.html) bytes)"; [ "$c" = 200 ] || { cat /tmp/server.log | tail -20; exit 1; }
           done
+          c=$(code "/books"); grep -c 'صحيح البخاري' /tmp/out.html || { echo '::error::صفحة الكتب بلا بيانات'; exit 1; }
+          code "/search?q=%D8%A5%D9%86%D9%85%D8%A7+%D8%A7%D9%84%D8%A3%D8%B9%D9%85%D8%A7%D9%84" >/dev/null; echo 'مرات ظهور «بالنيات» في نتيجة البحث:'; grep -o 'بالنيات' /tmp/out.html | wc -l
           echo 'عدد الأحاديث:'
           curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"select count(*)::int c from hadith_toc"}' http://127.0.0.1:7860/api/ai/q; echo
           echo 'منع التعديل:'
           curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"delete from books"}' http://127.0.0.1:7860/api/ai/q; echo
           echo 'أداة get_hadith:'
           curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"select main_id, tarqeem_harf from hadith_toc where is_leaf = true limit 2"}' http://127.0.0.1:7860/api/ai/q; echo
+          echo '--- ذيل سجل الخادم'; tail -n 30 /tmp/server.log
       - name: نشر إلى Space
         if: ${{ inputs.deploy == '1' }}
         run: |
