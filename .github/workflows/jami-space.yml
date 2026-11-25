@@ -56,6 +56,7 @@ jobs:
           done
           c=$(code "/books"); grep -c 'صحيح البخاري' /tmp/out.html || { echo '::error::صفحة الكتب بلا بيانات'; exit 1; }
           code "/search?q=%D8%A5%D9%86%D9%85%D8%A7+%D8%A7%D9%84%D8%A3%D8%B9%D9%85%D8%A7%D9%84" >/dev/null; echo 'مرات ظهور «بالنيات» في نتيجة البحث:'; grep -o 'بالنيات' /tmp/out.html | wc -l
+          for q in "select count(*)::int c from books" "select 1 as x" "select main_id from hadith_toc limit 1" "select count(*)::int c from hadith_toc"; do echo "Q: $q"; curl -s -m 120 -H "$H" -H 'content-type: application/json' -d "{\"text\":\"$q\"}" http://127.0.0.1:7860/api/ai/q; echo; done
           echo 'عدد الأحاديث:'
           curl -s -H "$H" -H 'content-type: application/json' -d '{"text":"select count(*)::int c from hadith_toc"}' http://127.0.0.1:7860/api/ai/q; echo
           echo 'منع التعديل:'
