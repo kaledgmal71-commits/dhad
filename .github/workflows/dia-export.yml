@@ -25,7 +25,7 @@ jobs:
       - name: جلب وتصدير
         if: inputs.list_only != '1'
         run: |
-          mkdir -p kout && kaggle kernels output ${{ inputs.kernel }} -p kout
+          mkdir -p kout && kaggle kernels output ${KAGGLE_USERNAME}/${{ inputs.kernel }} -p kout
           find kout -type f | head -30
           P=$(find kout -name 'dia_big.npz' | head -1); P=${P%.npz}; echo "prefix: $P"
           git clone -q --depth 1 --filter=blob:none --no-checkout https://github.com/OpenITI/0500AH.git t500 && (cd t500 && git sparse-checkout set --no-cone 'data/0476AbuIshaqShirazi/0476AbuIshaqShirazi.MuhadhdhabFiFiqh/*Shamela0011813-ara1' && git checkout -q)
