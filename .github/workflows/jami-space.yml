@@ -45,6 +45,11 @@ jobs:
           done
           tail -n 25 /tmp/server.log
           grep -q '^جاهز' /tmp/server.log || { echo '::error::لم يجهز الخادم'; exit 1; }
+      - name: تشخيص المقبس
+        run: |
+          cp deploy/jami-space/probe.mjs apps/jami/probe.mjs
+          cd apps/jami && DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/postgres node probe.mjs || true
+          tail -n 15 /tmp/server.log
       - name: اختبارات الدخان
         run: |
           set -e
