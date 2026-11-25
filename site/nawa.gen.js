@@ -101,7 +101,7 @@ function passagesOf(url, html) {
   return out;
 }
 function buildGuide() {
-  const dirs = ['docs', 'dictionary', 'limits', 'about'], found = [];
+  const dirs = ['docs', 'dictionary', 'bridge', 'about'], found = [];
   for (const d of dirs) { const f = path.join(DIST, d, 'index.html'); if (fs.existsSync(f)) found.push(['/' + d + '/', f]); }
   for (const d of ['learn', 'explain']) {
     const base = path.join(DIST, d); if (!fs.existsSync(base)) continue;

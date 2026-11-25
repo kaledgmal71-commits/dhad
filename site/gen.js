@@ -45,7 +45,7 @@ function codebox(code, where, opt = {}) {
   return `<div class="codebox"><div class="bar"><span>ضاد</span>${r.browser ? '' : '<button data-run>▶ شغّل</button>'}<a href="/editor/?code=${encodeURIComponent(code)}">افتح في المحرر</a></div><pre>${hl(code)}</pre>${o}</div>`;
 }
 // ---------- القالب ----------
-const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/limits/', 'الحدود'], ['/roadmap/', 'الخارطة']];
+const NAV = [['/learn/', 'تعلّم'], ['/explain/', 'شروحات'], ['/docs/', 'الدليل'], ['/dictionary/', 'المعجم'], ['/examples/', 'أمثلة'], ['/ai/', 'الذكاء الاصطناعي'], ['/community/', 'المجتمع'], ['/articles/', 'مقالات'], ['/about/', 'عن المشروع'], ['/roadmap/', 'الخارطة']];
 const FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%239a6b12'/%3E%3Ctext x='50' y='70' font-size='62' text-anchor='middle' fill='white'%3Eض%3C/text%3E%3C/svg%3E";
 const { lbar } = require('./layers.js');
 const LBAR = lbar('/');
@@ -63,7 +63,7 @@ function page({ url, title, desc, body, bodyAttr = '', schema = '' }) {
 <footer class="bot"><div class="wrap"><div class="cols"><div><h4>ضاد</h4><p>لغة برمجة عربية مجانية ومفتوحة للجميع، تكريمًا للخوارزمي. هدفها تيسير العلم وتقريب البرمجة والذكاء الاصطناعي من الجميع.</p><p class="visits" hidden>عدد الزائرين: <b id="vc"></b></p></div>
 <div><h4>تعلّم</h4><a href="/learn/">ضاد من الصفر</a><a href="/docs/">الدليل</a><a href="/dictionary/">المعجم</a><a href="/examples/">أمثلة</a></div>
 <div><h4>استكشف</h4><a href="/editor/">المحرر</a><a href="/ai/">الذكاء الاصطناعي</a><a href="/nawa/">نواة</a><a href="/articles/">مقالات</a><a href="/roadmap/">الخارطة</a></div>
-<div><h4>شارك</h4><a href="/community/">المجتمع</a><a href="/limits/">ما هي ضاد وما ليست</a><a href="/about/">عن المشروع</a><a href="/llms.txt">llms.txt</a></div></div></div></footer>
+<div><h4>شارك</h4><a href="/community/">المجتمع</a><a href="/bridge/">نشر برنامجك والانتقال</a><a href="/about/">عن المشروع</a><a href="/llms.txt">llms.txt</a></div></div></div></footer>
 <script src="/assets/engine.js"></script><script src="/assets/site.js"></script></body></html>`;
 }
 const crumbs = (...a) => `<div class="crumbs"><a href="/">الرئيسية</a>${a.map(([h, t]) => ' ‹ ' + (h ? `<a href="${h}">${t}</a>` : t)).join('')}</div>`;
