@@ -27,4 +27,13 @@ jobs:
         run: |
           mkdir -p kout && kaggle kernels output ${{ inputs.kernel }} -p kout
           find kout -type f | head -30
-          ls -la kout
+          P=$(find kout -name 'dia_big.npz' | head -1); P=${P%.npz}; echo "prefix: $P"
+          git clone -q --depth 1 --filter=blob:none --no-checkout https://github.com/OpenITI/0500AH.git t500 && (cd t500 && git sparse-checkout set --no-cone 'data/0476AbuIshaqShirazi/0476AbuIshaqShirazi.MuhadhdhabFiFiqh/*Shamela0011813-ara1' && git checkout -q)
+          T=$(find t500 -type f -name '*Shamela0011813*' | grep -v yml | head -1)
+          python3 tools/dia_export_js.py "$P" site/assets/dia "$T"
+          ls -la site/assets/dia
+      - name: التزام الأوزان
+        if: inputs.list_only != '1'
+        run: |
+          git config user.name nawa-builder; git config user.email builder@nawa.local
+          git add site/assets/dia && git commit -qm "المُشكِّل: أوزان المتصفح (int8/fp16) من مخرجات كاجل، DER اختبار مستقل 5.59٪ (بيانات Open-Hadith-Data ODbL، العمل المنتَج)" && git pull -q --rebase origin main && git push -q origin HEAD:main
