@@ -1,0 +1,30 @@
+name: dia-export
+# يجلب أوزان المُشكِّل من مخرجات كاجل ويحوّلها إلى صيغة المتصفح (int8) ويلتزمها في site/assets/dia.
+on:
+  workflow_dispatch:
+    inputs:
+      list_only: { description: 'سرد النوتبوكات فقط (1) أو التصدير (0)', default: '1' }
+      kernel: { description: 'مرجع النوتبوك user/slug', default: '' }
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip -q install kaggle six python-slugify requests tqdm numpy
+      - name: سرد
+        if: inputs.list_only == '1'
+        run: kaggle kernels list --mine --page-size 50 2>&1 | head -60
+      - name: جلب وتصدير
+        if: inputs.list_only != '1'
+        run: |
+          mkdir -p kout && kaggle kernels output ${{ inputs.kernel }} -p kout
+          find kout -type f | head -30
+          ls -la kout
