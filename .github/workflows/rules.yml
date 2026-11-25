@@ -1,0 +1,45 @@
+name: rules
+# موسِّم القواعد على Kaggle (GPU): نموذج مفتوح مؤقت يُخرج مسائل الفقه بنيويًّا ويُقبل ناتجه آليًّا فقط عند مطابقة النص حرفيًّا.
+on:
+  workflow_dispatch:
+    inputs:
+      model: { description: 'نموذج HF', default: 'ALLaM-AI/ALLaM-7B-Instruct-preview' }
+      pages: { description: 'عدد الصفحات', default: '60' }
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: تشغيل على Kaggle
+        run: |
+          pip -q install kaggle six python-slugify requests tqdm
+          mkdir kd && cp tools/shari/kernel/nawa-rules.py kd/ && sed "s/__USER__/${KAGGLE_USERNAME}/" tools/shari/kernel/kernel-metadata.json > kd/kernel-metadata.json
+          sed -i "s#__HF__#${HF_TOKEN}#; s#__MODEL__#${{ inputs.model }}#; s#__PAGES__#${{ inputs.pages }}#" kd/nawa-rules.py
+          kaggle kernels push -p kd
+          for i in $(seq 1 150); do
+            sleep 120
+            S=$(kaggle kernels status ${KAGGLE_USERNAME}/nawa-rules 2>&1 | tr -d '\n'); echo "$S"
+            case "$S" in *COMPLETE*|*ERROR*|*CANCEL*) break;; esac
+          done
+          mkdir -p out && kaggle kernels output ${KAGGLE_USERNAME}/nawa-rules -p out || true
+          for f in out/*.log; do python3 - "$f" <<'PY'
+          import sys,re,json
+          t=''
+          for l in open(sys.argv[1],encoding='utf8'):
+              l=l.strip().lstrip('[').rstrip(',').rstrip(']')
+              if l.startswith('{') and 'data' in l:
+                  try: t+=json.loads(l)['data']
+                  except Exception: pass
+          print(re.sub(r'hf_[A-Za-z0-9]{20,}','***',t)[-6000:])
+          PY
+          done
