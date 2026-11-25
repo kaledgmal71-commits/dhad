@@ -50,6 +50,13 @@ jobs:
           cp deploy/jami-space/probe.mjs apps/jami/probe.mjs
           cd apps/jami && DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/postgres node probe.mjs || true
           tail -n 15 /tmp/server.log
+      - name: اختبار الواجهات الداخلية بالبيانات الحقيقية
+        run: |
+          H='Cookie: jk='$(printf 'jami:testkey123' | sha256sum | cut -d' ' -f1)
+          for u in "/api/search?q=%D8%A5%D9%86%D9%85%D8%A7+%D8%A7%D9%84%D8%A3%D8%B9%D9%85%D8%A7%D9%84+%D8%A8%D8%A7%D9%84%D9%86%D9%8A%D8%A7%D8%AA" "/api/books" "/api/subject-categories" "/api/narrators?q=%D8%A7%D9%84%D8%A8%D8%AE%D8%A7%D8%B1%D9%8A"; do
+            echo "== $u"; /usr/bin/time -f '%es' curl -s -m 170 -w '\nHTTP %{http_code}\n' -H "$H" "http://127.0.0.1:7860$u" | cut -c1-400 | head -8
+          done
+          tail -n 20 /tmp/server.log
       - name: اختبارات الدخان
         run: |
           set -e
