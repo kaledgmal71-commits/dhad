@@ -450,10 +450,11 @@
     var dots = el('div', 'dots'); dots.innerHTML = '<i></i><i></i><i></i>'; var pending = msg('a', dots, curConv.msgs.length), my = ++reqId; curPending = pending;
     col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
     var mr = null; try { var mt = window.NawaMorph && window.NawaMorph.answer(t); if (mt) mr = { 'نوع': 'صرف_ذري', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'صرف_ذري', 'حالة': 'نُفّذ', 'تفصيل': 'تحليل بالوزن على الحروف الذرية' }], 'نتائج': {}, 'ذكريات': [], 'رد': mt }; } catch (e) { mr = null; }
-    (mr ? Promise.resolve(mr) : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
+    var dia = null; try { if (!mr && window.NawaDia && window.NawaDia.wants(t)) dia = window.NawaDia.run(t).then(function (txt) { return { 'نوع': 'تشكيل', 'ثقة': 94, 'لغة': '', 'خطة': [{ 'محرك': 'مشكّل_عصبي', 'حالة': 'نُفّذ', 'تفصيل': 'نموذج Transformer مدرَّب من الصفر، خطؤه ٥٫٦٪ على اختبار مستقل' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { dia = null; }
+    (mr ? Promise.resolve(mr) : dia ? dia : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
-      if (mr) call('سجّل_ردّ', r['رد']).catch(function () {});
+      if (mr || dia) call('سجّل_ردّ', r['رد']).catch(function () {});
       var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
     }, function (err) {
       if (my !== reqId) return 'x';
