@@ -91,7 +91,7 @@
     }, function () { return null; });
   }
   // نطاق البحث: ملفاتي (الربط)، ويكيبيديا العربية، مستودعات GitHub العامة. الأونلاين والأوفلاين مجموعتان منها لا زرّان منفصلان.
-  var SRC = { files: true, wiki: false, github: false, archive: false };
+  var SRC = { files: true, wiki: true, github: true }; try { var sv = JSON.parse(ls('nawa.src') || 'null'); if (sv) SRC = sv; } catch (e) {}
   var repos = []; try { repos = JSON.parse(ls('nawa.repos') || '[]'); } catch (e) {}
   function saveSrc() { ls('nawa.src', JSON.stringify(SRC)); ls('nawa.repos', JSON.stringify(repos)); }
   var webUrl = {}, wcache = {}, treeCache = {};
@@ -156,7 +156,7 @@
   }
   var WEB_NIAT = { 'بحث_معرفة': 1, 'شرح_مفهوم': 1, 'تحويل_صياغة': 0 };
   async function prepareLinked(q, nia) {
-    var paths = Object.keys(linked), online = false;
+    var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
     var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
     if (online && toks.length && !social && (!nia || WEB_NIAT[nia])) {
@@ -695,7 +695,7 @@
     });
   }
   var pw = el('div'); pw.style.position = 'relative'; pw.appendChild(pill); pw.appendChild(pm);
-
+  $('.crow').insertBefore(pw, $('.crow .sp'));
   pill.onclick = function (e) { e.stopPropagation(); buildPM(); pm.classList.toggle('open'); menu.classList.remove('open'); };
   document.addEventListener('click', function () { pm.classList.remove('open'); });
   window.addEventListener('online', paintPill); window.addEventListener('offline', paintPill); paintPill();
@@ -706,10 +706,19 @@
   function renderConnectors() {
     var g = $('#cgrid'); g.innerHTML = '';
     function sec(title) { g.appendChild(el('h4', 'csec', title)); }
+    sec('عامة');
+    g.appendChild(crow('ويكيبيديا العربية', 'بحث في مقالاتها وقت السؤال دون تنزيل شيء', toggle(!!SRC.wiki, function (v) { SRC.wiki = v; saveSrc(); lastSel = null; paintPill(); })));
     sec('خاصة');
     g.appendChild(crow('مجلد على الجهاز', 'مرجع إلى مكانه: لا نسخ ولا فهرسة، ويُقرأ الملف عند الحاجة', cbtn2('ربط', pickDir)));
     g.appendChild(crow('ملفات من الجهاز', 'تُربط مراجع لا نسخًا', cbtn2('ربط', function () { fileMode = 'link'; $('#fileIn').click(); })));
     sec('تطبيقات مساعدة');
+    var gh = crow('GitHub', repos.length ? repos.join('، ') : 'مستودعات عامة: تُجلب ملفاتها وقت السؤال', cbtn2('إضافة مستودع', function () {
+      var v = prompt('اسم المستودع بصيغة المالك/المستودع'); if (!v) return; v = v.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '');
+      if (!/^[\w.-]+\/[\w.-]+$/.test(v)) { alert('الصيغة: المالك/المستودع'); return; }
+      if (repos.indexOf(v) < 0) repos.push(v); SRC.github = true; saveSrc(); lastSel = null; paintPill(); renderConnectors();
+    }));
+    g.appendChild(gh);
+    repos.forEach(function (rp) { g.appendChild(crow(rp, 'مستودع مربوط', cbtn2('إزالة', function () { repos = repos.filter(function (x) { return x !== rp; }); delete treeCache[rp]; saveSrc(); lastSel = null; paintPill(); renderConnectors(); }))); });
     [['Vercel', 'النشر وسجلات التشغيل'], ['Zapier', 'الأتمتة بين التطبيقات'], ['Supabase', 'قواعد البيانات']].forEach(function (a) { g.appendChild(crow(a[0], a[1], el('span', 'soon', 'قريبًا'))); });
   }
 
