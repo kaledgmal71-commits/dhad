@@ -4,7 +4,7 @@ const fs = require('fs');
 const { normalizeAr } = require('../normalize');
 const { loadPages } = require('./pages_iti');
 const [rulesFile, ...maps] = process.argv.slice(2);
-const books = Object.fromEntries(maps.map(a => { const [k, f] = a.split('='); const p = loadPages(f); const n = new Map([...p].map(([k2, v]) => [k2, normalizeAr(v)])); return [k, n]; }));
+const books = Object.fromEntries(maps.map(a => { const [k, f] = a.split('='); const p = loadPages(f); const n = new Map([...p].map(([k2, v]) => [k2, normalizeAr(v.replace(/\bms\d+\b/g, ' '))])); return [k, n]; }));
 let ok = 0, bad = 0;
 for (const ln of fs.readFileSync(rulesFile, 'utf8').split('\n').filter(Boolean)) {
   let r; try { r = JSON.parse(ln); } catch { bad++; console.log('JSON غير صالح:', ln.slice(0, 80)); continue; }
