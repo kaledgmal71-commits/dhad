@@ -45,7 +45,7 @@ async function main() {
   const db = await PGlite.create({ dataDir: DIR, extensions: { pg_trgm, unaccent }, relaxedDurability: true })
   const n = (await db.query('select count(*)::int c from books')).rows[0].c
   log('القاعدة مفتوحة: كتب ' + n)
-  const pgs = new PGLiteSocketServer({ db, port: PG_PORT, host: '127.0.0.1' })
+  const pgs = new PGLiteSocketServer({ db, port: PG_PORT, host: '127.0.0.1', maxConnections: 8 })
   await pgs.start()
   log('يشغّل التطبيق…')
   const app = spawn('node', ['node_modules/next/dist/bin/next', 'start', '-p', String(APP_PORT)], {

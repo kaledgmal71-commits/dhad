@@ -10,7 +10,9 @@ function intEnv(name: string, fallback: number, min: number, max: number): numbe
 // Five connections ran out when crawlers (Google, Meta) sent dozens of pages at once, and queued
 // requests failed with «timeout exceeded when trying to connect». PostgreSQL allows 500, so 15
 // leaves ample headroom.
-const pool = new Pool({
+const g = globalThis as unknown as { __jamiPool?: Pool }
+// مجمّع واحد لكل العملية: حزم الصفحات والمسارات منفصلة، وكل حزمة كانت تفتح مجمّعًا خاصًا بها.
+const pool = g.__jamiPool ?? new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DB_SSL !== '0' && process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: intEnv('DB_POOL_MAX', 15, 1, 30),
@@ -22,6 +24,8 @@ const pool = new Pool({
   maxUses: intEnv('DB_MAX_USES', 10_000, 100, 100_000),
   keepAlive: true,
 })
+
+g.__jamiPool = pool
 
 pool.on('error', error => {
   console.error('Unexpected idle PostgreSQL client error:', error instanceof Error ? error.message : error)
