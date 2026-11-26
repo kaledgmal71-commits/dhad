@@ -1,0 +1,32 @@
+name: gen-space
+# ينشئ/يحدّث Space خادم التوليد على Hugging Face (معالج مجاني) بنموذج مفتوح الأوزان.
+on:
+  workflow_dispatch:
+    inputs:
+      repo: { description: 'مستودع GGUF', default: 'bartowski/ALLaM-AI_ALLaM-7B-Instruct-preview-GGUF' }
+      file: { description: 'ملف GGUF', default: 'ALLaM-AI_ALLaM-7B-Instruct-preview-Q4_K_M.gguf' }
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip -q install huggingface_hub
+      - name: إنشاء الـ Space ورفع الملفات
+        run: |
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          a=HfApi(token=os.environ['HF_TOKEN']); me=a.whoami()['name']; rid=f'{me}/nawa-gen'
+          a.create_repo(rid, repo_type='space', space_sdk='docker', exist_ok=True)
+          df=open('tools/gen_space/Dockerfile',encoding='utf8').read()
+          df=df.replace('ARG REPO=bartowski/ALLaM-AI_ALLaM-7B-Instruct-preview-GGUF','ARG REPO=${{ inputs.repo }}').replace('ARG FILE=ALLaM-AI_ALLaM-7B-Instruct-preview-Q4_K_M.gguf','ARG FILE=${{ inputs.file }}')
+          open('tools/gen_space/Dockerfile','w',encoding='utf8').write(df)
+          a.upload_folder(folder_path='tools/gen_space', repo_id=rid, repo_type='space')
+          print('SPACE', rid, 'https://'+rid.replace('/','-').lower()+'.hf.space')
+          PY
