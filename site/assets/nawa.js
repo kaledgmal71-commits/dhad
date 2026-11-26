@@ -156,13 +156,43 @@
     }
     return out;
   }
+  // النطاق البحثي: يعيّنه المستخدم لمهمة بعينها؛ تعمل نواة داخله وحده، وتُهيّئه (تدرّب عليه) قبل الكتابة إن طُلب
+  var scope = null;
+  var SCOPE_SET = /^\s*(نطاق\s+(عملك|عمليّاتك|عملياتك|البحث)[^:：]{0,30}[:：]|اعمل\s+(فقط\s+)?(في|داخل)\s+نطاق)\s*(.+)$/;
+  var SCOPE_TRAIN = /(تدرّب|تدرب|تهيّأ|تهيأ|جهّز نفسك|جهز نفسك)[^]{0,12}(على|ل)\s*(هذا\s+)?النطاق/;
+  var SCOPE_OFF = /(ألغِ|الغ|ألغي|أنهِ|انه)\s+(ال)?نطاق/;
+  function scopeFiles() { var k = normQ(scope.text).split(/\s+/).filter(function (w) { return w.length >= 2 && !/^(مكتبه|المكتبه|ملفات|الملفات|مجلد|المجلد|في|من|هذه|هذا)$/.test(w); }); return Object.keys(linked).filter(function (pth) { var np = normQ(pth); return !k.length || k.every(function (w) { return np.indexOf(w) >= 0; }); }); }
+  async function scopeCommand(t) {
+    var m = t.match(SCOPE_SET);
+    if (m) {
+      var tx = m[m.length - 1].replace(/[.؟?]+$/, '').trim(), web = /ويكيبيديا|ويب|الانترنت|الإنترنت|github|جيت ?هاب/i.test(tx);
+      scope = { text: tx, web: web, profile: null }; var n = web ? 0 : scopeFiles().length;
+      if (web) return 'عيّنتُ النطاق: ' + tx + '. أعمل في مصادر الويب وحدها لهذه المهمة.';
+      return n ? 'عيّنتُ النطاق: ' + tx + ' (' + n + ' ملفًّا مربوطًا). أبحث فيه وحده، ويمكنك أن تقول «تدرّب على النطاق» لأهيّئه قبل أن نبدأ الكتابة.' : 'عيّنتُ النطاق: ' + tx + '، لكن لا ملفات مربوطة تطابقه. اربطها من «الموصّلات» ثم أعد الطلب.';
+    }
+    if (SCOPE_OFF.test(t)) { var had = !!scope; scope = null; lastSel = null; return had ? 'أُنهي النطاق، وأعود إلى البحث العام.' : 'لا نطاق مُعيَّن.'; }
+    if (SCOPE_TRAIN.test(t)) {
+      if (!scope) return 'لم يُعيَّن نطاق بعد. قل مثلًا: «نطاق عملك في هذه المهمة: المكتبة الشاملة».';
+      if (scope.web) return 'نطاق الويب يُجلب وقت السؤال؛ لا ما يُهيَّأ مسبقًا.';
+      var fs = scopeFiles(), t0 = Date.now(), freq = {}, docsN = 0, chars = 0;
+      for (var i = 0; i < fs.length && Date.now() - t0 < 30000; i++) {
+        var r = await readLinked(fs[i]); if (!r) continue; docsN++; chars += r.content.length;
+        qTokens(r.content.slice(0, 200000)).forEach(function (w) { freq[w] = (freq[w] || 0) + 1; });
+      }
+      var top = Object.keys(freq).sort(function (a, b) { return freq[b] - freq[a]; }).slice(0, 15);
+      scope.profile = { docs: docsN, of: fs.length, chars: chars, top: top, at: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+      return 'هيّأتُ النطاق: قرأتُ ' + docsN + ' من ' + fs.length + ' ملفًّا (' + chars + ' حرفًا)، وأبرز مفرداته: ' + top.join('، ') + '. هذه تهيئة فهرسية لا تدريب أوزان.';
+    }
+    return null;
+  }
   var WEB_NIAT = { 'بحث_معرفة': 1, 'شرح_مفهوم': 1, 'تحويل_صياغة': 0 };
   async function prepareLinked(q, nia) {
     quoteMode = QUOTE_RE.test(q);
+    var scp = scope, scpWeb = !scp || scp.web;
     var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
     var toks = qTokens(q).filter(function (t) { return !/^(اقتبس|اقتباس|حرفي|حرفيا|انقل|نص|لي|كتب|ما)$/.test(t); }), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
-    if (online && toks.length && !social && (!nia || WEB_NIAT[nia])) {
+    if (online && scpWeb && toks.length && !social && (!nia || WEB_NIAT[nia])) {
       var got = await Promise.all([SRC.wiki ? wikiDocs(toks, q).catch(function () { return []; }) : [], SRC.archive !== false ? archiveDocs(toks).catch(function () { return []; }) : [], SRC.archive !== false ? repoSearchDocs(toks, q).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
       // بوابة الصلة: لا يدخل مصدرٌ لا يغطي معظم جذور الطلب؛ ويُوثَّق كل مصدر مقبول (رابط، وقت الجلب، بصمة، ما غطّاه)
       var need = toks.length >= 2 ? Math.max(2, Math.ceil(toks.length * 0.6)) : 1;
@@ -175,10 +205,11 @@
         });
       });
     }
-    if (SRC.files && paths.length && toks.length && !social) {
+    if (scp && !scp.web) paths = scopeFiles();
+    if (SRC.files && paths.length && toks.length && !social && !(scp && scp.web)) {
       var sc = paths.map(function (p) { var np = normQ(p), s = 0; toks.forEach(function (t) { if (np.indexOf(t) >= 0) s += 5; }); return { p: p, s: s }; }).sort(function (a, b) { return b.s - a.s; });
       var t0 = Date.now(), n = 0;
-      for (var i = 0; i < sc.length && n < 40 && Date.now() - t0 < 6000; i++) {
+      for (var i = 0; i < sc.length && n < (scp ? 150 : 40) && Date.now() - t0 < (scp ? 15000 : 6000); i++) {
         var it = sc[i], r = await readLinked(it.p); n++; if (!r) continue;
         var low = normQ(r.content), hits = 0;
         toks.forEach(function (t) { var k = low.indexOf(t); while (k >= 0 && hits < 200) { hits++; k = low.indexOf(t, k + t.length); } });
@@ -467,11 +498,12 @@
     col.querySelectorAll('.sugg,.acts .rt').forEach(function (n) { n.remove(); });
     var mr = null; try { var mt = window.NawaMorph && window.NawaMorph.answer(t); if (mt) mr = { 'نوع': 'صرف_ذري', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'صرف_ذري', 'حالة': 'نُفّذ', 'تفصيل': 'تحليل بالوزن على الحروف الذرية' }], 'نتائج': {}, 'ذكريات': [], 'رد': mt }; } catch (e) { mr = null; }
     var dia = null; try { if (!mr && window.NawaDia && window.NawaDia.wants(t)) dia = window.NawaDia.run(t).then(function (txt) { return { 'نوع': 'تشكيل', 'ثقة': 94, 'لغة': '', 'خطة': [{ 'محرك': 'مشكّل_عصبي', 'حالة': 'نُفّذ', 'تفصيل': 'نموذج Transformer مدرَّب من الصفر، خطؤه ٥٫٦٪ على اختبار مستقل' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { dia = null; }
+    var sc0 = null; try { if (!mr && !dia && (SCOPE_SET.test(t) || SCOPE_OFF.test(t) || SCOPE_TRAIN.test(t))) sc0 = scopeCommand(t).then(function (txt) { return txt == null ? null : { 'نوع': 'نطاق_بحثي', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نطاق_بحثي', 'حالة': 'نُفّذ', 'تفصيل': 'تعيين نطاق المهمة وتهيئته' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { sc0 = null; }
     var fq = null; try { if (!mr && !dia && window.NawaFiqh && window.NawaFiqh.wants(t)) fq = window.NawaFiqh.run(t).then(function (txt) { return { 'نوع': 'بحث_فقهي', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'فهرس_نصوص', 'حالة': 'نُفّذ', 'تفصيل': 'نصوص حرفية بمواضعها من كتب الشافعية' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { fq = null; }
-    (mr ? Promise.resolve(mr) : dia ? dia : fq ? fq : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
+    (mr ? Promise.resolve(mr) : dia ? dia : sc0 ? sc0 : fq ? fq : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
-      if (mr || dia || fq) call('سجّل_ردّ', r['رد']).catch(function () {});
+      if (mr || dia || fq || sc0) call('سجّل_ردّ', r['رد']).catch(function () {});
       var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
     }, function (err) {
       if (my !== reqId) return 'x';
