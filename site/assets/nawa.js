@@ -157,7 +157,7 @@
     return out;
   }
   // النطاق البحثي: يعيّنه المستخدم لمهمة بعينها؛ تعمل نواة داخله وحده، وتُهيّئه (تدرّب عليه) قبل الكتابة إن طُلب
-  var scope = null;
+  var scope = null, lastSources = [];
   var SCOPE_SET = /^\s*(نطاق\s+(عملك|عمليّاتك|عملياتك|البحث)[^:：]{0,30}[:：]|اعمل\s+(فقط\s+)?(في|داخل)\s+نطاق)\s*(.+)$/;
   var SCOPE_TRAIN = /(تدرّب|تدرب|تهيّأ|تهيأ|جهّز نفسك|جهز نفسك)[^]{0,12}(على|ل)\s*(هذا\s+)?النطاق/;
   var SCOPE_OFF = /(ألغِ|الغ|ألغي|أنهِ|انه)\s+(ال)?نطاق/;
@@ -187,6 +187,7 @@
   }
   var WEB_NIAT = { 'بحث_معرفة': 1, 'شرح_مفهوم': 1, 'تحويل_صياغة': 0 };
   async function prepareLinked(q, nia) {
+    lastSources = [];
     quoteMode = QUOTE_RE.test(q);
     var scp = scope, scpWeb = !scp || scp.web;
     var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
@@ -217,6 +218,7 @@
       }
       sel = sel.concat(sc.filter(function (x) { return x.s > 0 && x.r; }).slice(0, 5));
     }
+    lastSources = sel.slice(0, 4).map(function (x) { return { name: x.p.replace(/^ويب\//, ''), url: webUrl[x.p] || '', text: String(x.r.content || '').slice(0, 1500) }; });
     var key = sel.map(function (x) { return x.p; }).join('|');
     if (key === lastSel) return;
     lastSel = key; await call('صفّر_المكتبة');
@@ -420,6 +422,7 @@
       var links = src.filter(function (s) { return urlFor(s['معرف']); });
       if (links.length) { any = true; box.appendChild(el('h4', '', 'من معرفة الموقع')); var sc = el('div', 'src'); links.forEach(function (s) { var a = el('a', '', s['عنوان']); a.href = urlFor(s['معرف']); sc.appendChild(a); }); box.appendChild(sc); }
     }
+    if (r['إعداد_نموذج']) { any = true; box.appendChild(el('p', '', r['رد'])); box.appendChild(llmCard(r['إعداد_نموذج'])); }
     if (!any) { if (r['بادئة'] && box.firstChild && box.firstChild.tagName === 'P') box.removeChild(box.firstChild); box.appendChild(rich(r['رد'])); }
     box.appendChild(actions(r, box));
     return box;
@@ -500,15 +503,57 @@
     var dia = null; try { if (!mr && window.NawaDia && window.NawaDia.wants(t)) dia = window.NawaDia.run(t).then(function (txt) { return { 'نوع': 'تشكيل', 'ثقة': 94, 'لغة': '', 'خطة': [{ 'محرك': 'مشكّل_عصبي', 'حالة': 'نُفّذ', 'تفصيل': 'نموذج Transformer مدرَّب من الصفر، خطؤه ٥٫٦٪ على اختبار مستقل' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { dia = null; }
     var sc0 = null; try { if (!mr && !dia && (SCOPE_SET.test(t) || SCOPE_OFF.test(t) || SCOPE_TRAIN.test(t))) sc0 = scopeCommand(t).then(function (txt) { return txt == null ? null : { 'نوع': 'نطاق_بحثي', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نطاق_بحثي', 'حالة': 'نُفّذ', 'تفصيل': 'تعيين نطاق المهمة وتهيئته' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { sc0 = null; }
     var fq = null; try { if (!mr && !dia && window.NawaFiqh && window.NawaFiqh.wants(t)) fq = window.NawaFiqh.run(t).then(function (txt) { return { 'نوع': 'بحث_فقهي', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'فهرس_نصوص', 'حالة': 'نُفّذ', 'تفصيل': 'نصوص حرفية بمواضعها من كتب الشافعية' }], 'نتائج': {}, 'ذكريات': [], 'رد': txt }; }); } catch (e) { fq = null; }
-    (mr ? Promise.resolve(mr) : dia ? dia : sc0 ? sc0 : fq ? fq : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); })).then(function (r) {
+    (mr ? Promise.resolve(mr) : dia ? dia : sc0 ? sc0 : fq ? fq : ready.then(function () { return call('نية', t).then(function (n) { return n.نية; }, function () { return ''; }); }).then(function (nia) { return prepareLinked(t, nia).catch(function () {}); }).then(function () { return call('اسأل', t); }).then(function (r0) { return isGeneral(r0) ? generate(r0, t, pending) : r0; })).then(function (r) {
       if (my !== reqId) return 'x';
       var en = { role: 'a', res: r }; curConv.msgs.push(en);
-      if (mr || dia || fq || sc0) call('سجّل_ردّ', r['رد']).catch(function () {});
+      if (mr || dia || fq || sc0 || r['نوع'] === 'توليد') call('سجّل_ردّ', r['رد']).catch(function () {});
       var node = answer(r); pending.querySelector('.tx').replaceChildren(node); en.txt = plainOf(node); addExtras(r, node, t, curConv.msgs.length - 2); if (SET.autotrace) { var trb = node.querySelectorAll('.acts button'); if (trb.length) trb[trb.length - 1].click(); }
     }, function (err) {
       if (my !== reqId) return 'x';
       pending.querySelector('.tx').replaceChildren(el('p', '', 'تعذّر إتمام الطلب: ' + (err && err.message ? err.message : ''))); curConv.msgs.push({ role: 'a', text: 'تعذّر إتمام الطلب' });
     }).then(function (x) { if (x === 'x') return; busyAsk = false; curPending = null; grow(); saveConvs(); renderHist(); scroll.scrollTop = scroll.scrollHeight; });
+  }
+
+  // ===== خانة التوليد: الكلام العام يمرّ على نموذج توليد بسجلّ حواري كامل، والمحركات أدوات تُستدعى عند الحاجة =====
+  function isGeneral(r) { return !!r && (r['نوع'] === 'حوار' || r['نوع'] === 'خارج_النطاق' || r['نوع'] === '' || String(r['رد'] || '').indexOf('لم أجد ما يجيب هذا الطلب') >= 0); }
+  function llmMessages(t) {
+    var h = [], ms = curConv ? curConv.msgs : [];
+    ms.slice(-12).forEach(function (m) { if (m.role === 'u') h.push({ role: 'user', content: m.text }); else { var a = m.txt || (m.res && m.res['رد']) || m.text; if (a) h.push({ role: 'assistant', content: String(a).slice(0, 1800) }); } });
+    if (!h.length || h[h.length - 1].role !== 'user') h.push({ role: 'user', content: t });
+    return [{ role: 'system', content: window.NawaLLM.system(lastSources, window.NawaLLM.modelName()) }].concat(h);
+  }
+  function llmCard(t) {
+    var box = el('div', 'llmcard'), L = window.NawaLLM;
+    box.appendChild(el('p', '', 'للمحادثة العامة أحتاج نموذج توليد. اختر أحد الطريقين:'));
+    var row = el('div', 'fr');
+    var b1 = el('button', 'ibtn', L.hasGPU() ? 'نموذج على جهازي (تنزيل ' + L.local.light.size + ' مرة واحدة، يُنصح بالواي فاي)' : 'نموذج على جهازي (يحتاج متصفحًا يدعم WebGPU: كروم أو إيدج على الحاسوب)');
+    b1.type = 'button'; if (!L.hasGPU()) b1.disabled = true;
+    b1.onclick = function () { L.useLocal(); inp.value = t; go(); };
+    var b2 = el('button', 'ibtn', 'مزوّد بمفتاحي (أقوى، وتُرسل رسائلك إلى المزوّد)'); b2.type = 'button';
+    var form = el('div', 'fr'); form.hidden = true;
+    var base = el('input'); base.value = 'https://api.groq.com/openai/v1'; base.setAttribute('aria-label', 'عنوان المزوّد');
+    var model = el('input'); model.value = 'llama-3.3-70b-versatile'; model.setAttribute('aria-label', 'النموذج');
+    var key = el('input'); key.type = 'password'; key.placeholder = 'المفتاح (يُحفظ في متصفحك وحده)'; key.setAttribute('aria-label', 'المفتاح');
+    var ok = el('button', 'ibtn', 'حفظ ومتابعة'); ok.type = 'button';
+    ok.onclick = function () { if (!key.value.trim()) return; L.useApi(base.value.trim(), key.value.trim(), model.value.trim()); inp.value = t; go(); };
+    [base, model, key, ok].forEach(function (n) { form.appendChild(n); });
+    b2.onclick = function () { form.hidden = !form.hidden; };
+    row.appendChild(b1); row.appendChild(b2); box.appendChild(row); box.appendChild(form);
+    return box;
+  }
+  // يعيد ردًّا جاهزًا للعرض: يبثّ التوليد في فقاعة الانتظار ثم يعيد النتيجة النهائية
+  async function generate(r, t, pending) {
+    var L = window.NawaLLM;
+    if (!L.enabled()) return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'غير_متاح', 'تفصيل': 'لم يُفعَّل' }], 'نتائج': {}, 'ذكريات': [], 'رد': 'لم يُفعَّل نموذج التوليد بعد.', 'إعداد_نموذج': t };
+    var tx = pending.querySelector('.tx'), last = 0, out;
+    try {
+      out = await L.chat(llmMessages(t), function (txt) { var n = Date.now(); if (n - last > 120) { last = n; tx.replaceChildren(rich(txt)); scroll.scrollTop = scroll.scrollHeight; } }, function (st) { tx.replaceChildren(el('p', '', (st.text || 'يُهيَّأ النموذج…') + (st.progress != null ? ' ' + Math.round(st.progress * 100) + '٪' : ''))); });
+    } catch (e) {
+      var m = String(e && e.message);
+      return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'فشل', 'تفصيل': m }], 'نتائج': {}, 'ذكريات': [], 'رد': m === 'nogpu' ? 'متصفحك لا يدعم WebGPU فلا يعمل النموذج المحلي. جرّب كروم أو إيدج على الحاسوب، أو اربط مزوّدًا بمفتاحك.' : /^http 4(01|03)/.test(m) ? 'رفض المزوّد المفتاح. تحقق منه ثم أعد المحاولة.' : 'تعذّر التوليد (' + m + '). أعد المحاولة بعد قليل.', 'إعداد_نموذج': /^http 4(01|03)|nogpu/.test(m) ? t : '' };
+    }
+    var res = { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'نُفّذ', 'تفصيل': L.modelName() }], 'نتائج': (r && r['نتائج']) || {}, 'ذكريات': [], 'رد': out };
+    return res;
   }
   var hq = '', hlist = null;
   function renderHist() {
