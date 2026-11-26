@@ -1,0 +1,40 @@
+name: gen-compare
+# مقارنة نماذج التوليد المفتوحة على Kaggle (GPU)، وتجمع النتائج في الفرع builder-results تحت results/gen-compare.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: gen-compare
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: تشغيل Kaggle
+        run: |
+          pip -q install kaggle six python-slugify requests tqdm
+          [ -n "$KAGGLE_USERNAME" ] || { echo "سرّ KAGGLE_USERNAME غير مضبوط"; exit 1; }
+          mkdir kd && cp tools/gen_kernel/nawa-gen.py kd/ && sed "s/__USER__/${KAGGLE_USERNAME}/" tools/gen_kernel/kernel-metadata.json > kd/kernel-metadata.json
+          kaggle kernels push -p kd
+          for i in $(seq 1 150); do
+            sleep 120
+            S=$(kaggle kernels status ${KAGGLE_USERNAME}/nawa-gen 2>&1 | tr -d '\n'); echo "$S"
+            case "$S" in *COMPLETE*|*ERROR*|*CANCEL*) break;; esac
+          done
+          mkdir -p out && kaggle kernels output ${KAGGLE_USERNAME}/nawa-gen -p out || true
+          find out | head -50
+      - name: دفع النتائج
+        run: |
+          git config user.name nawa-builder; git config user.email builder@nawa.local
+          git fetch origin builder-results 2>/dev/null && git checkout -B builder-results origin/builder-results || { git checkout --orphan builder-results; git rm -rfq .; }
+          mkdir -p results/gen-compare
+          cp -r out/out/gen/* results/gen-compare/ 2>/dev/null || cp -r out/gen/* results/gen-compare/ 2>/dev/null || true
+          git add results; git commit -qm "نتائج مقارنة نماذج التوليد" || echo "لا جديد"
+          git push origin builder-results
