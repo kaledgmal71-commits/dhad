@@ -1,15 +1,15 @@
 // خانة التوليد في نواة: نموذج مفتوح الأوزان مؤقتًا إلى حين اكتمال نموذج نواة الخاص.
-// وضعان: محلي (يعمل في متصفحك على WebGPU، يُنزَّل مرة ويُحفظ) أو مزوّد متوافق مع OpenAI بمفتاح المستخدم (يُحفظ في متصفحه وحده).
+// يعمل في متصفح المستخدم على WebGPU، يُنزَّل مرة ويُحفظ؛ لا مفاتيح ولا خوادم خارجية.
 (function (root) {
-  var GOOGLE = 'https://generativelanguage.googleapis.com/v1beta/openai', LS = 'nawa.llm', WEBLLM = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm';
+  var LS = 'nawa.llm', WEBLLM = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm';
   var LOCAL = { light: { id: 'Qwen3-1.7B-q4f16_1-MLC', label: 'Qwen3 1.7B', size: '١ جيجابايت' } };
   var cfg = null, engine = null, loading = null, state = { phase: 'off', text: '' };
   function save() { try { localStorage.setItem(LS, JSON.stringify(cfg)); } catch (e) {} }
   function load() { try { cfg = JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { cfg = null; } }
   load();
   function hasGPU() { return !!(root.navigator && root.navigator.gpu); }
-  function enabled() { return !!(cfg && (cfg.mode === 'local' || (cfg.mode === 'api' && cfg.key))); }
-  function modelName() { return !cfg ? '' : cfg.mode === 'local' ? LOCAL.light.label : cfg.model; }
+  function enabled() { return !!(cfg && cfg.mode === 'local'); }
+  function modelName() { return !cfg ? '' : LOCAL.light.label; }
   // يحذف وسم التفكير: كتلًا مكتملة، وما بعد وسم لم يُغلق بعد
   function clean(t) { t = String(t).replace(/<think>[\s\S]*?<\/think>/g, ''); var i = t.indexOf('<think>'); if (i >= 0) t = t.slice(0, i); return t.replace(/^\s+/, ''); }
   async function ensureLocal(onP) {
@@ -39,39 +39,7 @@
       for await (var c of st) { var d = c.choices[0] && c.choices[0].delta && c.choices[0].delta.content; if (d) { acc += d; onTok(clean(acc)); } }
       return clean(acc);
     }
-    if (/gemma/i.test(cfg.model) && messages[0] && messages[0].role === 'system') {
-      var sy = messages[0].content; messages = messages.slice(1);
-      var fi = messages.findIndex(function (x) { return x.role === 'user'; });
-      if (fi >= 0) messages = messages.map(function (x, i) { return i === fi ? { role: 'user', content: sy + '\n\n---\n\n' + x.content } : x; });
-    }
-    var r = await fetch(cfg.base.replace(/\/$/, '') + '/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.key }, body: JSON.stringify({ model: cfg.model, messages: messages, stream: true, temperature: 0.6, max_tokens: 1200 }) });
-    if (!r.ok) throw new Error('http ' + r.status);
-    var rd = r.body.getReader(), dec = new TextDecoder(), buf = '';
-    for (;;) {
-      var x = await rd.read(); if (x.done) break; buf += dec.decode(x.value, { stream: true });
-      var lines = buf.split('\n'); buf = lines.pop();
-      for (var i = 0; i < lines.length; i++) {
-        var ln = lines[i].trim(); if (ln.indexOf('data:') !== 0) continue; var js = ln.slice(5).trim(); if (js === '[DONE]') continue;
-        try { var dd = JSON.parse(js).choices[0].delta.content; if (dd) { acc += dd; onTok(clean(acc)); } } catch (e) {}
-      }
-    }
     return clean(acc);
-  }
-  // يختار من نماذج المزوّد: Gemma المفتوح الأوزان أولًا (الأكبر)، وإلا أحدث Flash
-  function pick(ids) {
-    ids = ids.map(function (x) { return String(x).replace(/^models\//, ''); }).filter(function (x) { return !/embed|tts|image|imagen|veo|live|audio|aqa|robotics|-vision/i.test(x); });
-    var g = ids.filter(function (x) { return /gemma/i.test(x) && /(^|[-_])(it|instruct)\b|-it$/i.test(x); });
-    g.sort(function (a, b) { return (Number((b.match(/(\d+)b/i) || [0, 0])[1])) - (Number((a.match(/(\d+)b/i) || [0, 0])[1])); });
-    if (g.length) return g[0];
-    var f = ids.filter(function (x) { return /flash/i.test(x) && !/lite|preview|exp/i.test(x); }).sort().reverse();
-    return f[0] || ids[0] || '';
-  }
-  async function useGoogle(key) {
-    var r = await fetch(GOOGLE + '/models', { headers: { authorization: 'Bearer ' + key } });
-    if (!r.ok) throw new Error('http ' + r.status);
-    var j = await r.json(), m = pick((j.data || j.models || []).map(function (x) { return x.id || x.name; }));
-    if (!m) throw new Error('nomodel');
-    cfg = { mode: 'api', base: GOOGLE, key: key, model: m }; save(); return m;
   }
   function system(sources, name) {
     var s = 'أنت «نواة»، ذكاء اصطناعي عربي. أجب بالعربية الفصيحة الميسّرة ما لم يكتب المستخدم بلغة أخرى، بوضوح ومباشرة ودون حشو، وبقدر ما يحتاجه السؤال. لا تختلق معلومة ولا مصدرًا ولا اقتباسًا؛ إن لم تكن متأكدًا فقل ذلك. ' +
@@ -83,8 +51,6 @@
   root.NawaLLM = {
     enabled: enabled, hasGPU: hasGPU, modelName: modelName, chat: chat, system: system, clean: clean, state: function () { return state; }, local: LOCAL,
     useLocal: function () { cfg = { mode: 'local' }; save(); },
-    useGoogle: useGoogle, pick: pick,
-    useApi: function (base, key, model) { cfg = { mode: 'api', base: base, key: key, model: model }; save(); },
     off: function () { cfg = null; engine = null; save(); }
   };
 })(window);

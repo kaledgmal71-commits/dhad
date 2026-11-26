@@ -524,20 +524,12 @@
   }
   function llmCard(t) {
     var box = el('div', 'llmcard'), L = window.NawaLLM;
-    box.appendChild(el('p', '', 'للمحادثة العامة أحتاج نموذج توليد. اختر أحد الطريقين:'));
+    box.appendChild(el('p', '', 'للمحادثة العامة يعمل نموذج مفتوح الأوزان على جهازك، دون مفاتيح ودون إرسال رسائلك إلى أحد:'));
     var row = el('div', 'fr');
     var b1 = el('button', 'ibtn', L.hasGPU() ? 'نموذج على جهازي (تنزيل ' + L.local.light.size + ' مرة واحدة، يُنصح بالواي فاي)' : 'نموذج على جهازي (يحتاج متصفحًا يدعم WebGPU: كروم أو إيدج على الحاسوب)');
     b1.type = 'button'; if (!L.hasGPU()) b1.disabled = true;
     b1.onclick = function () { L.useLocal(); inp.value = t; go(); };
-    var b2 = el('button', 'ibtn', 'جوجل (مجاني بلا بطاقة، أقوى؛ تُرسل رسائلك إلى جوجل)'); b2.type = 'button';
-    var form = el('div', 'fr'); form.hidden = true;
-    var key = el('input'); key.type = 'password'; key.placeholder = 'مفتاح من aistudio.google.com/apikey (يُحفظ في متصفحك وحده)'; key.setAttribute('aria-label', 'المفتاح');
-    var msgn = el('span', 'tiny', '');
-    var ok = el('button', 'ibtn', 'حفظ ومتابعة'); ok.type = 'button';
-    ok.onclick = function () { var k = key.value.trim(); if (!k) return; ok.disabled = true; msgn.textContent = 'يُفحص المفتاح…'; L.useGoogle(k).then(function () { inp.value = t; go(); }, function (e) { ok.disabled = false; msgn.textContent = /http 4(00|01|03)/.test(String(e && e.message)) ? 'المفتاح غير مقبول.' : 'تعذّر الاتصال بجوجل من هذا المتصفح (' + (e && e.message) + ').'; }); };
-    [key, ok, msgn].forEach(function (n) { form.appendChild(n); });
-    b2.onclick = function () { form.hidden = !form.hidden; };
-    row.appendChild(b1); row.appendChild(b2); box.appendChild(row); box.appendChild(form);
+    row.appendChild(b1); box.appendChild(row);
     return box;
   }
   // يعيد ردًّا جاهزًا للعرض: يبثّ التوليد في فقاعة الانتظار ثم يعيد النتيجة النهائية
@@ -549,7 +541,7 @@
       out = await L.chat(llmMessages(t), function (txt) { var n = Date.now(); if (n - last > 120) { last = n; tx.replaceChildren(rich(txt)); scroll.scrollTop = scroll.scrollHeight; } }, function (st) { tx.replaceChildren(el('p', '', (st.text || 'يُهيَّأ النموذج…') + (st.progress != null ? ' ' + Math.round(st.progress * 100) + '٪' : ''))); });
     } catch (e) {
       var m = String(e && e.message);
-      return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'فشل', 'تفصيل': m }], 'نتائج': {}, 'ذكريات': [], 'رد': m === 'nogpu' ? 'متصفحك لا يدعم WebGPU فلا يعمل النموذج المحلي. جرّب كروم أو إيدج على الحاسوب، أو اربط مزوّدًا بمفتاحك.' : /^http 4(01|03)/.test(m) ? 'رفض المزوّد المفتاح. تحقق منه ثم أعد المحاولة.' : 'تعذّر التوليد (' + m + '). أعد المحاولة بعد قليل.', 'إعداد_نموذج': /^http 4(01|03)|nogpu/.test(m) ? t : '' };
+      return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'فشل', 'تفصيل': m }], 'نتائج': {}, 'ذكريات': [], 'رد': m === 'nogpu' ? 'متصفحك لا يدعم WebGPU فلا يعمل النموذج المحلي. جرّب كروم أو إيدج على الحاسوب.' : 'تعذّر التوليد (' + m + '). أعد المحاولة بعد قليل.', 'إعداد_نموذج': m === 'nogpu' ? t : '' };
     }
     var res = { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'نُفّذ', 'تفصيل': L.modelName() }], 'نتائج': (r && r['نتائج']) || {}, 'ذكريات': [], 'رد': out };
     return res;
