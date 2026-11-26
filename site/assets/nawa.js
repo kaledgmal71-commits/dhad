@@ -94,7 +94,9 @@
   var SRC = { files: true, wiki: true, github: true }; try { var sv = JSON.parse(ls('nawa.src') || 'null'); if (sv) SRC = sv; } catch (e) {}
   var repos = []; try { repos = JSON.parse(ls('nawa.repos') || '[]'); } catch (e) {}
   function saveSrc() { ls('nawa.src', JSON.stringify(SRC)); ls('nawa.repos', JSON.stringify(repos)); }
-  var webUrl = {}, wcache = {}, treeCache = {};
+  var webUrl = {}, wcache = {}, treeCache = {}, webMeta = {}, quoteMode = false;
+  function fnv(s) { var h = 2166136261; s = String(s); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('00000000' + h.toString(16)).slice(-8); }
+  var QUOTE_RE = /(اقتبس|اقتباس|نصا حرفي|نصًّا حرفيًّا|النص الحرفي|نص حرفي|حرفيا|حرفيًّا|انقل (لي )?(نص|الن))/;
   // الجلب بمهلة: مصدر معطّل لا يعلّق المحادثة
   function tfetch(u) { var c = new AbortController(), t = setTimeout(function () { c.abort(); }, 7000); return fetch(u, { signal: c.signal }).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; }); }
   function jget(u) { return tfetch(u).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }); }
@@ -156,12 +158,22 @@
   }
   var WEB_NIAT = { 'بحث_معرفة': 1, 'شرح_مفهوم': 1, 'تحويل_صياغة': 0 };
   async function prepareLinked(q, nia) {
+    quoteMode = QUOTE_RE.test(q);
     var paths = Object.keys(linked), online = navigator.onLine !== false && (SRC.wiki || SRC.archive !== false || (SRC.github && repos.length));
     if (!paths.length && !online) return;
-    var toks = qTokens(q), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
+    var toks = qTokens(q).filter(function (t) { return !/^(اقتبس|اقتباس|حرفي|حرفيا|انقل|نص|لي|كتب|ما)$/.test(t); }), sel = [], social = /^(السلام|مرحبا|اهلا|شكرا|من انت|ما انت|عرف)|(هل (انت|تستطيع|تقدر|تعمل)|ماذا (تحسن|تستطيع|تفعل|تجيد)|تعمل بكفاءه|كيف حالك)/.test(normQ(q).trim());
     if (online && toks.length && !social && (!nia || WEB_NIAT[nia])) {
       var got = await Promise.all([SRC.wiki ? wikiDocs(toks, q).catch(function () { return []; }) : [], SRC.archive !== false ? archiveDocs(toks).catch(function () { return []; }) : [], SRC.archive !== false ? repoSearchDocs(toks, q).catch(function () { return []; }) : [], SRC.github ? githubDocs(toks) : []]);
-      got.forEach(function (g) { g.forEach(function (d) { sel.push({ p: d.p, r: d.r, s: 1 }); }); });
+      // بوابة الصلة: لا يدخل مصدرٌ لا يغطي معظم جذور الطلب؛ ويُوثَّق كل مصدر مقبول (رابط، وقت الجلب، بصمة، ما غطّاه)
+      var need = toks.length >= 2 ? Math.max(2, Math.ceil(toks.length * 0.6)) : 1;
+      got.forEach(function (g) {
+        g.forEach(function (d) {
+          var low = normQ(d.r.content), cov = toks.filter(function (t) { return low.indexOf(t) >= 0; });
+          if (cov.length < need) return;
+          webMeta[d.p] = { at: new Date().toISOString().slice(0, 16).replace('T', ' '), hash: fnv(d.r.content), covered: cov, size: d.r.content.length };
+          sel.push({ p: d.p, r: d.r, s: 1 });
+        });
+      });
     }
     if (SRC.files && paths.length && toks.length && !social) {
       var sc = paths.map(function (p) { var np = normQ(p), s = 0; toks.forEach(function (t) { if (np.indexOf(t) >= 0) s += 5; }); return { p: p, s: s }; }).sort(function (a, b) { return b.s - a.s; });
@@ -364,7 +376,11 @@
         part.forEach(function (p) {
           var nm = String(p['معرف']).split('#')[0], q = el('div', 'pas'), u = webUrl[nm], t = u ? el('a', '', nm.replace(/^ويب\//, '')) : el('b', '', nm);
           if (u) { t.href = u; t.target = '_blank'; t.rel = 'noopener'; t.className = 'pl'; }
-          var sn = p['مقتطف'] || p['عنوان']; if (u) sn = String(sn).replace(/^[^\n]{1,160}\n\n/, ''); q.appendChild(t); q.appendChild(el('span', '', sn)); box.appendChild(q);
+          var sn = p['مقتطف'] || p['عنوان']; if (u) sn = String(sn).replace(/^[^\n]{1,160}\n\n/, ''); q.appendChild(t);
+          var wm = webMeta[nm];
+          if (u && wm && !quoteMode) sn = 'غطّى: ' + wm.covered.join('، ') + ' · جُلب ' + wm.at + ' · بصمة ' + wm.hash;
+          else if (u && wm) sn = sn + ' [جُلب ' + wm.at + ' · بصمة ' + wm.hash + ']';
+          q.appendChild(el('span', '', sn)); box.appendChild(q);
         });
       });
     }

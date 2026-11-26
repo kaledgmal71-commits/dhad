@@ -18,8 +18,10 @@ srv.listen(0,async()=>{const port=srv.address().port;const b=await chromium.laun
    await p.route(/archive\.org/,r=>{hits.push('ia');r.fulfill({headers:cors,body:JSON.stringify({response:{docs:[]}})})});
    await p.route(/api\.github\.com/,r=>{hits.push('gh');r.fulfill({headers:cors,body:'{"items":[]}'})});});
   let t=await ask(p,'من هو ابن سينا');
-  ok(/من الويب والمستودعات/.test(t)&&/ابن سينا طبيب/.test(t),'سؤال عام يُجاب من الويب');
-  ok(/القانون في الطب/.test(t)&&t.indexOf('ابن سينا طبيب')<t.indexOf('من الويب والمستودعات'),'خلاصة استخراجية قبل قائمة المصادر');
+  ok(/من الويب والمستودعات/.test(t),'سؤال عام: توثيق المصادر');
+  ok(!/ابن سينا طبيب وفيلسوف/.test(t)&&/بصمة/.test(t)&&/جُلب/.test(t)&&/غطّى/.test(t),'لا لصق للنص افتراضيًا: رابط ووقت وبصمة وما غُطّي');
+  t=await ask(p,'اقتبس لي نص ما كُتب عن ابن سينا');
+  ok(/ابن سينا طبيب/.test(t)&&/القانون في الطب/.test(t),'الاقتباس الحرفي عند الطلب فقط');
   ok(hits.includes('ar')&&hits.includes('ws')&&hits.includes('ia'),'ويكيبيديا وويكي مصدر وأرشيف الإنترنت تُستعلَم: '+hits.join(','));
   ok(!/من معرفة الموقع/.test(t)&&!/ضاد/.test(t.replace(/نواة|dhad|NAWA/g,'').replace(/ض\s*ا\s*د/g,'')),'لا تسرّب لمادة ضاد في سؤال عام');
   p=await page(async p=>{await p.route(/wikipedia\.org|wikisource\.org|archive\.org|api\.github\.com/,r=>r.abort());});
