@@ -1,0 +1,7 @@
+ALLaM-7B: {'arabic': 0.98, 'repetition': 0.04, 'hit_limit': 5, 'refusals': 1} | ترخيص: apache-2.0 | False | 268ث
+Fanar-9B: {'arabic': 0.83, 'repetition': 0.0, 'hit_limit': 7, 'refusals': 0} | ترخيص: apache-2.0 | False | 517ث
+Qwen3-8B: {'arabic': 0.97, 'repetition': 0.01, 'hit_limit': 10, 'refusals': 0} | ترخيص: apache-2.0 | False | 482ث
+Qwen3-4B: {'arabic': 0.94, 'repetition': 0.01, 'hit_limit': 10, 'refusals': 1} | ترخيص: apache-2.0 | False | 431ث
+Jais2-8B: فشل OSError You are trying to access a gated repo.
+Make sure to have access to it at https://huggingface.co/inception42/Jais-2-8B-Chat.
+401 Client Error. (Request ID: Root= | ترخيص: apache-2.0 | auto

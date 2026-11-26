@@ -1,0 +1,4 @@
+أ = Qwen/Qwen3-8B
+ب = QCRI/Fanar-1-9B-Instruct
+ج = ALLaM-AI/ALLaM-7B-Instruct-preview
+د = Qwen/Qwen3-4B
