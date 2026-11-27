@@ -163,3 +163,5 @@ def gen(prompt, n=60, k=20):
     return tok.decode(ids[0].tolist())
 for pr in ['بسم الله الرحمن الرحيم', 'قال رسول الله صلى الله عليه وسلم', 'الحمد لله رب العالمين', 'باب في أحكام الصلاة', 'اختلف الفقهاء في']:
     print('>>', gen(pr).replace('\n', ' '), flush=True)
+
+if os.environ.get('LAB'): exec(open(os.environ['LAB'], encoding='utf8').read())
