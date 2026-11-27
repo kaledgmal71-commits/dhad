@@ -11,14 +11,14 @@ srv.listen(0,async()=>{const port=srv.address().port;const b=await chromium.laun
   const cors={'access-control-allow-origin':'*','content-type':'application/json'};
   async function page(mocks){const p=await(await b.newContext()).newPage();await mocks(p);await p.goto('http://localhost:'+port+'/nawa/');await p.waitForSelector('#in');return p;}
   const ask=async(p,q,w)=>{await p.fill('#in',q);await p.keyboard.press('Enter');await p.waitForTimeout(w||8000);return p.innerText('#col');};
-  const stub="export async function CreateMLCEngine(id,o){o&&o.initProgressCallback&&o.initProgressCallback({text:'تحميل',progress:1});return{chat:{completions:{create:async(req)=>{window.__msgs=req.messages;async function* g(){const w=['<think>x</think>','مرحبًا ','بك ','من ','النموذج.'];for(const x of w){yield{choices:[{delta:{content:x}}]};}}return g();}}}};}";
+  const stub="export async function CreateMLCEngine(id,o){o&&o.initProgressCallback&&o.initProgressCallback({text:'تحميل',progress:1});return{chat:{completions:{create:async(req)=>{window.__msgs=req.messages;async function* g(){const w=window.__reply||['<think>x</think>','مرحبًا ','بك ','من ','النموذج.'];for(const x of w){yield{choices:[{delta:{content:x}}]};}}return g();}}}};}";
   const ctx=await b.newContext();await ctx.addInitScript(()=>{Object.defineProperty(navigator,'gpu',{value:{}});});
   const p=await ctx.newPage();
   await p.route(/cdn\.jsdelivr\.net\/npm\/@mlc-ai/,r=>r.fulfill({headers:{'content-type':'text/javascript','access-control-allow-origin':'*'},body:stub}));
   await p.route(/wikipedia\.org|wikisource\.org|archive\.org|api\.github\.com/,r=>r.abort());
   await p.goto('http://localhost:'+port+'/nawa/');await p.waitForSelector('#in');
   let t=await ask(p,'كيف حالك اليوم؟',9000);
-  ok(/أحتاج نموذج توليد/.test(t)&&!/لم أجد ما يجيب/.test(t),'بلا نموذج: بطاقة إعداد لا ردّ قالبي: '+t.slice(-200));
+  ok(/نموذج مفتوح الأوزان على جهازك/.test(t)&&!/لم أجد ما يجيب/.test(t),'بلا نموذج: بطاقة إعداد لا ردّ قالبي: '+t.slice(-200));
   await p.click('.llmcard button');await p.waitForTimeout(9000);
   t=await p.innerText('#col');
   ok(/مرحبًا بك من النموذج\./.test(t)&&!/think|<think>/.test(t),'التوليد يُبثّ ويُحذف وسم التفكير: '+t.slice(-200));
@@ -27,6 +27,10 @@ srv.listen(0,async()=>{const port=srv.address().port;const b=await chromium.laun
   t=await ask(p,'وما رأيك في القراءة؟',9000);
   const m2=await p.evaluate(()=>window.__msgs);
   ok(m2.length>=4&&m2.some(x=>x.role==='assistant'&&/النموذج/.test(x.content)),'السجلّ الحواري يتراكم: '+m2.length);
+  await p.evaluate(()=>{window.__reply=['الصلاة ركن. ','قال رسول الله صلى الله عليه وسلم ألا إن العرق العظام سود من آثار الوضوء فمن أعان من أولياء الله. ','وهذا شرح.'];});
+  t=await ask(p,'حدثني عن الوضوء',9000);
+  ok(!/العرق العظام/.test(t)&&/حُذف نص منسوب/.test(t)&&/الصلاة ركن/.test(t)&&/وهذا شرح/.test(t),'حديث مختلَق من النموذج يُحذف قبل العرض ويبقى غير المنسوب: '+t.slice(-300));
+  await p.evaluate(()=>{window.__reply=null;});
   t=await ask(p,'شكّل: ذهب الولد إلى المدرسة',20000);
   ok(/الْوَلَدِ|[\u064B-\u0652]/.test(t.split('شكّل')[1]||''),'المحركات تبقى أدوات: التشكيل لا يمرّ بالنموذج');
  }catch(e){fail++;console.log('ERR',e.message)}
