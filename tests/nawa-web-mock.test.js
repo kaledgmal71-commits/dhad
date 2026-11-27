@@ -26,7 +26,7 @@ srv.listen(0,async()=>{const port=srv.address().port;const b=await chromium.laun
   ok(!/من معرفة الموقع/.test(t)&&!/ضاد/.test(t.replace(/نواة|dhad|NAWA/g,'').replace(/ض\s*ا\s*د/g,'')),'لا تسرّب لمادة ضاد في سؤال عام');
   p=await page(async p=>{await p.route(/wikipedia\.org|wikisource\.org|archive\.org|api\.github\.com/,r=>r.abort());});
   t=await ask(p,'ما هي الفوتوسنثيس',12000);
-  ok(/أحتاج نموذج توليد/.test(t)&&!/معرفة الموقع/.test(t),'مصادر معطّلة وبلا نموذج: بطاقة إعداد بلا ذكر لمعرفة الموقع');
+  ok(/نموذج مفتوح الأوزان على جهازك/.test(t)&&!/معرفة الموقع/.test(t),'مصادر معطّلة وبلا نموذج: بطاقة إعداد بلا ذكر لمعرفة الموقع');
   t=await ask(p,'اكتب برنامجا يحسب مضروب ٥');ok(/بأي لغة/.test(t),'برنامج بلا لغة: يُسأل عنها');
   t=await ask(p,'بضاد',9000);ok(/١٢٠/.test(t),'جواب اللغة وحده يكمّل الطلب');
  }catch(e){fail++;console.log('ERR',e.message)}
