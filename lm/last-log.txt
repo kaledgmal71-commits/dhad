@@ -1,217 +1,257 @@
 $ nvidia-smi -L 
-,{"stream_name":"stdout","time":1.699418297,"data":"GPU 0: Tesla T4 (UUID: GPU-5379c976-f740-5d1c-4af5-e3153bd67a4d)\n"}
-,{"stream_name":"stdout","time":1.6994534780000001,"data":"GPU 1: Tesla T4 (UUID: GPU-7ed3eea4-c17a-da45-f457-fd7d267fd726)\n"}
-,{"stream_name":"stdout","time":1.707737935,"data":"$ pip -q install tokenizers datasets huggingface_hub 2\u003e\u00261 \n"}
-,{"stream_name":"stdout","time":5.7251026750000005,"data":"$ rm -rf /kaggle/working/dhad \u0026\u0026 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.gi\n"}
-,{"stream_name":"stdout","time":8.701605165,"data":"$ python3 /kaggle/working/dhad/tools/lm/prep.py\n"}
-,{"stream_name":"stdout","time":280.298860861,"data":"hadith: 117799 وثيقة، 92.7M حرف، ODbL-1.0\n"}
-,{"stream_name":"stdout","time":280.298903643,"data":"quran: 228 وثيقة، 1.4M حرف، CC-BY-SA-4.0\n"}
-,{"stream_name":"stdout","time":280.298908186,"data":"openiti_0300AH: 734 وثيقة، 187.5M حرف، CC-BY-NC-SA-4.0\n"}
-,{"stream_name":"stdout","time":280.298911578,"data":"openiti_0400AH: 698 وثيقة، 267.4M حرف، CC-BY-NC-SA-4.0\n"}
-,{"stream_name":"stdout","time":280.298914613,"data":"openiti_0500AH: 316 وثيقة، 261.9M حرف، CC-BY-NC-SA-4.0\n"}
-,{"stream_name":"stdout","time":280.32298277,"data":"$ python3 /kaggle/working/dhad/tools/lm/train.py\n"}
-,{"stream_name":"stdout","time":287.081570398,"data":"الجهاز cuda Tesla T4\n"}
-,{"stream_name":"stdout","time":288.391965304,"data":"مجزّئ مستأنف 8000\n"}
-,{"stream_name":"stdout","time":288.391992804,"data":"المفردات 8000 زمن 1\n"}
-,{"stream_name":"stdout","time":351.831632857,"data":"hadith: 60.8M رمز × 2\n"}
-,{"stream_name":"stdout","time":353.137009819,"data":"quran: 1.1M رمز × 4\n"}
-,{"stream_name":"stdout","time":451.525460051,"data":"openiti_0300AH: 61.0M رمز × 1\n"}
-,{"stream_name":"stdout","time":596.464525736,"data":"openiti_0400AH: 91.8M رمز × 1\n"}
-,{"stream_name":"stdout","time":734.618384388,"data":"openiti_0500AH: 86.7M رمز × 1\n"}
-,{"stream_name":"stdout","time":734.93397999,"data":"رموز التدريب 363373285 تحقق 1764482\n"}
-,{"stream_name":"stdout","time":736.220476891,"data":"المعاملات 53.5M\n"}
-,{"stream_name":"stdout","time":745.580361199,"data":"استئناف من الخطوة 30000\n"}
-,{"stream_name":"stdout","time":756.375090558,"data":"نهاية التشغيل: خطوة 30000 خسارة تحقق 2.165 حيرة 8.7\n"}
-,{"stream_name":"stderr","time":757.378277862,"data":"\rProcessing Files (0 / 0)      : |          |  0.00B /  0.00B            \n"}
-,{"stream_name":"stderr","time":757.924866032,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B            \u001b[A\n"}
-,{"stream_name":"stderr","time":757.924908465,"data":"\n"}
-,{"stream_name":"stderr","time":757.925144365,"data":"\r  /kaggle/temp/ckpt/last.pt   :   4%|▎         | 24.0MB /  642MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":757.925169124,"data":"\n"}
-,{"stream_name":"stderr","time":758.025749419,"data":"\r  /kaggle/temp/ckpt/last.pt   :   4%|▎         | 24.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   4%|▎         | 24.0MB /  642MB, 2.38MB/s  \n"}
-,{"stream_name":"stderr","time":758.025783724,"data":"\n"}
-,{"stream_name":"stderr","time":758.126560252,"data":"\r  /kaggle/temp/ckpt/last.pt   :   6%|▌         | 40.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   6%|▌         | 40.0MB /  642MB, 3.93MB/s  \n"}
-,{"stream_name":"stderr","time":758.126597741,"data":"\n"}
-,{"stream_name":"stderr","time":758.227425661,"data":"\r  /kaggle/temp/ckpt/last.pt   :   9%|▊         | 55.9MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   9%|▊         | 55.9MB /  642MB, 5.46MB/s  \n"}
-,{"stream_name":"stderr","time":758.227488485,"data":"\n"}
-,{"stream_name":"stderr","time":758.328276988,"data":"\r  /kaggle/temp/ckpt/last.pt   :  12%|█▏        | 80.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  12%|█▏        | 80.0MB /  642MB, 7.77MB/s  \n"}
-,{"stream_name":"stderr","time":758.32831901,"data":"\n"}
-,{"stream_name":"stderr","time":758.428925682,"data":"\r  /kaggle/temp/ckpt/last.pt   :  15%|█▍        | 95.9MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  15%|█▍        | 95.9MB /  642MB, 9.25MB/s  \n"}
-,{"stream_name":"stderr","time":758.428963729,"data":"\n"}
-,{"stream_name":"stderr","time":758.529796819,"data":"\r  /kaggle/temp/ckpt/last.pt   :  17%|█▋        |  112MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  17%|█▋        |  112MB /  642MB, 10.7MB/s  \n"}
-,{"stream_name":"stderr","time":758.529827115,"data":"\n"}
-,{"stream_name":"stderr","time":758.630610487,"data":"\r  /kaggle/temp/ckpt/last.pt   :  20%|█▉        |  128MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  20%|█▉        |  128MB /  642MB, 12.2MB/s  \n"}
-,{"stream_name":"stderr","time":758.63064072,"data":"\n"}
-,{"stream_name":"stderr","time":758.731360659,"data":"\r  /kaggle/temp/ckpt/last.pt   :  22%|██▏       |  144MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  22%|██▏       |  144MB /  642MB, 13.6MB/s  \n"}
-,{"stream_name":"stderr","time":758.731404894,"data":"\n"}
-,{"stream_name":"stderr","time":758.832179306,"data":"\r  /kaggle/temp/ckpt/last.pt   :  25%|██▍       |  160MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  25%|██▍       |  160MB /  642MB, 15.0MB/s  \n"}
-,{"stream_name":"stderr","time":758.832212004,"data":"\n"}
-,{"stream_name":"stderr","time":758.932936189,"data":"\r  /kaggle/temp/ckpt/last.pt   :  26%|██▌       |  168MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  26%|██▌       |  168MB /  642MB, 15.7MB/s  \n"}
-,{"stream_name":"stderr","time":758.932966417,"data":"\n"}
-,{"stream_name":"stderr","time":759.033774674,"data":"\r  /kaggle/temp/ckpt/last.pt   :  29%|██▊       |  184MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  29%|██▊       |  184MB /  642MB, 17.0MB/s  \n"}
-,{"stream_name":"stderr","time":759.033804513,"data":"\n"}
-,{"stream_name":"stderr","time":759.134605637,"data":"\r  /kaggle/temp/ckpt/last.pt   :  31%|███       |  200MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  31%|███       |  200MB /  642MB, 18.4MB/s  \n"}
-,{"stream_name":"stderr","time":759.134636283,"data":"\n"}
-,{"stream_name":"stderr","time":759.235423541,"data":"\r  /kaggle/temp/ckpt/last.pt   :  32%|███▏      |  208MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  32%|███▏      |  208MB /  642MB, 19.0MB/s  \n"}
-,{"stream_name":"stderr","time":759.235459418,"data":"\n"}
-,{"stream_name":"stderr","time":759.336206383,"data":"\r  /kaggle/temp/ckpt/last.pt   :  35%|███▍      |  224MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  35%|███▍      |  224MB /  642MB, 20.4MB/s  \n"}
-,{"stream_name":"stderr","time":759.336260925,"data":"\n"}
-,{"stream_name":"stderr","time":759.437005755,"data":"\r  /kaggle/temp/ckpt/last.pt   :  37%|███▋      |  240MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  37%|███▋      |  240MB /  642MB, 21.7MB/s  \n"}
-,{"stream_name":"stderr","time":759.437117503,"data":"\n"}
-,{"stream_name":"stderr","time":759.537737641,"data":"\r  /kaggle/temp/ckpt/last.pt   :  40%|███▉      |  256MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  40%|███▉      |  256MB /  642MB, 23.0MB/s  \n"}
-,{"stream_name":"stderr","time":759.537773851,"data":"\n"}
-,{"stream_name":"stderr","time":759.638571876,"data":"\r  /kaggle/temp/ckpt/last.pt   :  42%|████▏     |  272MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  42%|████▏     |  272MB /  642MB, 24.3MB/s  \n"}
-,{"stream_name":"stderr","time":759.63860415,"data":"\n"}
-,{"stream_name":"stderr","time":759.739285457,"data":"\r  /kaggle/temp/ckpt/last.pt   :  46%|████▌     |  296MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  46%|████▌     |  296MB /  642MB, 26.3MB/s  \n"}
-,{"stream_name":"stderr","time":759.73931662,"data":"\n"}
-,{"stream_name":"stderr","time":759.840030615,"data":"\r  /kaggle/temp/ckpt/last.pt   :  49%|████▊     |  312MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  49%|████▊     |  312MB /  642MB, 27.6MB/s  \n"}
-,{"stream_name":"stderr","time":759.840089449,"data":"\n"}
-,{"stream_name":"stderr","time":759.940910263,"data":"\r  /kaggle/temp/ckpt/last.pt   :  51%|█████     |  328MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  51%|█████     |  328MB /  642MB, 28.8MB/s  \n"}
-,{"stream_name":"stderr","time":759.94094755,"data":"\n"}
-,{"stream_name":"stderr","time":760.041868926,"data":"\r  /kaggle/temp/ckpt/last.pt   :  54%|█████▎    |  344MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  54%|█████▎    |  344MB /  642MB, 30.1MB/s  \n"}
-,{"stream_name":"stderr","time":760.041932522,"data":"\n"}
-,{"stream_name":"stderr","time":760.1426262,"data":"\r  /kaggle/temp/ckpt/last.pt   :  56%|█████▌    |  360MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  56%|█████▌    |  360MB /  642MB, 31.3MB/s  \n"}
-,{"stream_name":"stderr","time":760.14275122,"data":"\n"}
-,{"stream_name":"stderr","time":760.243337447,"data":"\r  /kaggle/temp/ckpt/last.pt   :  59%|█████▊    |  376MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  59%|█████▊    |  376MB /  642MB, 32.5MB/s  \n"}
-,{"stream_name":"stderr","time":760.243386195,"data":"\n"}
-,{"stream_name":"stderr","time":760.344069471,"data":"\r  /kaggle/temp/ckpt/last.pt   :  61%|██████    |  392MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  61%|██████    |  392MB /  642MB, 33.6MB/s  \n"}
-,{"stream_name":"stderr","time":760.344107537,"data":"\n"}
-,{"stream_name":"stderr","time":760.444728719,"data":"\r  /kaggle/temp/ckpt/last.pt   :  64%|██████▎   |  408MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  64%|██████▎   |  408MB /  642MB, 34.8MB/s  \n"}
-,{"stream_name":"stderr","time":760.44475885,"data":"\n"}
-,{"stream_name":"stderr","time":760.545424826,"data":"\r  /kaggle/temp/ckpt/last.pt   :  66%|██████▌   |  424MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  66%|██████▌   |  424MB /  642MB, 36.0MB/s  \n"}
-,{"stream_name":"stderr","time":760.545470081,"data":"\n"}
-,{"stream_name":"stderr","time":760.646162005,"data":"\r  /kaggle/temp/ckpt/last.pt   :  69%|██████▊   |  440MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  69%|██████▊   |  440MB /  642MB, 37.1MB/s  \n"}
-,{"stream_name":"stderr","time":760.646296809,"data":"\n"}
-,{"stream_name":"stderr","time":760.746809763,"data":"\r  /kaggle/temp/ckpt/last.pt   :  71%|███████   |  456MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  71%|███████   |  456MB /  642MB, 38.3MB/s  \n"}
-,{"stream_name":"stderr","time":760.746842529,"data":"\n"}
-,{"stream_name":"stderr","time":760.847491721,"data":"\r  /kaggle/temp/ckpt/last.pt   :  74%|███████▎  |  472MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  74%|███████▎  |  472MB /  642MB, 39.4MB/s  \n"}
-,{"stream_name":"stderr","time":760.84752272,"data":"\n"}
-,{"stream_name":"stderr","time":760.948291741,"data":"\r  /kaggle/temp/ckpt/last.pt   :  76%|███████▌  |  488MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  76%|███████▌  |  488MB /  642MB, 40.5MB/s  \n"}
-,{"stream_name":"stderr","time":760.948330599,"data":"\n"}
-,{"stream_name":"stderr","time":761.048874236,"data":"\r  /kaggle/temp/ckpt/last.pt   :  79%|███████▊  |  504MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  79%|███████▊  |  504MB /  642MB, 41.6MB/s  \n"}
-,{"stream_name":"stderr","time":761.048948822,"data":"\n"}
-,{"stream_name":"stderr","time":761.149574815,"data":"\r  /kaggle/temp/ckpt/last.pt   :  81%|████████  |  520MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  81%|████████  |  520MB /  642MB, 42.6MB/s  \n"}
-,{"stream_name":"stderr","time":761.149655084,"data":"\n"}
-,{"stream_name":"stderr","time":761.2503004,"data":"\r  /kaggle/temp/ckpt/last.pt   :  84%|████████▎ |  536MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  84%|████████▎ |  536MB /  642MB, 43.7MB/s  \n"}
-,{"stream_name":"stderr","time":761.250330412,"data":"\n"}
-,{"stream_name":"stderr","time":761.350980545,"data":"\r  /kaggle/temp/ckpt/last.pt   :  86%|████████▌ |  552MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  86%|████████▌ |  552MB /  642MB, 44.8MB/s  \n"}
-,{"stream_name":"stderr","time":761.351007977,"data":"\n"}
-,{"stream_name":"stderr","time":761.451684202,"data":"\r  /kaggle/temp/ckpt/last.pt   :  89%|████████▊ |  568MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  89%|████████▊ |  568MB /  642MB, 45.8MB/s  \n"}
-,{"stream_name":"stderr","time":761.451716763,"data":"\n"}
-,{"stream_name":"stderr","time":761.55265985,"data":"\r  /kaggle/temp/ckpt/last.pt   :  91%|█████████ |  584MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  91%|█████████ |  584MB /  642MB, 46.8MB/s  \n"}
-,{"stream_name":"stderr","time":761.552694035,"data":"\n"}
-,{"stream_name":"stderr","time":761.65351733,"data":"\r  /kaggle/temp/ckpt/last.pt   :  92%|█████████▏|  592MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  92%|█████████▏|  592MB /  642MB, 47.1MB/s  \n"}
-,{"stream_name":"stderr","time":761.653551532,"data":"\n"}
-,{"stream_name":"stderr","time":761.754276617,"data":"\r  /kaggle/temp/ckpt/last.pt   :  95%|█████████▍|  608MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  95%|█████████▍|  608MB /  642MB, 48.1MB/s  \n"}
-,{"stream_name":"stderr","time":761.754306813,"data":"\n"}
-,{"stream_name":"stderr","time":761.854831731,"data":"\r  /kaggle/temp/ckpt/last.pt   :  98%|█████████▊|  632MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  98%|█████████▊|  632MB /  642MB, 49.9MB/s  \n"}
-,{"stream_name":"stderr","time":761.854863757,"data":"\n"}
-,{"stream_name":"stderr","time":761.855479148,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  642MB /  642MB, 50.3MB/s  \n"}
-,{"stream_name":"stderr","time":761.855494677,"data":"\n"}
-,{"stream_name":"stderr","time":761.855498822,"data":"\n"}
-,{"stream_name":"stderr","time":761.855667676,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":761.855683473,"data":"\n"}
-,{"stream_name":"stderr","time":761.855688355,"data":"\n"}
-,{"stream_name":"stderr","time":761.956147197,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":761.956194269,"data":"\n"}
-,{"stream_name":"stderr","time":761.956355728,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":761.956365916,"data":"\n"}
-,{"stream_name":"stderr","time":761.956369837,"data":"\n"}
-,{"stream_name":"stderr","time":762.0568644,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":762.05691017,"data":"\n"}
-,{"stream_name":"stderr","time":762.057106817,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":762.057133883,"data":"\n"}
-,{"stream_name":"stderr","time":762.057138154,"data":"\n"}
-,{"stream_name":"stderr","time":762.084528278,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":762.084547665,"data":"\n"}
-,{"stream_name":"stderr","time":762.08472247,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":762.084732406,"data":"\n"}
-,{"stream_name":"stderr","time":762.084735983,"data":"\n"}
-,{"stream_name":"stderr","time":762.085116403,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  642MB /  642MB, 49.3MB/s  \n"}
-,{"stream_name":"stderr","time":762.085285936,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  \n"}
-,{"stream_name":"stderr","time":762.085388717,"data":"\rValidating                    : ██████████| 100%            \n"}
-,{"stream_name":"stderr","time":762.085553871,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \n"}
-,{"stream_name":"stderr","time":762.086526294,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
-,{"stream_name":"stdout","time":762.137738921,"data":"رُفع last.pt\n"}
-,{"stream_name":"stderr","time":762.191404419,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
-,{"stream_name":"stdout","time":762.257516427,"data":"رُفع /kaggle/temp/ckpt/status.json\n"}
-,{"stream_name":"stderr","time":762.67254502,"data":"\rProcessing Files (0 / 0)      : |          |  0.00B /  0.00B            \n"}
-,{"stream_name":"stderr","time":763.000968156,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B            \u001b[A\n"}
-,{"stream_name":"stderr","time":763.000997211,"data":"\n"}
-,{"stream_name":"stderr","time":763.001078508,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  11%|█         | 23.9MB /  214MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":763.001090151,"data":"\n"}
-,{"stream_name":"stderr","time":763.101808998,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  11%|█         | 23.9MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  11%|█         | 23.9MB /  214MB,   ???B/s  \n"}
-,{"stream_name":"stderr","time":763.101842472,"data":"\n"}
-,{"stream_name":"stderr","time":763.20283524,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  19%|█▊        | 39.9MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  19%|█▊        | 39.9MB /  214MB,   ???B/s  \n"}
-,{"stream_name":"stderr","time":763.202866583,"data":"\n"}
-,{"stream_name":"stderr","time":763.303157812,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  30%|██▉       | 64.0MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  30%|██▉       | 64.0MB /  214MB, 6.29MB/s  \n"}
-,{"stream_name":"stderr","time":763.303190082,"data":"\n"}
-,{"stream_name":"stderr","time":763.403771738,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  37%|███▋      | 79.9MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  37%|███▋      | 79.9MB /  214MB, 7.81MB/s  \n"}
-,{"stream_name":"stderr","time":763.403801705,"data":"\n"}
-,{"stream_name":"stderr","time":763.504409107,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  45%|████▍     | 96.0MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  45%|████▍     | 96.0MB /  214MB, 9.31MB/s  \n"}
-,{"stream_name":"stderr","time":763.50445229,"data":"\n"}
-,{"stream_name":"stderr","time":763.605141192,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  52%|█████▏    |  112MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  52%|█████▏    |  112MB /  214MB, 10.8MB/s  \n"}
-,{"stream_name":"stderr","time":763.605173239,"data":"\n"}
-,{"stream_name":"stderr","time":763.706039847,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  60%|█████▉    |  128MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  60%|█████▉    |  128MB /  214MB, 12.2MB/s  \n"}
-,{"stream_name":"stderr","time":763.706072714,"data":"\n"}
-,{"stream_name":"stderr","time":763.806682955,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  71%|███████   |  152MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  71%|███████   |  152MB /  214MB, 14.5MB/s  \n"}
-,{"stream_name":"stderr","time":763.806715936,"data":"\n"}
-,{"stream_name":"stderr","time":763.907425601,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  78%|███████▊  |  168MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  78%|███████▊  |  168MB /  214MB, 15.9MB/s  \n"}
-,{"stream_name":"stderr","time":763.907460492,"data":"\n"}
-,{"stream_name":"stderr","time":764.008340329,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  86%|████████▌ |  184MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  86%|████████▌ |  184MB /  214MB, 17.3MB/s  \n"}
-,{"stream_name":"stderr","time":764.008384169,"data":"\n"}
-,{"stream_name":"stderr","time":764.109048493,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  93%|█████████▎|  200MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  93%|█████████▎|  200MB /  214MB, 18.7MB/s  \n"}
-,{"stream_name":"stderr","time":764.109073913,"data":"\n"}
-,{"stream_name":"stderr","time":764.109641948,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  214MB /  214MB, 19.8MB/s  \n"}
-,{"stream_name":"stderr","time":764.10966289,"data":"\n"}
-,{"stream_name":"stderr","time":764.109667394,"data":"\n"}
-,{"stream_name":"stderr","time":764.109739312,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.109753748,"data":"\n"}
-,{"stream_name":"stderr","time":764.109758592,"data":"\n"}
-,{"stream_name":"stderr","time":764.210128573,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.210146481,"data":"\n"}
-,{"stream_name":"stderr","time":764.210273787,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.210281634,"data":"\n"}
-,{"stream_name":"stderr","time":764.210285036,"data":"\n"}
-,{"stream_name":"stderr","time":764.310648552,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.310668205,"data":"\n"}
-,{"stream_name":"stderr","time":764.310795521,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.310804754,"data":"\n"}
-,{"stream_name":"stderr","time":764.310808728,"data":"\n"}
-,{"stream_name":"stderr","time":764.321732322,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.321750824,"data":"\n"}
-,{"stream_name":"stderr","time":764.321881985,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
-,{"stream_name":"stderr","time":764.321895041,"data":"\n"}
-,{"stream_name":"stderr","time":764.321898932,"data":"\n"}
-,{"stream_name":"stderr","time":764.322240565,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  214MB /  214MB, 19.4MB/s  \n"}
-,{"stream_name":"stderr","time":764.322323328,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  \n"}
-,{"stream_name":"stderr","time":764.322498812,"data":"\rValidating                    : ██████████| 100%            \n"}
-,{"stream_name":"stderr","time":764.322668626,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \n"}
-,{"stream_name":"stderr","time":764.323517545,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
-,{"stream_name":"stdout","time":764.374433398,"data":"رُفع /kaggle/temp/ckpt/nawa_lm.npz\n"}
-,{"stream_name":"stderr","time":764.427314355,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
-,{"stream_name":"stdout","time":764.47328764,"data":"رُفع /kaggle/temp/ckpt/nawa_lm.json\n"}
-,{"stream_name":"stdout","time":765.468228983,"data":"\u003e\u003e بسم الله الرحمن الرحيم الحمد لله رب العالمين، اللهم إني أسألك خير هذا الأمر، وخير ما تعلم، وأعوذ بك من الشر، وشر ما تنقى أحدا من عبادك المؤمنين، اللهم اغفر لمحارم الله، وتعتع من دنياه، وتخلع من رجائك،\n"}
-,{"stream_name":"stdout","time":766.111468039,"data":"\u003e\u003e قال رسول الله صلى الله عليه وسلم (من صلى من صلاة الصبح ركعة ثم طلعت الشمس فقد استخففت به ومن استخف بها في نفسه فلم يستخففت به فالله أحق أن يعبد ) . وأنكر أصحابنا الصلاة مع الإمام . وقيل : إن الصلاة في موضعها غير\n"}
-,{"stream_name":"stdout","time":766.742109165,"data":"\u003e\u003e الحمد لله رب العالمين } ) . . . . . . الفرقان : ( 6 ) وما بكم من . . . . . \u003e \u003e ^ { وما بكم } ) يعني به من النصرة ^ { من نعمة . . . } ) . ^ { إذ يوازينا } \n"}
-,{"stream_name":"stdout","time":767.337975745,"data":"\u003e\u003e باب في أحكام الصلاة والصوم والصلاة. وفي الصلاة. والثاني: أن من نذر صوم سنة في مواضع مختلفة، كان ناذرا للشافعي رحمه الله، لأنه إذا نذر صوم سنة، كان نذرا مباحا للشافعي رحمه الله. فإذا نذر إج\n"}
-,{"stream_name":"stdout","time":767.910102272,"data":"\u003e\u003e اختلف الفقهاء في أن من اشترى شقصا أو شقصا مشفوعا فيصيبه الشفيع فيشتريه بثمن معلومة. وأجاز الشافعي رضي الله تعالى عنه أن يشتري الشقص الذي بائع شفيعان فالشفعة لا تجاوز قيمة الش\n"}
-,{"stream_name":"stdout","time":848.84364345,"data":"فهرس 15462156 متتالية من 40007134 كلمة\n"}
-,{"stream_name":"stdout","time":997.538481253,"data":"نتيجة التجربة ١ {\"ngrams\": 7168, \"copy_rate\": 0.16741071428571427, \"attributed\": 148, \"attributed_fabricated\": 38, \"fabricated_rate\": 0.25675675675675674, \"strict_fabricated\": 99, \"strict_rate\": 0.668918918918919, \"matched_fraction_mean\": 0.3503834191334191, \"model_params\": 53466240, \"prompts\": 98}\n"}
-,{"stream_name":"stdout","time":997.538792392,"data":"عيّنة 0  الحمد لله الذي هدانا لهذا 19 - أحمد بن محمد بن أحمد بن جعفر أبو العباس الجواليقي الشروطي حدث عن أبي بكر ابن أبي الدنيا وغيره روى عنه أبو بكر بن أبي الدنيا وابن أبي الدنيا قال حدثنا محمد بن إبراهيم بن شعيب النسائي عن محمود بن محمد بن يحيى بن عمر قال سألت عبد ا\n"}
-,{"stream_name":"stdout","time":997.538812967,"data":"عيّنة 9  حدثنا الليث بن سعيد قال: حدثني يزيد بن أبي حبيب، عن سعد بن سنان، عن أنس بن مالك، أنه سمع رسول الله صلى الله عليه وسلم يقول: «لا تسبوا أصحابي فوالذي نفسي بيده إنهم ليسمع خفق نعالهم إلا أن يتكلوا» ثم قال: «إنما هلك الذين من قبلكم حين نفقتهم، وفسروا لهم شرا» حدث\n"}
-,{"stream_name":"stdout","time":997.538821027,"data":"عيّنة 18  عَلَيْهِ وَسَلَّمَ : ( وَلَا تَحْجُجِي فَتَشْرَفْ ) كَذَا جَاءَ فِي الْمَوَاضِع بِأَكْثَر مِنْهَا , ثُمَّ قَالَ فِي رِوَايَة التِّرْمِذِيّ : ( وَلَا تَحْجُجِي فَتَبْقَى تَغْطَوْهُ ) , وَلَ\n"}
-,{"stream_name":"stdout","time":997.538827444,"data":"عيّنة 27  بْنُ حَاتِمٍ ‏ ‏عَنْ ‏ ‏عُبَيْدِ اللَّهِ بْنِ حُنَيْنٍ ‏ ‏عَنْ ‏ ‏عُقْبَةَ بْنِ عَامِرٍ الْأَنْصَارِيِّ ‏ ‏قَالَ ‏ ‏قِيلَ لِلنَّبِيِّ ‏ ‏صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ‏ ‏مَا كَانَ لِي أَفْضَلُ صَل\n"}
-,{"stream_name":"stdout","time":997.538835179,"data":"عيّنة 36  الْمُغِيرَة ) ‏ ‏: وَسَقَطَتْ الْقِصَّة الْمَرْفُوعَة ‏ ‏( وَأُمّ مُوسَى ) ‏ ‏: بِالتَّصْغِيرِ اِسْمهَا سَفِينَة لَكِنَّهَا ثَلَاث فَوَاحِد , وَكَذَا أُخْرَى وَاحِدَة , لَكِنْ اِسْتُشْعِرَ بِرِوَايَ\n"}
-,{"stream_name":"stdout","time":997.538864233,"data":"عيّنة 45  المأمون وهو يقول: «الفضل بن العباس بن عبد المطلب: [البحر الوافر] أراه محمدا المهدى ... من بعد موسى في الخلق «1» فلما دخل المأمون مكة قام بالنهروان في أهل مكة، فلما نظر إلى ذلك عبد المطلب أقبل يتخطى الناس حتى وقف على الباب، فقال: يا أمير المؤمنين «قد أعجبتني ي\n"}
-,{"stream_name":"stdout","time":997.538871025,"data":"عيّنة 54  بلغ عنه قال لا ولكن هذا من دقائق الباطن والله ما كنت لأدعي شيئا من القرآن إلا أني كنت رجلا عربيا وإني لأعطيه كل محرم سنا من خمر وأستعفيه من سنبس الخمر وسنبست أن لا أدع شيئا من القرآن إلا سألته عنه فلما سمعتها قال لي يا أبا محمد ما الذي قلت قال قلت إنه من دقائ\n"}
-,{"stream_name":"stdout","time":997.538876839,"data":"عيّنة 63  ذلك لا يحركه الا من قبل نفسه الاسقاط. ومن اراهم من المتحرك ان يسقطهم في الحال انما يكون على ما كان في الحال ان يستمر في الحال كما قال ابن سينا ومن قال: انه ان لا يحركه في الحال فلا يحركه في الحال، قال: وكذلك قال ابن سينا ومن قال: انه يحركه في الحال انه قد يست\n"}
-,{"stream_name":"stdout","time":997.538882731,"data":"عيّنة 72  صالح، عن أبي الزاهرية عن جبير بن نفير عن أبي سعيد الخدري عن النبي صلى الله عليه وسلم قال: \" لا تصلوا خلف ذوات العكن فإنهن معادن خيولكم. [ص: 165] قالوا: وما نأتي هذا الحي من النوكى؟ قال: النوكى. حدثنا أبو بكر بن خلاد، حدثنا إسماعيل بن إسحاق القلوسي، حدثنا أبو \n"}
-,{"stream_name":"stdout","time":997.538889385,"data":"عيّنة 81  الجواهر: لا يتحالفا. والأصل عدم الفهم، وفي الجواهر: للمرتهن تأخير الرهن حتى يتحالفا إذا لم يعلم بالشرط إلا أنه يحالفه بالكلام، وقاله الأئمة. (الخامسة) إذا اختلفا في شرطها، فقال الراهن: بل شرطت أن ترهن، وقال المحلف: بل أشرطت إن كان الشرط شرطا فالراهن بريء، فال\n"}
-,{"stream_name":"stdout","time":997.538895648,"data":"عيّنة 90  منقوص أي كالكبير وكثير. وقوله: 208 - فإن قلت: لا تأمنن امرأ * من عدا قرينتك الأنباء (¬3) وقول لبيد: \"فإنما الناس بشر (¬4) \" يعنون: من عدهم في العدد، أي: معدهم قرينتان تنوخان، وهما قرونتان تنوخان، أي: متنوخان. 209 - قوله: \"ولا تذعذعذع\" يعنون: أن يقلب الرجل في \n"}
-,{"stream_name":"stderr","time":1003.703609525,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
-,{"stream_name":"stderr","time":1003.703641727,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
-,{"stream_name":"stderr","time":1003.970082236,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
-,{"stream_name":"stderr","time":1003.970117114,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
-,{"stream_name":"stderr","time":1004.866900363,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
-,{"stream_name":"stderr","time":1005.91250102,"data":"[NbConvertApp] Writing 276539 bytes to __results__.html\n"}
+,{"stream_name":"stdout","time":1.804860525,"data":"GPU 0: Tesla T4 (UUID: GPU-e264ce4f-787a-a8ab-8a0e-65e21a8c07fc)\n"}
+,{"stream_name":"stdout","time":1.804902705,"data":"GPU 1: Tesla T4 (UUID: GPU-ebd6a4c8-5c5e-941a-e921-76701aaaddc4)\n"}
+,{"stream_name":"stdout","time":1.8118763100000002,"data":"$ pip -q install tokenizers datasets huggingface_hub 2\u003e\u00261 \n"}
+,{"stream_name":"stdout","time":7.934974231,"data":"$ rm -rf /kaggle/working/dhad \u0026\u0026 git clone -q --depth 1 https://github.com/kaledgmal71-commits/dhad.gi\n"}
+,{"stream_name":"stdout","time":11.463897588,"data":"$ python3 /kaggle/working/dhad/tools/lm/prep.py\n"}
+,{"stream_name":"stdout","time":274.045739384,"data":"hadith: 117799 وثيقة، 92.7M حرف، ODbL-1.0\n"}
+,{"stream_name":"stdout","time":274.045772039,"data":"quran: 228 وثيقة، 1.4M حرف، CC-BY-SA-4.0\n"}
+,{"stream_name":"stdout","time":274.045777392,"data":"openiti_0300AH: 734 وثيقة، 187.5M حرف، CC-BY-NC-SA-4.0\n"}
+,{"stream_name":"stdout","time":274.045782119,"data":"openiti_0400AH: 698 وثيقة، 267.4M حرف، CC-BY-NC-SA-4.0\n"}
+,{"stream_name":"stdout","time":274.045787154,"data":"openiti_0500AH: 316 وثيقة، 261.9M حرف، CC-BY-NC-SA-4.0\n"}
+,{"stream_name":"stdout","time":274.069233026,"data":"$ python3 /kaggle/working/dhad/tools/lm/train.py\n"}
+,{"stream_name":"stdout","time":287.911597646,"data":"الجهاز cuda Tesla T4\n"}
+,{"stream_name":"stdout","time":289.374713926,"data":"مجزّئ مستأنف 8000\n"}
+,{"stream_name":"stdout","time":289.374739074,"data":"المفردات 8000 زمن 1\n"}
+,{"stream_name":"stdout","time":345.949613393,"data":"hadith: 60.8M رمز × 2\n"}
+,{"stream_name":"stdout","time":347.071053482,"data":"quran: 1.1M رمز × 4\n"}
+,{"stream_name":"stdout","time":437.830847925,"data":"openiti_0300AH: 61.0M رمز × 1\n"}
+,{"stream_name":"stdout","time":571.752311706,"data":"openiti_0400AH: 91.8M رمز × 1\n"}
+,{"stream_name":"stdout","time":701.396886565,"data":"openiti_0500AH: 86.7M رمز × 1\n"}
+,{"stream_name":"stdout","time":701.71679147,"data":"رموز التدريب 363373285 تحقق 1764482\n"}
+,{"stream_name":"stdout","time":703.122216505,"data":"المعاملات 53.5M\n"}
+,{"stream_name":"stdout","time":713.510633446,"data":"استئناف من الخطوة 30000\n"}
+,{"stream_name":"stdout","time":725.609536355,"data":"نهاية التشغيل: خطوة 30000 خسارة تحقق 2.165 حيرة 8.7\n"}
+,{"stream_name":"stderr","time":727.150804348,"data":"\rProcessing Files (0 / 0)      : |          |  0.00B /  0.00B            \n"}
+,{"stream_name":"stderr","time":727.670165519,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B            \u001b[A\n"}
+,{"stream_name":"stderr","time":727.67019818,"data":"\n"}
+,{"stream_name":"stderr","time":727.670252138,"data":"\r  /kaggle/temp/ckpt/last.pt   :   4%|▎         | 24.0MB /  642MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":727.670263943,"data":"\n"}
+,{"stream_name":"stderr","time":727.770905578,"data":"\r  /kaggle/temp/ckpt/last.pt   :   4%|▎         | 24.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   4%|▎         | 24.0MB /  642MB, 2.38MB/s  \n"}
+,{"stream_name":"stderr","time":727.771023547,"data":"\n"}
+,{"stream_name":"stderr","time":727.871477648,"data":"\r  /kaggle/temp/ckpt/last.pt   :   6%|▌         | 40.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   6%|▌         | 40.0MB /  642MB, 3.93MB/s  \n"}
+,{"stream_name":"stderr","time":727.87150676,"data":"\n"}
+,{"stream_name":"stderr","time":727.972156587,"data":"\r  /kaggle/temp/ckpt/last.pt   :  10%|▉         | 64.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  10%|▉         | 64.0MB /  642MB, 6.26MB/s  \n"}
+,{"stream_name":"stderr","time":727.972206232,"data":"\n"}
+,{"stream_name":"stderr","time":728.072823925,"data":"\r  /kaggle/temp/ckpt/last.pt   :  12%|█▏        | 80.0MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  12%|█▏        | 80.0MB /  642MB, 7.76MB/s  \n"}
+,{"stream_name":"stderr","time":728.072850717,"data":"\n"}
+,{"stream_name":"stderr","time":728.173518926,"data":"\r  /kaggle/temp/ckpt/last.pt   :  15%|█▍        | 95.9MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  15%|█▍        | 95.9MB /  642MB, 9.25MB/s  \n"}
+,{"stream_name":"stderr","time":728.173546985,"data":"\n"}
+,{"stream_name":"stderr","time":728.274422692,"data":"\r  /kaggle/temp/ckpt/last.pt   :  17%|█▋        |  112MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  17%|█▋        |  112MB /  642MB, 10.7MB/s  \n"}
+,{"stream_name":"stderr","time":728.274450574,"data":"\n"}
+,{"stream_name":"stderr","time":728.374979288,"data":"\r  /kaggle/temp/ckpt/last.pt   :  20%|█▉        |  128MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  20%|█▉        |  128MB /  642MB, 12.2MB/s  \n"}
+,{"stream_name":"stderr","time":728.375011851,"data":"\n"}
+,{"stream_name":"stderr","time":728.475692663,"data":"\r  /kaggle/temp/ckpt/last.pt   :  22%|██▏       |  144MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  22%|██▏       |  144MB /  642MB, 13.6MB/s  \n"}
+,{"stream_name":"stderr","time":728.475719305,"data":"\n"}
+,{"stream_name":"stderr","time":728.576239811,"data":"\r  /kaggle/temp/ckpt/last.pt   :  26%|██▌       |  168MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  26%|██▌       |  168MB /  642MB, 15.8MB/s  \n"}
+,{"stream_name":"stderr","time":728.576269947,"data":"\n"}
+,{"stream_name":"stderr","time":728.676881396,"data":"\r  /kaggle/temp/ckpt/last.pt   :  29%|██▊       |  184MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  29%|██▊       |  184MB /  642MB, 17.2MB/s  \n"}
+,{"stream_name":"stderr","time":728.676946985,"data":"\n"}
+,{"stream_name":"stderr","time":728.777475901,"data":"\r  /kaggle/temp/ckpt/last.pt   :  31%|███       |  200MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  31%|███       |  200MB /  642MB, 18.6MB/s  \n"}
+,{"stream_name":"stderr","time":728.777560918,"data":"\n"}
+,{"stream_name":"stderr","time":728.878225741,"data":"\r  /kaggle/temp/ckpt/last.pt   :  34%|███▎      |  216MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  34%|███▎      |  216MB /  642MB, 19.9MB/s  \n"}
+,{"stream_name":"stderr","time":728.878290783,"data":"\n"}
+,{"stream_name":"stderr","time":728.978905728,"data":"\r  /kaggle/temp/ckpt/last.pt   :  36%|███▌      |  232MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  36%|███▌      |  232MB /  642MB, 21.3MB/s  \n"}
+,{"stream_name":"stderr","time":728.97896671,"data":"\n"}
+,{"stream_name":"stderr","time":729.079412629,"data":"\r  /kaggle/temp/ckpt/last.pt   :  39%|███▊      |  248MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  39%|███▊      |  248MB /  642MB, 22.6MB/s  \n"}
+,{"stream_name":"stderr","time":729.079445637,"data":"\n"}
+,{"stream_name":"stderr","time":729.179923137,"data":"\r  /kaggle/temp/ckpt/last.pt   :  41%|████      |  264MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  41%|████      |  264MB /  642MB, 23.9MB/s  \n"}
+,{"stream_name":"stderr","time":729.179962953,"data":"\n"}
+,{"stream_name":"stderr","time":729.280737139,"data":"\r  /kaggle/temp/ckpt/last.pt   :  44%|████▎     |  280MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  44%|████▎     |  280MB /  642MB, 25.2MB/s  \n"}
+,{"stream_name":"stderr","time":729.28076595,"data":"\n"}
+,{"stream_name":"stderr","time":729.381442092,"data":"\r  /kaggle/temp/ckpt/last.pt   :  46%|████▌     |  296MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  46%|████▌     |  296MB /  642MB, 26.5MB/s  \n"}
+,{"stream_name":"stderr","time":729.3814712,"data":"\n"}
+,{"stream_name":"stderr","time":729.482189845,"data":"\r  /kaggle/temp/ckpt/last.pt   :  49%|████▊     |  312MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  49%|████▊     |  312MB /  642MB, 27.7MB/s  \n"}
+,{"stream_name":"stderr","time":729.482216753,"data":"\n"}
+,{"stream_name":"stderr","time":729.582808455,"data":"\r  /kaggle/temp/ckpt/last.pt   :  51%|█████     |  328MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  51%|█████     |  328MB /  642MB, 29.0MB/s  \n"}
+,{"stream_name":"stderr","time":729.582844692,"data":"\n"}
+,{"stream_name":"stderr","time":729.683547897,"data":"\r  /kaggle/temp/ckpt/last.pt   :  54%|█████▎    |  344MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  54%|█████▎    |  344MB /  642MB, 30.2MB/s  \n"}
+,{"stream_name":"stderr","time":729.683575011,"data":"\n"}
+,{"stream_name":"stderr","time":729.784236217,"data":"\r  /kaggle/temp/ckpt/last.pt   :  56%|█████▌    |  360MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  56%|█████▌    |  360MB /  642MB, 31.4MB/s  \n"}
+,{"stream_name":"stderr","time":729.784265796,"data":"\n"}
+,{"stream_name":"stderr","time":729.884997582,"data":"\r  /kaggle/temp/ckpt/last.pt   :  59%|█████▊    |  376MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  59%|█████▊    |  376MB /  642MB, 32.6MB/s  \n"}
+,{"stream_name":"stderr","time":729.885026725,"data":"\n"}
+,{"stream_name":"stderr","time":729.985730619,"data":"\r  /kaggle/temp/ckpt/last.pt   :  61%|██████    |  392MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  61%|██████    |  392MB /  642MB, 33.8MB/s  \n"}
+,{"stream_name":"stderr","time":729.985760672,"data":"\n"}
+,{"stream_name":"stderr","time":730.086458779,"data":"\r  /kaggle/temp/ckpt/last.pt   :  64%|██████▎   |  408MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  64%|██████▎   |  408MB /  642MB, 35.0MB/s  \n"}
+,{"stream_name":"stderr","time":730.086487704,"data":"\n"}
+,{"stream_name":"stderr","time":730.187189533,"data":"\r  /kaggle/temp/ckpt/last.pt   :  66%|██████▌   |  424MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  66%|██████▌   |  424MB /  642MB, 36.1MB/s  \n"}
+,{"stream_name":"stderr","time":730.187218474,"data":"\n"}
+,{"stream_name":"stderr","time":730.287903382,"data":"\r  /kaggle/temp/ckpt/last.pt   :  70%|██████▉   |  448MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  70%|██████▉   |  448MB /  642MB, 38.0MB/s  \n"}
+,{"stream_name":"stderr","time":730.287932402,"data":"\n"}
+,{"stream_name":"stderr","time":730.388681959,"data":"\r  /kaggle/temp/ckpt/last.pt   :  72%|███████▏  |  464MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  72%|███████▏  |  464MB /  642MB, 39.1MB/s  \n"}
+,{"stream_name":"stderr","time":730.388722947,"data":"\n"}
+,{"stream_name":"stderr","time":730.489303062,"data":"\r  /kaggle/temp/ckpt/last.pt   :  75%|███████▍  |  480MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  75%|███████▍  |  480MB /  642MB, 40.3MB/s  \n"}
+,{"stream_name":"stderr","time":730.489328454,"data":"\n"}
+,{"stream_name":"stderr","time":730.589882654,"data":"\r  /kaggle/temp/ckpt/last.pt   :  79%|███████▊  |  504MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  79%|███████▊  |  504MB /  642MB, 42.1MB/s  \n"}
+,{"stream_name":"stderr","time":730.589910353,"data":"\n"}
+,{"stream_name":"stderr","time":730.690573646,"data":"\r  /kaggle/temp/ckpt/last.pt   :  81%|████████  |  520MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  81%|████████  |  520MB /  642MB, 43.2MB/s  \n"}
+,{"stream_name":"stderr","time":730.690622529,"data":"\n"}
+,{"stream_name":"stderr","time":730.791185629,"data":"\r  /kaggle/temp/ckpt/last.pt   :  84%|████████▎ |  536MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  84%|████████▎ |  536MB /  642MB, 44.2MB/s  \n"}
+,{"stream_name":"stderr","time":730.791214207,"data":"\n"}
+,{"stream_name":"stderr","time":730.891991876,"data":"\r  /kaggle/temp/ckpt/last.pt   :  86%|████████▌ |  552MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  86%|████████▌ |  552MB /  642MB, 45.3MB/s  \n"}
+,{"stream_name":"stderr","time":730.892019054,"data":"\n"}
+,{"stream_name":"stderr","time":730.992776182,"data":"\r  /kaggle/temp/ckpt/last.pt   :  89%|████████▊ |  568MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  89%|████████▊ |  568MB /  642MB, 46.3MB/s  \n"}
+,{"stream_name":"stderr","time":730.992809163,"data":"\n"}
+,{"stream_name":"stderr","time":731.094047854,"data":"\r  /kaggle/temp/ckpt/last.pt   :  91%|█████████ |  584MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  91%|█████████ |  584MB /  642MB, 47.4MB/s  \n"}
+,{"stream_name":"stderr","time":731.094072309,"data":"\n"}
+,{"stream_name":"stderr","time":731.194707408,"data":"\r  /kaggle/temp/ckpt/last.pt   :  95%|█████████▍|  608MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  95%|█████████▍|  608MB /  642MB, 49.1MB/s  \n"}
+,{"stream_name":"stderr","time":731.194731495,"data":"\n"}
+,{"stream_name":"stderr","time":731.295385545,"data":"\r  /kaggle/temp/ckpt/last.pt   :  96%|█████████▌|  616MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  96%|█████████▌|  616MB /  642MB, 49.4MB/s  \n"}
+,{"stream_name":"stderr","time":731.295415843,"data":"\n"}
+,{"stream_name":"stderr","time":731.39624051,"data":"\r  /kaggle/temp/ckpt/last.pt   :  98%|█████████▊|  632MB /  642MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  98%|█████████▊|  632MB /  642MB, 50.4MB/s  \n"}
+,{"stream_name":"stderr","time":731.396263096,"data":"\n"}
+,{"stream_name":"stderr","time":731.396635307,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  642MB /  642MB, 50.8MB/s  \n"}
+,{"stream_name":"stderr","time":731.396645873,"data":"\n"}
+,{"stream_name":"stderr","time":731.396649905,"data":"\n"}
+,{"stream_name":"stderr","time":731.39678115,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.39680792,"data":"\n"}
+,{"stream_name":"stderr","time":731.396812715,"data":"\n"}
+,{"stream_name":"stderr","time":731.49711975,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.497136962,"data":"\n"}
+,{"stream_name":"stderr","time":731.497269668,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.497278406,"data":"\n"}
+,{"stream_name":"stderr","time":731.497281848,"data":"\n"}
+,{"stream_name":"stderr","time":731.597837929,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.597855805,"data":"\n"}
+,{"stream_name":"stderr","time":731.597916605,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.597925544,"data":"\n"}
+,{"stream_name":"stderr","time":731.597929871,"data":"\n"}
+,{"stream_name":"stderr","time":731.599658957,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.599686172,"data":"\n"}
+,{"stream_name":"stderr","time":731.599783682,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":731.59979106,"data":"\n"}
+,{"stream_name":"stderr","time":731.599794855,"data":"\n"}
+,{"stream_name":"stderr","time":731.600149465,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  642MB /  642MB, 49.9MB/s  \n"}
+,{"stream_name":"stderr","time":731.600293327,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  \n"}
+,{"stream_name":"stderr","time":731.600400809,"data":"\rValidating                    : ██████████| 100%            \n"}
+,{"stream_name":"stderr","time":731.600555169,"data":"\r  /kaggle/temp/ckpt/last.pt   : 100%|██████████|  642MB /  642MB            \n"}
+,{"stream_name":"stderr","time":731.6013892,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
+,{"stream_name":"stdout","time":731.658375369,"data":"رُفع last.pt\n"}
+,{"stream_name":"stderr","time":731.727832479,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
+,{"stream_name":"stdout","time":731.780374497,"data":"رُفع /kaggle/temp/ckpt/status.json\n"}
+,{"stream_name":"stderr","time":732.148604337,"data":"\rProcessing Files (0 / 0)      : |          |  0.00B /  0.00B            \n"}
+,{"stream_name":"stderr","time":732.471771628,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B            \u001b[A\n"}
+,{"stream_name":"stderr","time":732.471816735,"data":"\n"}
+,{"stream_name":"stderr","time":732.471972627,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:   7%|▋         | 16.0MB /  214MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":732.471984595,"data":"\n"}
+,{"stream_name":"stderr","time":732.572564905,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:   7%|▋         | 16.0MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   7%|▋         | 16.0MB /  214MB,   ???B/s  \n"}
+,{"stream_name":"stderr","time":732.57259466,"data":"\n"}
+,{"stream_name":"stderr","time":732.673128062,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  15%|█▍        | 32.0MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  15%|█▍        | 32.0MB /  214MB,   ???B/s  \n"}
+,{"stream_name":"stderr","time":732.673176734,"data":"\n"}
+,{"stream_name":"stderr","time":732.773769057,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  26%|██▌       | 56.0MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  26%|██▌       | 56.0MB /  214MB, 5.52MB/s  \n"}
+,{"stream_name":"stderr","time":732.773801307,"data":"\n"}
+,{"stream_name":"stderr","time":732.874501332,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  34%|███▎      | 71.9MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  34%|███▎      | 71.9MB /  214MB, 7.03MB/s  \n"}
+,{"stream_name":"stderr","time":732.874528962,"data":"\n"}
+,{"stream_name":"stderr","time":732.975152205,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  41%|████      | 87.9MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  41%|████      | 87.9MB /  214MB, 8.54MB/s  \n"}
+,{"stream_name":"stderr","time":732.97518352,"data":"\n"}
+,{"stream_name":"stderr","time":733.075862091,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  52%|█████▏    |  112MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  52%|█████▏    |  112MB /  214MB, 10.8MB/s  \n"}
+,{"stream_name":"stderr","time":733.075890456,"data":"\n"}
+,{"stream_name":"stderr","time":733.176352142,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  60%|█████▉    |  128MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  60%|█████▉    |  128MB /  214MB, 12.3MB/s  \n"}
+,{"stream_name":"stderr","time":733.176379654,"data":"\n"}
+,{"stream_name":"stderr","time":733.276953435,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  67%|██████▋   |  144MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  67%|██████▋   |  144MB /  214MB, 13.7MB/s  \n"}
+,{"stream_name":"stderr","time":733.276980714,"data":"\n"}
+,{"stream_name":"stderr","time":733.377731717,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  75%|███████▍  |  160MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  75%|███████▍  |  160MB /  214MB, 15.1MB/s  \n"}
+,{"stream_name":"stderr","time":733.377776599,"data":"\n"}
+,{"stream_name":"stderr","time":733.478198529,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  86%|████████▌ |  184MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  86%|████████▌ |  184MB /  214MB, 17.3MB/s  \n"}
+,{"stream_name":"stderr","time":733.478227118,"data":"\n"}
+,{"stream_name":"stderr","time":733.578671018,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz:  93%|█████████▎|  200MB /  214MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  93%|█████████▎|  200MB /  214MB, 18.7MB/s  \n"}
+,{"stream_name":"stderr","time":733.578693142,"data":"\n"}
+,{"stream_name":"stderr","time":733.579254266,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  214MB /  214MB, 19.9MB/s  \n"}
+,{"stream_name":"stderr","time":733.579268821,"data":"\n"}
+,{"stream_name":"stderr","time":733.579272997,"data":"\n"}
+,{"stream_name":"stderr","time":733.579362909,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.579376873,"data":"\n"}
+,{"stream_name":"stderr","time":733.579381036,"data":"\n"}
+,{"stream_name":"stderr","time":733.679738632,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.679787849,"data":"\n"}
+,{"stream_name":"stderr","time":733.679908093,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.679915822,"data":"\n"}
+,{"stream_name":"stderr","time":733.679919394,"data":"\n"}
+,{"stream_name":"stderr","time":733.780344486,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.780365483,"data":"\n"}
+,{"stream_name":"stderr","time":733.780473012,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.78048642,"data":"\n"}
+,{"stream_name":"stderr","time":733.780490306,"data":"\n"}
+,{"stream_name":"stderr","time":733.821373283,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.821389309,"data":"\n"}
+,{"stream_name":"stderr","time":733.821521127,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":733.821528989,"data":"\n"}
+,{"stream_name":"stderr","time":733.821532589,"data":"\n"}
+,{"stream_name":"stderr","time":733.821927096,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████|  214MB /  214MB, 19.4MB/s  \n"}
+,{"stream_name":"stderr","time":733.822016645,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  \n"}
+,{"stream_name":"stderr","time":733.822173962,"data":"\rValidating                    : ██████████| 100%            \n"}
+,{"stream_name":"stderr","time":733.822356988,"data":"\r  ...gle/temp/ckpt/nawa_lm.npz: 100%|██████████|  214MB /  214MB            \n"}
+,{"stream_name":"stderr","time":733.823150506,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
+,{"stream_name":"stdout","time":733.878173884,"data":"رُفع /kaggle/temp/ckpt/nawa_lm.npz\n"}
+,{"stream_name":"stderr","time":733.937948675,"data":"No files have been modified since last commit. Skipping to prevent empty commit.\n"}
+,{"stream_name":"stdout","time":733.995894997,"data":"رُفع /kaggle/temp/ckpt/nawa_lm.json\n"}
+,{"stream_name":"stdout","time":735.108021113,"data":"\u003e\u003e بسم الله الرحمن الرحيم الحمد لله مالك الملك وقوله الملك الحمد لله الذي خلق السماوات والأرض وجعل الظلمات والنور وجعل الظلمات والنور وجعل الظلمات والنور ومن فيهن وما بينهن وما تحت الثرى وأنزل السماوات والأرض على ما ذكر لنا في كتابه قال\n"}
+,{"stream_name":"stdout","time":735.656480803,"data":"\u003e\u003e قال رسول الله صلى الله عليه وسلم: \" من قتل دون ماله فهو شهيد، ومن قتل دون ماله فهو شهيد، ومن قتل دون جاره سترا ستر الله عليه \" 5 - أبو هريرة قال: قال رسول الله صلى الله عليه وسلم: \" من قتل عصفورا بإبل معقفة لم يذكر اسم الله\n"}
+,{"stream_name":"stdout","time":736.206374118,"data":"\u003e\u003e الحمد لله رب العالمين، رب العالمين، أشهد أن لا إله إلا الواحد، رب العالمين، وأن محمدا عبده ورسوله، أرسلنا إلى قوم مجرمين، فأعرض عنهم حتى يأتي أمر الله، فأوحى إليهم: إن كنتم مؤمنين، فامشوا مرسلين، وإن كنتم مؤمنين، ف\n"}
+,{"stream_name":"stdout","time":736.755553433,"data":"\u003e\u003e باب في أحكام الصلاة الوضوء والتيمم والجماع والمسح على الخفين. وفي كتاب غسل الجمعة والتيمم في كتاب الطهارة، باب في الجنب الجنب. قال القاضي أبو الطيب في سوارد التوضئ: قال أصحابنا وغيرهم: لو أراد الجنب أن يتيمم للصلاة في\n"}
+,{"stream_name":"stdout","time":737.304425216,"data":"\u003e\u003e اختلف الفقهاء في تأويل قوله - صلى الله عليه وسلم -: «إنما الناس مختلفون، فمن اعتدى بعد ذلك أثم» . قال: (فإن خالف، فله أجران، أحدهما بالغ، والآخر بأحدهما) ؛ لأن الإجارة عقد تمليك المنفعة\n"}
+,{"stream_name":"stdout","time":782.426270521,"data":"نتيجة التجربة ٢ {\"val_fp32\": 2.247550827264786, \"val_int8_all\": 2.2479457223415373, \"val_int8_blocks_only\": 2.247855155467987, \"delta_all\": 0.00039489507675138924, \"delta_blocks\": 0.0003043282032009209, \"bytes_int8\": 53799680, \"bytes_fp32\": 213864960}\n"}
+,{"stream_name":"stderr","time":782.527168906,"data":"\rProcessing Files (0 / 0)      : |          |  0.00B /  0.00B            \n"}
+,{"stream_name":"stderr","time":783.155709628,"data":"\rNew Data Upload               : |          |  0.00B /  0.00B            \u001b[A\n"}
+,{"stream_name":"stderr","time":783.155735661,"data":"\n"}
+,{"stream_name":"stderr","time":783.1557409,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:   1%|          |  525kB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":783.155745645,"data":"\n"}
+,{"stream_name":"stderr","time":783.15590152,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:   1%|          |  525kB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   1%|          |  525kB / 53.8MB, 51.8kB/s  \n"}
+,{"stream_name":"stderr","time":783.256283382,"data":"\rNew Data Upload               :   1%|          |  525kB / 53.8MB, 51.8kB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.256302451,"data":"\n"}
+,{"stream_name":"stderr","time":783.256558756,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:   9%|▉         | 4.72MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :   9%|▉         | 4.72MB / 53.8MB,  465kB/s  \n"}
+,{"stream_name":"stderr","time":783.356990514,"data":"\rNew Data Upload               :   9%|▉         | 4.72MB / 53.8MB,  465kB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.357019292,"data":"\n"}
+,{"stream_name":"stderr","time":783.357369373,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:  20%|██        | 11.0MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  20%|██        | 11.0MB / 53.8MB, 1.08MB/s  \n"}
+,{"stream_name":"stderr","time":783.457751226,"data":"\rNew Data Upload               :  20%|██        | 11.0MB / 53.8MB, 1.08MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.457772015,"data":"\n"}
+,{"stream_name":"stderr","time":783.457910585,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:  45%|████▍     | 24.1MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  45%|████▍     | 24.1MB / 53.8MB, 2.35MB/s  \n"}
+,{"stream_name":"stderr","time":783.558318125,"data":"\rNew Data Upload               :  45%|████▍     | 24.1MB / 53.8MB, 2.35MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.558366291,"data":"\n"}
+,{"stream_name":"stderr","time":783.558628775,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:  69%|██████▉   | 37.2MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  69%|██████▉   | 37.2MB / 53.8MB, 3.61MB/s  \n"}
+,{"stream_name":"stderr","time":783.659150697,"data":"\rNew Data Upload               :  69%|██████▉   | 37.2MB / 53.8MB, 3.61MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.659183432,"data":"\n"}
+,{"stream_name":"stderr","time":783.659198838,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt:  96%|█████████▌| 51.4MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      :  96%|█████████▌| 51.4MB / 53.8MB, 4.95MB/s  \n"}
+,{"stream_name":"stderr","time":783.759694713,"data":"\rNew Data Upload               :  96%|█████████▌| 51.4MB / 53.8MB, 4.95MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.759716452,"data":"\n"}
+,{"stream_name":"stderr","time":783.759846421,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|█████████▉| 53.8MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (0 / 1)      : 100%|█████████▉| 53.8MB / 53.8MB, 5.14MB/s  \n"}
+,{"stream_name":"stderr","time":783.860337021,"data":"\rNew Data Upload               : 100%|█████████▉| 53.8MB / 53.8MB, 5.14MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":783.860351621,"data":"\n"}
+,{"stream_name":"stderr","time":783.960786867,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|█████████▉| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":783.960807688,"data":"\n"}
+,{"stream_name":"stderr","time":784.061199605,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|█████████▉| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.06121695,"data":"\n"}
+,{"stream_name":"stderr","time":784.161580343,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|█████████▉| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.161597567,"data":"\n"}
+,{"stream_name":"stderr","time":784.261771134,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|█████████▉| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.261789091,"data":"\n"}
+,{"stream_name":"stderr","time":784.262070594,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|██████████| 53.8MB / 53.8MB            \u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████| 53.8MB / 53.8MB, 4.89MB/s  \n"}
+,{"stream_name":"stderr","time":784.262384816,"data":"\rNew Data Upload               : 100%|██████████| 53.8MB / 53.8MB, 4.89MB/s  \u001b[A\n"}
+,{"stream_name":"stderr","time":784.262396471,"data":"\n"}
+,{"stream_name":"stderr","time":784.262400179,"data":"\n"}
+,{"stream_name":"stderr","time":784.262496582,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.262506935,"data":"\n"}
+,{"stream_name":"stderr","time":784.262510802,"data":"\n"}
+,{"stream_name":"stderr","time":784.362871528,"data":"\rValidating                    :           |   0%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.362889371,"data":"\n"}
+,{"stream_name":"stderr","time":784.362929979,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|██████████| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.362937643,"data":"\n"}
+,{"stream_name":"stderr","time":784.362941073,"data":"\n"}
+,{"stream_name":"stderr","time":784.378678334,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.378708382,"data":"\n"}
+,{"stream_name":"stderr","time":784.378825697,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|██████████| 53.8MB / 53.8MB            \u001b[A\u001b[A\n"}
+,{"stream_name":"stderr","time":784.378832428,"data":"\n"}
+,{"stream_name":"stderr","time":784.378835647,"data":"\n"}
+,{"stream_name":"stderr","time":784.379165096,"data":"\rValidating                    : ██████████| 100%            \u001b[A\u001b[A\u001b[A\rProcessing Files (1 / 1)      : 100%|██████████| 53.8MB / 53.8MB, 4.84MB/s  \n"}
+,{"stream_name":"stderr","time":784.37931491,"data":"\rNew Data Upload               : 100%|██████████| 53.8MB / 53.8MB, 4.84MB/s  \n"}
+,{"stream_name":"stderr","time":784.379389954,"data":"\rValidating                    : ██████████| 100%            \n"}
+,{"stream_name":"stderr","time":784.379528747,"data":"\r  ...emp/ckpt/nawa_lm.int8.nwt: 100%|██████████| 53.8MB / 53.8MB            \n"}
+,{"stream_name":"stdout","time":784.720243006,"data":"رُفع /kaggle/temp/ckpt/nawa_lm.int8.nwt\n"}
+,{"stream_name":"stderr","time":793.462804279,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":793.462832298,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":793.905994913,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":793.906020295,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":794.911020287,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":796.337703275,"data":"[NbConvertApp] Writing 276536 bytes to __results__.html\n"}
 
