@@ -22,3 +22,4 @@ for pr in prompts:
 r = score(gens, idx); r.update(model_params=sum(p.numel() for p in model.parameters()), prompts=len(prompts))
 print('نتيجة التجربة ١', json.dumps(r, ensure_ascii=False), flush=True)
 json.dump(r, open(OUT + '/lab_e1.json', 'w'), ensure_ascii=False)
+for i in range(0, len(gens), 9): print('عيّنة', i, gens[i][:260].replace('\n', ' '), flush=True)

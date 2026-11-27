@@ -22,12 +22,14 @@ class Index:
 MARK = re.compile(r'(قال رسول الله|قال النبي|حدثنا|أخبرنا|قال الله تعالى|قال تعالى|عن النبي)')
 def score(gens, idx, window=14):
     # gens: قائمة نصوص مولَّدة (دون المطالبة). يعيد قاموس المقاييس.
-    tot = hit = 0; att = att_bad = 0
+    tot = hit = 0; att = att_bad = 0; strict_bad = 0; fr = []
     for g in gens:
         ws = norm(g); gs = grams(ws, idx.n); m = idx.has(gs); tot += len(gs); hit += int(m.sum())
         for mt in MARK.finditer(g):
             tail = norm(g[mt.end():])[:window]
             if len(tail) < idx.n: continue
             att += 1
-            if not idx.has(grams(tail, idx.n)).any(): att_bad += 1
-    return {'ngrams': tot, 'copy_rate': hit / tot if tot else 0.0, 'attributed': att, 'attributed_fabricated': att_bad, 'fabricated_rate': att_bad / att if att else None}
+            mm = idx.has(grams(tail, idx.n)); f = float(mm.mean()); fr.append(f)
+            if not mm.any(): att_bad += 1
+            if f < 0.5: strict_bad += 1
+    return {'ngrams': tot, 'copy_rate': hit / tot if tot else 0.0, 'attributed': att, 'attributed_fabricated': att_bad, 'fabricated_rate': att_bad / att if att else None, 'strict_fabricated': strict_bad, 'strict_rate': strict_bad / att if att else None, 'matched_fraction_mean': float(np.mean(fr)) if fr else None}
