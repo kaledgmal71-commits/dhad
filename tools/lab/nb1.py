@@ -22,7 +22,12 @@ def build(verses, hadiths, seed=11, n=200, plen=4, hlen=5, glen=6):
         uniq = [t for t in texts if starts[' '.join(norm(t)[:pl])] == 1]   # بداية فريدة: لا غموض في المتابعة
         rnd.shuffle(uniq); pick = uniq[:n]
         vocab = sorted({w for t in texts[:20000] for w in norm(t)})
-        comp, pair = [], []
+        succ = {}   # خلفاء الكلمة في المتن: يجعلون المزيَّف الصعب سلسًا محليًّا (ثنائية موجودة في المتن)
+        for t in texts[:20000]:
+            nw = norm(t)
+            for a, b in zip(nw, nw[1:]): succ.setdefault(a, set()).add(b)
+        succ = {k: sorted(v) for k, v in succ.items()}
+        comp, pair, hard = [], [], []
         for t in pick:
             ws = _words(t); gold = norm(' '.join(ws[pl:pl + glen]))
             if len(norm(' '.join(ws[:pl]))) != pl or len(gold) != glen: continue   # اتساق التقسيم بين النص الأصلي والمطبَّع
@@ -32,7 +37,12 @@ def build(verses, hadiths, seed=11, n=200, plen=4, hlen=5, glen=6):
             for i in rnd.sample(range(2, len(fk)), 2): fk[i] = rnd.choice(vocab)
             fake = ' '.join(fk)
             if fake != ' '.join(rw) and fake not in seen: pair.append({'real': real, 'fake': fake})
-        out[name + '_complete'] = comp; out[name + '_pair'] = pair
+            hf = list(rw)
+            for i in rnd.sample(range(2, len(hf)), 2):
+                c = [w for w in succ.get(hf[i - 1], []) if w != hf[i]]; hf[i] = rnd.choice(c) if c else rnd.choice(vocab)
+            hfake = ' '.join(hf)
+            if hfake != ' '.join(rw) and hfake not in seen: hard.append({'real': real, 'fake': hfake})
+        out[name + '_complete'] = comp; out[name + '_pair'] = pair; out[name + '_pairhard'] = hard
     return out
 
 def score_complete(output, gold):
@@ -53,7 +63,7 @@ def run(system, items, n_words=8):
     return res
 
 # العتبات المسجَّلة (مصدر: docs/مقياس-نواة-NB1.md): شرط عرض النظام مقتبِسًا من القرآن والحديث
-THRESHOLDS = {'Q_complete.strict': 0.95, 'H_complete.strict': 0.90, 'Q_pair.acc': 0.99, 'H_pair.acc': 0.97}
+THRESHOLDS = {'Q_complete.strict': 0.95, 'H_complete.strict': 0.90, 'Q_pair.acc': 0.99, 'H_pair.acc': 0.97, 'Q_pairhard.acc': 0.95, 'H_pairhard.acc': 0.90}
 def verdict(res):
     v = {}
     for k, th in THRESHOLDS.items():

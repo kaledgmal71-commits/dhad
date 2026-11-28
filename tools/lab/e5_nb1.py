@@ -27,7 +27,7 @@ for t in verses + hads[:400000]: idx.add_text(t)
 idx.freeze()
 def pl(text):
     import numpy as np; g = nb1.norm(text); gs = [h for h in __import__('fidelity').grams(g, 4)]; m = idx.has(gs); return float(m.mean()) if len(m) else 0.0
-gres = {k: {'n': len(v), 'acc': sum(nb1.score_pair(pl(i['real']), pl(i['fake'])) for i in v) / max(1, len(v))} for k, v in items.items() if k.endswith('_pair')}
+gres = {k: {'n': len(v), 'acc': sum(nb1.score_pair(pl(i['real']), pl(i['fake'])) for i in v) / max(1, len(v))} for k, v in items.items() if 'pair' in k}
 out = {'parametric': res, 'parametric_verdict': nb1.verdict(res), 'grounded_pair': gres, 'params': sum(p.numel() for p in model.parameters())}
 print('نتيجة التجربة ٥', json.dumps(out, ensure_ascii=False), flush=True)
 json.dump(out, open(OUT + '/lab_e5.json', 'w'), ensure_ascii=False)

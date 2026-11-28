@@ -10,9 +10,10 @@ assert all(len(i['gold']) == 6 for i in it['Q_complete'])
 real = set(' '.join(nb1.norm(t)) for t in verses + hads)
 assert all(' '.join(nb1.norm(i['fake'])) not in real for k in ('Q_pair', 'H_pair') for i in it[k]), 'المزيَّف موجود في المتن'
 g = nb1.run(nb1.IndexSystem(verses + hads), it); v = nb1.verdict(g)
+assert len(it['Q_pairhard']) >= 90 and all(len(nb1.norm(i['real'])) == len(nb1.norm(i['fake'])) for i in it['Q_pairhard'])
 assert v['all_pass'] and g['Q_complete']['strict'] == 1.0 and g['H_pair']['acc'] >= 0.97, g
 z = nb1.run(nb1.RandomSystem(), it)
 assert z['Q_complete']['strict'] == 0 and 0.35 < z['Q_pair']['acc'] < 0.65 and not nb1.verdict(z)['all_pass'], z
 assert nb1.score_complete('وعليكم', ['وعليكم', 'السلام'])['prefix'] == 0.5
 assert nb1.norm('قَالَ رَسُولُ ٱللَّهِ') == ['قال', 'رسول', 'الله']
-print('NB-1: 8/8', g['Q_complete'], z['Q_pair'])
+print('NB-1: 9/9', g['Q_complete'], z['Q_pair'])
