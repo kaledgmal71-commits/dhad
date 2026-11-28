@@ -1,0 +1,52 @@
+name: collect
+# يجمع مخرجات نواة كاجل بعد انتهائها إن انتهت مهلة الانتظار في train قبل اكتمال النواة (طابور كاجل طويل)؛ يكتب lm/last-log.txt في builder-results.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: lm-collect
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 400
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: انتظار النواة وجلب المخرجات
+        run: |
+          pip -q install kaggle six python-slugify requests tqdm
+          for i in $(seq 1 170); do
+            S=$(kaggle kernels status ${KAGGLE_USERNAME}/nawa-lm 2>&1 | tr -d '\n'); echo "$S"
+            case "$S" in *COMPLETE*|*ERROR*|*CANCEL*) break;; esac
+            sleep 120
+          done
+          mkdir -p out && kaggle kernels output ${KAGGLE_USERNAME}/nawa-lm -p out || true
+          ls out | head
+      - name: دفع السجل إلى builder-results
+        if: always()
+        run: |
+          git config user.name nawa-builder; git config user.email builder@nawa.local
+          git fetch origin builder-results 2>/dev/null && git checkout -B builder-results origin/builder-results || { git checkout --orphan builder-results; git rm -rfq .; }
+          mkdir -p lm
+          python3 - <<'PY'
+          import glob, json, re
+          out = ''
+          for f in glob.glob('out/*.log'):
+              try:
+                  for l in open(f, encoding='utf8'):
+                      l = l.strip().lstrip('[').rstrip(',').rstrip(']')
+                      if l.startswith('{') and 'data' in l:
+                          try: out += json.loads(l)['data']
+                          except Exception: pass
+                      elif l not in ('[', ']'): out += l + '\n'
+              except Exception: pass
+          out = re.sub(r'hf_[A-Za-z0-9]{20,}', '***', out)
+          open('lm/last-log.txt', 'w', encoding='utf8').write(out[-60000:])
+          PY
+          git add lm; git commit -qm "سجل تدريب نواة" || echo "لا جديد"
+          git push origin builder-results

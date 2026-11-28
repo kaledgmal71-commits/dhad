@@ -45,7 +45,7 @@ jobs:
           mkdir kd && cp tools/lm/kernel/nawa-lm.py kd/ && sed "s/__USER__/${KAGGLE_USERNAME}/" tools/lm/kernel/kernel-metadata.json > kd/kernel-metadata.json
           sed -i "s#__PRESET__#${PRESET}#; s#__HOURS__#${HOURS}#; s#__HF__#${HF_TOKEN}#; s#__CENT__#${CENT}#; s#__WIKI__#${WIKI}#; s#__STEPS__#${STEPS}#; s#__REPO__#${HFREPO}#; s#__JAMI__#${JAMI}#; s#__INIT__#${INIT}#; s#__JREP__#${JREP}#; s#__LAB__#${LAB}#" kd/nawa-lm.py
           kaggle kernels push -p kd
-          N=$(python3 -c "print(int(float('${HOURS}')*30)+40)")
+          N=$(python3 -c "print(int(float('${HOURS}')*30)+120)")
           for i in $(seq 1 $N); do
             sleep 120
             S=$(kaggle kernels status ${KAGGLE_USERNAME}/nawa-lm 2>&1 | tr -d '\n'); echo "$S"
