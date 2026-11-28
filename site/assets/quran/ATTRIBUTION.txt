@@ -1,0 +1,3 @@
+نص القرآن الكريم (الرسم الإملائي المبسّط) من مشروع تنزيل (Tanzil.net) بترخيصه، عبر حزمة risan/quran-json (CC BY-SA 4.0).
+يُستعمل هنا للتحقق الحرفي من الآيات المنسوبة في مخرجات النموذج وللإحالة إلى السورة والآية. النص غير معدَّل، والتنسيق من الحزمة.
+Quran text (simple orthography): Tanzil Project (tanzil.net), via risan/quran-json (CC BY-SA 4.0). Used unmodified to verify quoted verses and cite surah:ayah.

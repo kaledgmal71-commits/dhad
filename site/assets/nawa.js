@@ -533,6 +533,19 @@
     return box;
   }
   // يعيد ردًّا جاهزًا للعرض: يبثّ التوليد في فقاعة الانتظار ثم يعيد النتيجة النهائية
+  // مصدر القرآن للتحقق من الآيات المنسوبة: ملف الآيات (تنزيل، بلا تشكيل زائد) يُجلب عند الحاجة فقط، ويُنتقى منه عدد قليل من الآيات الأقرب لنص المخرجات (مع جاراتها) فيحكم عليها محرك التحقق الحرفي نفسه
+  var quranData = null, quranIdx = null;
+  function qnorm(s) { return (String(s).replace(/[\u064B-\u0670\u0640]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').match(/[ء-ي]+/g)) || []; }
+  async function quranSources(out) {
+    if (!quranData) { var rs = await fetch('/assets/quran/quran.json'); quranData = await rs.json(); }
+    if (!quranIdx) { quranIdx = new Map(); quranData.forEach(function (v, i) { var seen = {}; qnorm(v[2]).forEach(function (w) { if (!seen[w]) { seen[w] = 1; var a = quranIdx.get(w); if (a) a.push(i); else quranIdx.set(w, [i]); } }); }); }
+    var score = new Map(), ws = {};
+    qnorm(out).forEach(function (w) { ws[w] = 1; });
+    Object.keys(ws).forEach(function (w) { var a = quranIdx.get(w); if (!a || a.length > 600) return; var wt = 1 / Math.log(2 + a.length); a.forEach(function (i) { score.set(i, (score.get(i) || 0) + wt); }); });
+    var top = Array.from(score.entries()).sort(function (x, y) { return y[1] - x[1]; }).slice(0, 30), pick = {};
+    top.forEach(function (e) { for (var d = -1; d <= 1; d++) { var j = e[0] + d; if (j >= 0 && j < quranData.length) pick[j] = 1; } });
+    return Object.keys(pick).map(Number).sort(function (x, y) { return x - y; }).map(function (i) { var v = quranData[i]; return { 'مصدر': 'القرآن الكريم — سورة ' + v[0] + ' آية ' + v[1], 'نص': v[2] }; });
+  }
   async function generate(r, t, pending) {
     var L = window.NawaLLM;
     if (!L.enabled()) return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'غير_متاح', 'تفصيل': 'لم يُفعَّل' }], 'نتائج': {}, 'ذكريات': [], 'رد': 'لم يُفعَّل نموذج التوليد بعد.', 'إعداد_نموذج': t };
@@ -544,7 +557,9 @@
       return { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'فشل', 'تفصيل': m }], 'نتائج': {}, 'ذكريات': [], 'رد': m === 'nogpu' ? 'متصفحك لا يدعم WebGPU فلا يعمل النموذج المحلي. جرّب كروم أو إيدج على الحاسوب.' : 'تعذّر التوليد (' + m + '). أعد المحاولة بعد قليل.', 'إعداد_نموذج': m === 'nogpu' ? t : '' };
     }
     var chk = null;
-    try { chk = await call('نقّح_منسوب', out, JSON.stringify(lastSources.map(function (x) { return { 'مصدر': x.name, 'نص': x.text }; }))); } catch (e) { chk = null; }
+    var srcs = lastSources.map(function (x) { return { 'مصدر': x.name, 'نص': x.text }; });
+    if (/(قال الله|قال تعالى|قوله تعالى|﴿|\{)/.test(out)) { try { srcs = srcs.concat(await quranSources(out)); } catch (e) { /* بلا ملف الآيات يبقى الحكم على المصادر المعروضة فقط */ } }
+    try { chk = await call('نقّح_منسوب', out, JSON.stringify(srcs)); } catch (e) { chk = null; }
     if (chk && chk['نص'] !== undefined) out = chk['نص']; else if (/(قال رسول الله|قال الله|قال تعالى|حدثنا|أخبرنا|«|\{)/.test(out)) out = out.replace(/[^.؟!\n]*(قال رسول الله|قال الله|قال تعالى|حدثنا|أخبرنا|«|\{)[^.؟!\n]*[.؟!]?/g, '[حُذف نص منسوب لم يثبت في المصادر]');
     var res = { 'نوع': 'توليد', 'ثقة': 100, 'لغة': '', 'خطة': [{ 'محرك': 'نموذج_توليد', 'حالة': 'نُفّذ', 'تفصيل': L.modelName() }], 'نتائج': (r && r['نتائج']) || {}, 'ذكريات': [], 'رد': out };
     return res;

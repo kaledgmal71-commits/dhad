@@ -124,6 +124,7 @@ function build(G) {
   wr('nawa/index.html', page());
   for (const [f, h] of Object.entries(DOCS.pages)) wr(f, h);
   fs.mkdirSync(path.join(DIST, 'assets', 'fiqh'), { recursive: true }); fs.copyFileSync(path.join(__dirname, 'assets', 'fiqh', 'rules.json'), path.join(DIST, 'assets', 'fiqh', 'rules.json'));
+  fs.mkdirSync(path.join(DIST, 'assets', 'quran'), { recursive: true }); for (const f of ['quran.json', 'ATTRIBUTION.txt']) fs.copyFileSync(path.join(__dirname, 'assets', 'quran', f), path.join(DIST, 'assets', 'quran', f));
   fs.mkdirSync(path.join(DIST, 'assets', 'dia'), { recursive: true }); for (const f of ['dia.json', 'dia.bin']) fs.copyFileSync(path.join(__dirname, 'assets', 'dia', f), path.join(DIST, 'assets', 'dia', f));
   for (const f of ['nawa.css', 'nawa.js', 'nawa.files.js', 'nawa.morph.js', 'nawa.dia.js', 'nawa.fiqh.js', 'nawa.llm.js', 'nawa.worker.js', 'nawa.app.js', 'nawa.templates.json']) fs.copyFileSync(path.join(__dirname, 'assets', f), path.join(DIST, 'assets', f));
   const png = fs.existsSync(path.join(__dirname, 'assets', 'nawa-icon-192.png'));
@@ -134,7 +135,7 @@ function build(G) {
   wr('nawa/icon.svg', ICON('#9a6b12'));
   wr('nawa/manifest.webmanifest', JSON.stringify({ name: 'نواة NAWA', short_name: 'نواة', description: 'مساعد ذكي مبني بلغة ضاد', start_url: '/nawa/', scope: '/nawa/', display: 'standalone', dir: 'rtl', lang: 'ar', background_color: '#ffffff', theme_color: '#9a6b12', icons: iconsList }));
   // عامل الخدمة: أصول التطبيق تُحفظ لتعمل الصفحة بلا اتصال بعد أول زيارة؛ الطلبات الأخرى من الشبكة
-  wr('nawa/sw.js', `const C='nawa-v9',A=['/nawa/','/nawa/learn/','/nawa/guide/','/nawa/explain/','/assets/nawa.css','/assets/nawa.js','/assets/nawa.files.js','/assets/nawa.morph.js','/assets/nawa.dia.js','/assets/nawa.fiqh.js','/assets/nawa.llm.js','/assets/nawa.app.js','/assets/nawa.templates.json','/assets/nawa.worker.js','/assets/engine.api.js','/nawa/base.json','/nawa/guide.json'];
+  wr('nawa/sw.js', `const C='nawa-v10',A=['/nawa/','/nawa/learn/','/nawa/guide/','/nawa/explain/','/assets/nawa.css','/assets/nawa.js','/assets/nawa.files.js','/assets/nawa.morph.js','/assets/nawa.dia.js','/assets/nawa.fiqh.js','/assets/nawa.llm.js','/assets/nawa.app.js','/assets/nawa.templates.json','/assets/nawa.worker.js','/assets/engine.api.js','/nawa/base.json','/nawa/guide.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==location.origin||!A.includes(u.pathname))return;e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));return r}).catch(()=>caches.match(e.request)))});
